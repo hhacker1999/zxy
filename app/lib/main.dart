@@ -1,0 +1,120 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:zxy_app/app_theme.dart';
+import 'package:zxy_app/bloc/image_bloc.dart';
+import 'package:zxy_app/dependencies.dart';
+import 'package:zxy_app/usecase/resource/models.dart';
+import 'package:zxy_app/views/base_home_view/base_home_view.dart';
+import 'package:zxy_app/app_routes.dart';
+import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
+import 'package:zxy_app/views/home_view/home_view_model.dart';
+import 'package:zxy_app/views/movie_view/movie_view.dart';
+import 'package:zxy_app/views/movie_view/movie_view_model.dart';
+import 'package:zxy_app/views/series_view/series_view.dart';
+import 'package:zxy_app/views/series_view/series_view_model.dart';
+import 'package:zxy_app/views/shared/fade_page_route.dart';
+import 'package:zxy_app/views/splash_view/splash_view.dart';
+import 'package:zxy_app/views/video_player_view/video_player_view.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final Dependencies deps;
+
+  @override
+  void initState() {
+    super.initState();
+    deps = Dependencies();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        Provider<HomeViewModel>(
+          create: (_) => HomeViewModel(tmdbUc: deps.mediaUc),
+          dispose: (_, model) => model.dispose(),
+          lazy: true,
+        ),
+        Provider<BaseHomeViewModel>(
+          create: (_) => BaseHomeViewModel(),
+          dispose: (_, model) => model.dispose(),
+          lazy: true,
+        ),
+        Provider<ImageBloc>(
+          create: (_) => ImageBloc(),
+          dispose: (_, bloc) => bloc.dispose(),
+          lazy: false,
+        ),
+      ],
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'Flutter Demo',
+          themeMode: ThemeMode.dark,
+          theme: AppTheme.purpleTheme,
+          onGenerateRoute: (settings) {
+            switch (settings.name) {
+              case AppRoutes.baseHomeView:
+                return FadePageRoute(
+                  builder: (_) {
+                    return BaseHomeView(deps: deps);
+                  },
+                );
+              case AppRoutes.movieView:
+                final args = settings.arguments as ZxyMedia;
+                return FadePageRoute(
+                  builder: (_) {
+                    return Provider(
+                      create: (_) => MovieViewModel(
+                        mediaUc: deps.mediaUc,
+                        streamUc: deps.streamUc,
+                      ),
+                      dispose: (_, vm) => vm.dispose(),
+                      builder: (_, _) => MovieView(movie: args),
+                    );
+                  },
+                );
+              case AppRoutes.showView:
+                final args = settings.arguments as ZxyMedia;
+                return FadePageRoute(
+                  builder: (_) {
+                    return Provider(
+                      create: (_) => SeriesViewModel(
+                        mediaUc: deps.mediaUc,
+                        streamUc: deps.streamUc,
+                      ),
+                      dispose: (_, vm) => vm.dispose(),
+                      builder: (_, _) => ShowView(show: args),
+                    );
+                  },
+                );
+              case AppRoutes.videoPlayerView:
+                return MaterialPageRoute(
+                  builder: (_) {
+                    return VideoPlayerView(
+                      input: settings.arguments as VideoPlayerInput,
+                    );
+                  },
+                );
+              default:
+                return MaterialPageRoute(
+                  builder: (_) {
+                    return SplashView();
+                  },
+                );
+            }
+          },
+          initialRoute: AppRoutes.splash,
+        );
+      },
+    );
+  }
+}

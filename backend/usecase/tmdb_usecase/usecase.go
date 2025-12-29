@@ -1,0 +1,428 @@
+package tmdbusecase
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"sync"
+	apperrors "zxy/app_errors"
+	"zxy/models"
+)
+
+type Usecase struct {
+	tmdbApiBaseUrl string
+}
+
+func New(tmdbApiBaseUrl string) *Usecase {
+	return &Usecase{
+		tmdbApiBaseUrl: tmdbApiBaseUrl,
+	}
+}
+
+func (u *Usecase) GetTrendingMovies(timeline string, page int, at string) ([]byte, error) {
+
+	req, _ := http.NewRequest(
+		"GET",
+		fmt.Sprintf("%s/trending/movie/%s?page=%d", u.tmdbApiBaseUrl, timeline, page),
+		nil,
+	)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending trending movies request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from trending movies request to TMDB", res.StatusCode)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of trending movies request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+	fmt.Println(string(body))
+
+	return body, nil
+}
+
+func (u *Usecase) GetTrendingShows(timeline string, page int, at string) ([]byte, error) {
+
+	req, _ := http.NewRequest(
+		"GET",
+		fmt.Sprintf("%s/trending/tv/%s?page=%d", u.tmdbApiBaseUrl, timeline, page),
+		nil,
+	)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending trending shows request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from trending shows request to TMDB", res.StatusCode)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of trending shows request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return body, nil
+}
+
+func (u *Usecase) GetMovieLibrary(params map[string]string, at string) ([]byte, error) {
+	url := fmt.Sprintf(
+		"%s/discover/movie?include_video=false&language=en-US",
+		u.tmdbApiBaseUrl,
+	)
+	for k, v := range params {
+		url += fmt.Sprintf("&%s=%s", k, v)
+	}
+
+	fmt.Println("--------------------------------------------------")
+	fmt.Println("Final uri is ", url)
+	fmt.Println("--------------------------------------------------")
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending discover movies request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from discover movies request to TMDB", res.StatusCode)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of discover movies request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return body, nil
+}
+
+func (u *Usecase) GetShowsLibrary(params map[string]string, at string) ([]byte, error) {
+	url := fmt.Sprintf(
+		"%s/discover/tv?include_video=false&language=en-US",
+		u.tmdbApiBaseUrl,
+	)
+	for k, v := range params {
+		url += fmt.Sprintf("&%s=%s", k, v)
+	}
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending discover movies request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from discover movies request to TMDB", res.StatusCode)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of discover movies request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return body, nil
+}
+func (u *Usecase) GetMovieDetails(id string, at string) ([]byte, error) {
+	url := fmt.Sprintf(
+		"%s/movie/%s?append_to_response=credits,images",
+		u.tmdbApiBaseUrl, id,
+	)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending get movie request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from get movie request to TMDB", res.StatusCode)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of get movie request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return body, nil
+}
+
+func (u *Usecase) GetShowDetails(id string, at string) ([]byte, error) {
+	url := fmt.Sprintf(
+		"%s/tv/%s?append_to_response=credits",
+		u.tmdbApiBaseUrl, id,
+	)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending get series request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from get series request to TMDB", res.StatusCode)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of get series request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return body, nil
+}
+
+func (u *Usecase) GetSeasonDetails(id string, season string, at string) ([]byte, error) {
+	url := fmt.Sprintf(
+		"%s/tv/%s/season/%s",
+		u.tmdbApiBaseUrl, id, season,
+	)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending get season request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from get season request to TMDB", res.StatusCode)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of get season request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return body, nil
+}
+
+func (u *Usecase) GetEpisodeDetails(
+	id string,
+	season string,
+	episode string,
+	at string,
+) ([]byte, error) {
+	url := fmt.Sprintf(
+		"%s/tv/%s/season/%s/episode/%s",
+		u.tmdbApiBaseUrl, id, season, episode,
+	)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending get episode request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from get episode request to TMDB", res.StatusCode)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of get episode request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return body, nil
+}
+
+func (u *Usecase) GetGenres(at string) (models.ZxyGenreResponse, error) {
+	wg := sync.WaitGroup{}
+
+	var movieGenre []models.Genre
+	var showGenre []models.Genre
+	var err error
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		movieGenre, err = u.getTMDBMovieGenre(at)
+	}()
+
+	go func() {
+		defer wg.Done()
+		showGenre, err = u.getTMDBShowGenre(at)
+	}()
+	wg.Wait()
+	if err != nil {
+		return models.ZxyGenreResponse{}, err
+	}
+
+	return models.ZxyGenreResponse{MovieGenre: movieGenre, ShowGenre: showGenre}, nil
+}
+
+func (u *Usecase) getTMDBMovieGenre(at string) ([]models.Genre, error) {
+
+	url := fmt.Sprintf("%s/genre/movie/list?language=en", u.tmdbApiBaseUrl)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending get movie genre ", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading get movie genre ", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println(
+			"Invalid status code when calling get movie genre ",
+			res.StatusCode,
+			string(body),
+		)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	var tmdbRes models.TMDBGenreResponse
+	err = json.Unmarshal(body, &tmdbRes)
+
+	if err != nil {
+		fmt.Println("Error unmarshalling get movie genre ", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return tmdbRes.Genres, nil
+}
+
+func (u *Usecase) getTMDBShowGenre(at string) ([]models.Genre, error) {
+	url := fmt.Sprintf("%s/genre/tv/list?language=en", u.tmdbApiBaseUrl)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending get show genre ", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading get show genre ", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println(
+			"Invalid status code when calling get show genre ",
+			res.StatusCode,
+			string(body),
+		)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	var tmdbRes models.TMDBGenreResponse
+	err = json.Unmarshal(body, &tmdbRes)
+
+	if err != nil {
+		fmt.Println("Error unmarshalling get show genre ", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return tmdbRes.Genres, nil
+}
