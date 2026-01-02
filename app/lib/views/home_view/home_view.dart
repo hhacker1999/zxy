@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
@@ -40,13 +41,13 @@ class _HomeViewState extends State<HomeView> {
                 valueListenable: list[index].state,
                 builder: (_, value, _) {
                   if (value is ItemLoading) {
-                    return Center(child: CircularProgressIndicator());
+                    return Center(child: CupertinoActivityIndicator());
                   }
                   if (value is ItemError) {
                     return Center(child: Text(value.error));
                   }
                   final List<ZxyMedia> resourceList =
-                      (value as ItemLoaded<List<ZxyMedia>>).value;
+                      (value as ItemLoaded<List<ZxyMedia>>).data;
                   return LibraryList(
                     resource: resourceList,
                     title: list[index].title,

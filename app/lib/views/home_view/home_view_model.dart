@@ -112,7 +112,7 @@ class HomeViewModel {
         },
       );
       final movies = movieResponse.results;
-      topMovieState.value = ItemLoaded<List<ZxyMedia>>(value: movies);
+      topMovieState.value = ItemLoaded<List<ZxyMedia>>(data: movies);
     } catch (e) {
       if (kDebugMode) {
         topMovieState.value = ItemError<List<ZxyMedia>>(error: e.toString());
@@ -134,7 +134,7 @@ class HomeViewModel {
         },
       );
       final series = seriesResponse.results;
-      topSeriesState.value = ItemLoaded<List<ZxyMedia>>(value: series);
+      topSeriesState.value = ItemLoaded<List<ZxyMedia>>(data: series);
     } catch (e) {
       if (kDebugMode) {
         topSeriesState.value = ItemError<List<ZxyMedia>>(error: e.toString());
@@ -150,7 +150,7 @@ class HomeViewModel {
     try {
       final seriesResponse = await _mediaUc.getTrendingShows();
       final series = seriesResponse.results;
-      trendingSeriesState.value = ItemLoaded<List<ZxyMedia>>(value: series);
+      trendingSeriesState.value = ItemLoaded<List<ZxyMedia>>(data: series);
     } catch (e) {
       if (kDebugMode) {
         trendingSeriesState.value = ItemError<List<ZxyMedia>>(
@@ -168,7 +168,7 @@ class HomeViewModel {
     try {
       final seriesResponse = await _mediaUc.getTrendingMovies();
       final movies = seriesResponse.results;
-      trendingMoviesState.value = ItemLoaded<List<ZxyMedia>>(value: movies);
+      trendingMoviesState.value = ItemLoaded<List<ZxyMedia>>(data: movies);
     } catch (e) {
       if (kDebugMode) {
         trendingMoviesState.value = ItemError<List<ZxyMedia>>(

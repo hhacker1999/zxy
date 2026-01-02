@@ -1,7 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
@@ -58,9 +60,9 @@ class _MovieViewState extends State<MovieView> {
                   valueListenable: vm.movieDetailState,
                   builder: (_, state, _) {
                     if (state is! ItemLoaded) {
-                      return Center(child: CircularProgressIndicator());
+                      return Center(child: CupertinoActivityIndicator());
                     }
-                    final details = (state as ItemLoaded<MovieDetails>).value;
+                    final details = (state as ItemLoaded<MovieDetails>).data;
                     final nonEmptyCast = details.credits.cast
                         .where(
                           (member) =>
@@ -177,6 +179,13 @@ class _MovieViewState extends State<MovieView> {
                                       valueListenable: vm.movieStreamState,
                                       builder: (_, streamState, _) {
                                         return StreamRow(
+                                          onTap: () {
+                                            Navigator.pushNamed(
+                                              context,
+                                              AppRoutes.videoPlayerView,
+                                              arguments: vm.getPlayerStreams(),
+                                            );
+                                          },
                                           color: color,
                                           streamState: streamState,
                                           onStreamSelect: vm.onStreamSelect,

@@ -51,7 +51,7 @@ class SeriesViewModel {
         }
         seasons.add(element);
       }
-      _seriesDetailsState.value = ItemLoaded(value: details);
+      _seriesDetailsState.value = ItemLoaded(data: details);
     } catch (e) {
       if (kDebugMode) {
         print(e);
@@ -97,7 +97,7 @@ class SeriesViewModel {
     final cacheStreams =
         _streams["${activeSeasonEpisode.value.$1}:${activeSeasonEpisode.value.$2}"];
     if (cacheStreams != null) {
-      _episodeStreamsState.value = ItemLoaded(value: cacheStreams);
+      _episodeStreamsState.value = ItemLoaded(data: cacheStreams);
       return;
     }
     try {
@@ -111,7 +111,7 @@ class SeriesViewModel {
       );
       _streams["${activeSeasonEpisode.value.$1}:${activeSeasonEpisode.value.$2}"] =
           streams;
-      _episodeStreamsState.value = ItemLoaded(value: streams);
+      _episodeStreamsState.value = ItemLoaded(data: streams);
     } catch (e) {
       if (kDebugMode) {
         print(e);

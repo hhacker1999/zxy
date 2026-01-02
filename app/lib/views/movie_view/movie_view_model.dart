@@ -4,6 +4,7 @@ import 'package:zxy_app/usecase/resource/resource.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/usecase/stream/stream.dart';
+import 'package:zxy_app/views/video_player_view/video_player_view.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class MovieViewModel {
@@ -31,7 +32,7 @@ class MovieViewModel {
     try {
       _getMovieStreams();
       final details = await mediaUc.getMovieDetails(initialMovieDetails.id);
-      _movieDetailsState.value = ItemLoaded(value: details);
+      _movieDetailsState.value = ItemLoaded(data: details);
       _getMovieStreams();
     } catch (e) {
       if (kDebugMode) {
@@ -46,7 +47,7 @@ class MovieViewModel {
     try {
       _movieStreamsState.value = ItemLoading();
       final streams = await streamUc.getMovieStreams(initialMovieDetails.id);
-      _movieStreamsState.value = ItemLoaded(value: streams);
+      _movieStreamsState.value = ItemLoaded(data: streams);
     } catch (e) {
       if (kDebugMode) {
         print(e);
@@ -58,6 +59,13 @@ class MovieViewModel {
 
   void onStreamSelect(int index) {
     _selectedStream = index;
+  }
+
+  VideoPlayerInput getPlayerStreams() {
+    return VideoPlayerInput(
+      streams: (_movieStreamsState.value as ItemLoaded<List<StreamItem>>).data,
+      index: _selectedStream ?? 0,
+    );
   }
 
   void dispose() {

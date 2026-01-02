@@ -1,9 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
-import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/drop_down.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
@@ -61,9 +61,9 @@ class _ShowViewState extends State<ShowView> {
                   valueListenable: vm.seriesDetailState,
                   builder: (_, state, _) {
                     if (state is! ItemLoaded) {
-                      return Center(child: CircularProgressIndicator());
+                      return Center(child: CupertinoActivityIndicator());
                     }
-                    final details = (state as ItemLoaded<SeriesDetails>).value;
+                    final details = (state as ItemLoaded<SeriesDetails>).data;
                     final nonEmptyCast = details.credits.cast
                         .where(
                           (member) =>
@@ -208,6 +208,7 @@ class _ShowViewState extends State<ShowView> {
                                                       null) ...[
                                                     AppTheme.boxHeightL,
                                                     StreamRow(
+                                                    onTap: (){},
                                                       color: color,
                                                       streamState: streamState,
                                                       onStreamSelect:

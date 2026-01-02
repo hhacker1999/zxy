@@ -201,6 +201,7 @@ func (i *RestInterface) HandleGetGenre(w http.ResponseWriter, r *http.Request) {
 	defer response.SendResponse(w)
 
 	at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
+
 	genre, err := i.tmdbUc.GetGenres(
 		at,
 	)
