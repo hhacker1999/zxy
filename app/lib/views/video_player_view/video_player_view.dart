@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -60,6 +61,7 @@ class ZxyPlayerState {
   final ValueNotifier<double> volumeDetails = ValueNotifier(100);
   final ValueNotifier<bool> isOverlayVisible = ValueNotifier(false);
   final ValueNotifier<bool> buffering = ValueNotifier(true);
+  final ValueNotifier<bool> settingsVisible = ValueNotifier(false);
 
   void dispose() {
     isPlaying.dispose();
@@ -309,6 +311,26 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                         },
                       ),
                     ),
+                    ValueListenableBuilder(
+                      valueListenable: _state.settingsVisible,
+                      builder: (_, settingsVisible, child) {
+                        return AnimatedPositioned(
+                          curve: Curves.elasticOut,
+                          top: 0,
+                          bottom: 0,
+                          right: settingsVisible ? 0 : -400,
+                          duration: const Duration(milliseconds: 800),
+                          child: child!,
+                        );
+                      },
+                      child: GlassContainer(
+                        height: constr.maxHeight - 40,
+                        width: 400,
+                        padding: const EdgeInsets.all(20),
+                        radius: AppTheme.roundedMedium,
+                        child: SizedBox(),
+                      ),
+                    ),
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: ValueListenableBuilder(
@@ -457,7 +479,6 @@ class _MultiValueListenableBuilderState
   }
 }
 
-
 class ProgressHudWithBar extends StatelessWidget {
   const ProgressHudWithBar({
     super.key,
@@ -597,10 +618,16 @@ class ProgressHudWithBar extends StatelessWidget {
                   Expanded(
                     child: Align(
                       alignment: Alignment.centerRight,
-                      child: Icon(
-                        Icons.settings,
-                        size: 16,
-                        color: Colors.grey.withOpacity(0.8),
+                      child: GestureDetector(
+                        onTap: () {
+                          _state.settingsVisible.value =
+                              !_state.settingsVisible.value;
+                        },
+                        child: Icon(
+                          Icons.settings,
+                          size: 16,
+                          color: Colors.grey.withOpacity(0.8),
+                        ),
                       ),
                     ),
                   ),
