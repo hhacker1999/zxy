@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/shared/drop_down.dart';
@@ -147,7 +148,15 @@ class _FilterViewState extends State<FilterView> {
                         itemBuilder: (_, index) {
                           return LibraryCard(
                             resource: items[index],
-                            onTap: (_) {},
+                            onTap: (_) {
+                              Navigator.pushNamed(
+                                context,
+                                vm.type == ZxyMediaType.shows
+                                    ? AppRoutes.showView
+                                    : AppRoutes.movieView,
+                                arguments: items[index],
+                              );
+                            },
                             // width: width,
                             // height: width / (2 / 3),
                           );
@@ -164,4 +173,3 @@ class _FilterViewState extends State<FilterView> {
     );
   }
 }
-

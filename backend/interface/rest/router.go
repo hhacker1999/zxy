@@ -27,8 +27,11 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Get("/discover/shows", i.HandleDiscoverShows)
 	router.Get("/trending/movies", i.HandleGetTrendingMovies)
 	router.Get("/trending/shows", i.HandleGetTrendingShows)
+	router.Get("/search/show", i.HandleSearchShows)
+	router.Get("/search/movie", i.HandleSearchMovies)
 	router.Get("/movie/{id}", i.HandleGetMovieInfo)
 	router.Get("/show/{id}", i.HandleGetShowInfo)
 	router.Get("/genre", i.HandleGetGenre)
+	router.Get("/configuration", i.HandleGetConfiguration)
 	return router
 }

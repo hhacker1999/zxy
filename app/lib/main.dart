@@ -10,6 +10,8 @@ import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/movie_view/movie_view.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
+import 'package:zxy_app/views/search_view/search_view.dart';
+import 'package:zxy_app/views/search_view/search_view_model.dart';
 import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/fade_page_route.dart';
@@ -93,6 +95,17 @@ class _MyAppState extends State<MyApp> {
                       ),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) => ShowView(show: args),
+                    );
+                  },
+                );
+              case AppRoutes.searchView:
+                final args = settings.arguments as String;
+                return FadePageRoute(
+                  builder: (_) {
+                    return Provider(
+                      create: (_) => SearchViewModel(mediaUC: deps.mediaUc),
+                      dispose: (_, vm) => vm.dispose(),
+                      builder: (_, _) => SearchView(keyword: args),
                     );
                   },
                 );

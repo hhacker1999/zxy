@@ -13,6 +13,8 @@ class MovieViewModel {
   late final ZxyMedia initialMovieDetails;
   int? _selectedStream;
 
+  int? get selectedStream => _selectedStream;
+
   MovieViewModel({required this.mediaUc, required this.streamUc});
 
   final ValueNotifier<ViewItemState<MovieDetails>> _movieDetailsState =

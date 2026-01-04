@@ -426,3 +426,104 @@ func (u *Usecase) getTMDBShowGenre(at string) ([]models.Genre, error) {
 
 	return tmdbRes.Genres, nil
 }
+
+func (u *Usecase) SearchMovie(at string, page int, keyword string) ([]byte, error) {
+	url := fmt.Sprintf(
+		"%s/search/movie?include_adult=false&language=en-US&page=%d&query=%s",
+		u.tmdbApiBaseUrl, page, keyword,
+	)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending search movies request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from search movies request to TMDB", res.StatusCode)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of search movies request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return body, nil
+}
+
+func (u *Usecase) SearchShows(at string, page int, keyword string) ([]byte, error) {
+	url := fmt.Sprintf(
+		"%s/search/tv?include_adult=false&language=en-US&page=%d&query=%s",
+		u.tmdbApiBaseUrl, page, keyword,
+	)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending search shows request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from search shows request to TMDB", res.StatusCode)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of search shows request to TMDB", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return body, nil
+}
+
+func (u *Usecase) GetConfiguration(at string) ([]byte, error) {
+	req, _ := http.NewRequest("GET", u.tmdbApiBaseUrl+"/configuration", nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", at))
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending get configuration ", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading get configuration", err)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println(
+			"Invalid status code when calling get configuration ",
+			res.StatusCode,
+			string(body),
+		)
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+
+	return body, nil
+}

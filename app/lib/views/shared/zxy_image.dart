@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 
 class ZxyImage extends StatefulWidget {
@@ -39,33 +42,71 @@ class _ZxyImageState extends State<ZxyImage> {
         widget.path,
       ),
       builder: (_, provider, _) {
-        if (provider == null) {
-          return Placeholder(
-            fallbackWidth: widget.width ?? 400,
-            fallbackHeight: widget.height ?? 400,
-          );
+        if (provider != null) {
+          if (!isCalledLoad && widget.onLoad != null) {
+            widget.onLoad!(provider);
+            isCalledLoad = true;
+          }
         }
-        if (!isCalledLoad && widget.onLoad != null) {
-          widget.onLoad!(provider);
-          isCalledLoad = true;
-        }
-        return Container(
-          decoration: BoxDecoration(
-            boxShadow: widget.enableShadow
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.4), // Subtle dark color
-                      blurRadius: 6, // Keeps the shadow close
-                      spreadRadius: 1, // Small spread for definition
-                      offset: const Offset(0, 3), // Moves shadow slightly down
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          child: provider == null
+              ? Container(
+                  key: ValueKey("loader"),
+                  decoration: BoxDecoration(
+                    boxShadow: widget.enableShadow
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(
+                                0.4,
+                              ), // Subtle dark color
+                              blurRadius: 6, // Keeps the shadow close
+                              spreadRadius: 1, // Small spread for definition
+                              offset: const Offset(
+                                0,
+                                3,
+                              ), // Moves shadow slightly down
+                            ),
+                          ]
+                        : null,
+                    borderRadius: widget.radius,
+                  ),
+                  height: widget.height,
+                  width: widget.width,
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: SvgPicture.asset(
+                      AppIcons.image,
+                      color: AppTheme.textSecondary,
+                      height: 80,
+                      width: 80,
                     ),
-                  ]
-                : null,
-            borderRadius: widget.radius,
-            image: DecorationImage(image: provider, fit: widget.fit),
-          ),
-          height: widget.height,
-          width: widget.width,
+                  ),
+                )
+              : Container(
+                  key: ValueKey("image"),
+                  decoration: BoxDecoration(
+                    boxShadow: widget.enableShadow
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(
+                                0.4,
+                              ), // Subtle dark color
+                              blurRadius: 6, // Keeps the shadow close
+                              spreadRadius: 1, // Small spread for definition
+                              offset: const Offset(
+                                0,
+                                3,
+                              ), // Moves shadow slightly down
+                            ),
+                          ]
+                        : null,
+                    borderRadius: widget.radius,
+                    image: DecorationImage(image: provider, fit: widget.fit),
+                  ),
+                  height: widget.height,
+                  width: widget.width,
+                ),
         );
       },
     );

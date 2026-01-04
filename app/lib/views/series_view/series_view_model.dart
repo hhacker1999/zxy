@@ -4,6 +4,7 @@ import 'package:zxy_app/usecase/resource/resource.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/usecase/stream/stream.dart';
+import 'package:zxy_app/views/video_player_view/video_player_view.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class SeriesViewModel {
@@ -15,6 +16,8 @@ class SeriesViewModel {
   final Map<String, List<StreamItem>> _streams = {};
 
   int? _selectedStream = 0;
+
+  int? get selectedStream => _selectedStream;
 
   SeriesViewModel({required this.mediaUc, required this.streamUc});
 
@@ -119,6 +122,14 @@ class SeriesViewModel {
       _episodeStreamsState.value = ItemError(error: e.toString());
       rethrow;
     }
+  }
+
+  VideoPlayerInput getPlayerStreams() {
+    return VideoPlayerInput(
+      streams:
+          (_episodeStreamsState.value as ItemLoaded<List<StreamItem>>).data,
+      index: _selectedStream ?? 0,
+    );
   }
 
   void dispose() {

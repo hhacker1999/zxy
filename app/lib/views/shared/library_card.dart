@@ -65,7 +65,7 @@ class LibraryCard extends StatelessWidget {
         isPoster: true,
         path: resource.posterPath,
         radius: AppTheme.roundedMedium,
-        size: "original",
+        size: "w342",
       ),
     );
   }

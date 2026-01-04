@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
@@ -22,6 +23,7 @@ class _BaseHomeViewState extends State<BaseHomeView> {
   late final BaseHomeViewModel vm;
   late final List<Widget> baseChildren;
   late final List<(String, String)> leftCards;
+  late final TextEditingController searchController;
 
   @override
   void initState() {
@@ -43,7 +45,7 @@ class _BaseHomeViewState extends State<BaseHomeView> {
       Provider<FilterViewModel>(
         key: ValueKey<String>("Show Library"),
         create: (_) => FilterViewModel(
-          type: ZxyMediaType.series,
+          type: ZxyMediaType.shows,
           mediaUc: widget.deps.mediaUc,
         ),
         dispose: (_, vm) => vm.dispose(),
@@ -58,6 +60,13 @@ class _BaseHomeViewState extends State<BaseHomeView> {
       ("TV Shows", AppIcons.show),
       ("Settings", AppIcons.settings),
     ];
+    searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -82,76 +91,98 @@ class _BaseHomeViewState extends State<BaseHomeView> {
                 stops: color != null ? [0.0, 1.0] : [0.0, 1.0],
               ),
             ),
-            child: Row(
+            child: Column(
               children: [
+                TopHeader(
+                  searchController: searchController,
+                  onSearch: () {
+                    if (searchController.value.text.isNotEmpty) {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.searchView,
+                        arguments: searchController.value.text,
+                      );
+                      searchController.clear();
+                    }
+                  },
+                ),
+                AppTheme.boxHeightM,
                 Expanded(
-                  flex: 3,
-                  child: ValueListenableBuilder(
-                    valueListenable: vm.selectedIndex,
-                    builder: (_, value, _) {
-                      return ValueListenableBuilder(
-                        valueListenable: context.read<ImageBloc>().bgGradColor,
-                        builder: (_, color, _) {
-                          return Container(
-                            width: double.maxFinite,
-                            height: double.maxFinite,
-                            padding: EdgeInsets.all(AppTheme.spacingM),
-                            decoration: BoxDecoration(
-                              borderRadius: AppTheme.roundedMedium,
-                              color: Colors.black.withOpacity(0.2),
-                            ),
-                            child: Column(
-                              spacing: AppTheme.spacingM,
-                              children: List.generate(leftCards.length, (
-                                index,
-                              ) {
-                                return ColorAnimatedCard(
-                                  onTap: () {
-                                    vm.selectedIndex.value = index;
-                                  },
-                                  isSelected: value == index,
-                                  baseColor: Colors.grey.withOpacity(0.1),
-                                  animationSelectedColor:
-                                      color ?? AppTheme.accentColor,
-                                  child: Row(
-                                    children: [
-                                      SvgPicture.asset(
-                                        leftCards[index].$2,
-                                        color: AppTheme.textPrimary,
-                                        height: 25,
-                                        width: 25,
-                                      ),
-                                      SizedBox(width: AppTheme.spacingS),
-                                      Text(
-                                        leftCards[index].$1,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleLarge,
-                                      ),
-                                    ],
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: ValueListenableBuilder(
+                          valueListenable: vm.selectedIndex,
+                          builder: (_, value, _) {
+                            return ValueListenableBuilder(
+                              valueListenable: context
+                                  .read<ImageBloc>()
+                                  .bgGradColor,
+                              builder: (_, color, _) {
+                                return Container(
+                                  width: double.maxFinite,
+                                  height: double.maxFinite,
+                                  padding: EdgeInsets.all(AppTheme.spacingM),
+                                  decoration: BoxDecoration(
+                                    borderRadius: AppTheme.roundedMedium,
+                                    color: AppTheme.cardBgColor,
+                                  ),
+                                  child: Column(
+                                    spacing: AppTheme.spacingM,
+                                    children: List.generate(leftCards.length, (
+                                      index,
+                                    ) {
+                                      return ColorAnimatedCard(
+                                        onTap: () {
+                                          vm.selectedIndex.value = index;
+                                        },
+                                        isSelected: value == index,
+                                        baseColor: AppTheme.lightGreyBg,
+                                        animationSelectedColor:
+                                            color ?? AppTheme.accentColor,
+                                        child: Row(
+                                          children: [
+                                            SvgPicture.asset(
+                                              leftCards[index].$2,
+                                              color: AppTheme.textPrimary,
+                                              height: 25,
+                                              width: 25,
+                                            ),
+                                            SizedBox(width: AppTheme.spacingS),
+                                            Text(
+                                              leftCards[index].$1,
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.titleLarge,
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }),
                                   ),
                                 );
-                              }),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-                SizedBox(width: AppTheme.spacingM),
-                Expanded(
-                  flex: 13,
-                  child: ValueListenableBuilder(
-                    valueListenable: vm.selectedIndex,
-                    builder: (_, index, _) {
-                      return ZxyFadeIndexedStack(
-                        key: ValueKey("Switcher"),
-                        duration: const Duration(milliseconds: 500),
-                        index: index,
-                        children: baseChildren,
-                      );
-                    },
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      SizedBox(width: AppTheme.spacingM),
+                      Expanded(
+                        flex: 13,
+                        child: ValueListenableBuilder(
+                          valueListenable: vm.selectedIndex,
+                          builder: (_, index, _) {
+                            return ZxyFadeIndexedStack(
+                              key: ValueKey("Switcher"),
+                              duration: const Duration(milliseconds: 500),
+                              index: index,
+                              children: baseChildren,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -159,6 +190,87 @@ class _BaseHomeViewState extends State<BaseHomeView> {
           );
         },
       ),
+    );
+  }
+}
+
+class TopHeader extends StatelessWidget {
+  final TextEditingController searchController;
+  final VoidCallback onSearch;
+  final bool showBack;
+  const TopHeader({
+    super.key,
+    required this.searchController,
+    required this.onSearch,
+    this.showBack = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: context.read<ImageBloc>().bgGradColor,
+      builder: (_, color, _) {
+        return Container(
+          width: double.maxFinite,
+          height: 80,
+          padding: EdgeInsets.all(AppTheme.spacingM),
+          decoration: BoxDecoration(
+            borderRadius: AppTheme.roundedMedium,
+            color: AppTheme.cardBgColor,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (showBack)
+                InkWell(
+                  hoverColor: Colors.transparent,
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: Row(
+                    children: [
+                      Icon(Icons.arrow_back_ios, size: 34),
+                      Text(
+                        "Back",
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      AppTheme.boxWidthXL,
+                    ],
+                  ),
+                ),
+              Image.asset(AppIcons.logo),
+              AppTheme.boxWidthL,
+              SizedBox(
+                width: 400,
+                child: TextField(
+                  enabled: true,
+                  onSubmitted: (_) {
+                    onSearch();
+                  },
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: color ?? AppTheme.accentColor,
+                      ),
+                      borderRadius: AppTheme.roundedMedium,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: AppTheme.roundedMedium,
+                    ),
+                    fillColor: AppTheme.lightGreyBg,
+                    hintText: "Search Movies and Shows",
+                    hintStyle: Theme.of(context).textTheme.labelLarge,
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  cursorColor: color ?? AppTheme.accentColor,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

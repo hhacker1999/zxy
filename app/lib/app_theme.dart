@@ -33,6 +33,9 @@ class AppTheme {
   static const Color errorColor = Color(0xFFEF4565);
   static const Color successColor = Color(0xFF2CB67D);
 
+  static Color lightGreyBg = Colors.grey.withOpacity(0.1);
+  static Color cardBgColor = Colors.black.withOpacity(0.2);
+
   // -----------------------------------------------------------------------------
   // 2. Dimensions & Border Radius
   // -----------------------------------------------------------------------------

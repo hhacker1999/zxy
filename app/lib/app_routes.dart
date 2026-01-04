@@ -5,8 +5,8 @@ class AppRoutes {
   static const String movieView = "/movie";
   static const String showView = "/series";
   static const String seasonView = "/season";
-  static const String episodeView =
-      "/episode";
+  static const String episodeView = "/episode";
   static const String videoPlayerView = "/video_player_view";
   static const String filterView = "/filterView";
+  static const String searchView = "/searchView";
 }

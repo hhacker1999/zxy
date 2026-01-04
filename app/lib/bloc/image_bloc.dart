@@ -68,13 +68,12 @@ class ImageBloc {
   }) async {
     try {
       final res = await _client.get(
-        Uri.parse("${AppConstants.tmdbImageBaseUrl}/$size/$path}"),
+        Uri.parse("${AppConstants.imageConfig.secureBaseUrl}/$size/$path}"),
       );
       if (res.statusCode == 200) {
         if (!containsColor) {
           final color = await _getColorFromImage(MemoryImage(res.bodyBytes));
           _images[path]!.color = color.primary;
-          // _images[path]!.scheme = color;
         }
         notifier.value = MemoryImage(res.bodyBytes);
       } else {

@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/http.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
@@ -108,7 +107,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.series));
+        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.shows));
       }
       return temp;
     });
@@ -252,7 +251,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.series));
+        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.shows));
       }
       return temp;
     });
@@ -269,5 +268,72 @@ class MediaUsecase {
       throw "Something went wrong";
     }
     return GenreResponse.fromJson(jsonDecode(res.body));
+  }
+
+  Future<ImageConfiguation> getConfiguration() async {
+    final res = await _client.get(Uri.parse("$_baseUrl/configuration"));
+    if (res.statusCode != 200) {
+      if (kDebugMode) {
+        print("Invalid status code getting genre ${res.body}");
+      }
+      throw "Something went wrong";
+    }
+    return ImageConfiguation.fromJson(jsonDecode(res.body)["images"]);
+  }
+
+  Future<ZxyPaginatedResponse<ZxyMedia>> searchMovies(
+    int page,
+    String keyword,
+  ) async {
+    var url = "$_baseUrl/search/movie?page=$page&keyword=$keyword";
+    final response = await _client.get(Uri.parse(url), headers: _getHeaders());
+    if (response.statusCode != 200) {
+      if (kDebugMode) {
+        print(
+          "Invalid response from search api ${response.statusCode} ${response.body}",
+        );
+      }
+      throw "Invalid response from Search api";
+    }
+    final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
+    final finalResult = ZxyPaginatedResponse<ZxyMedia>.fromJson(responseMap, (
+      results,
+    ) {
+      final List<ZxyMedia> temp = [];
+      for (var item in results) {
+        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.movie));
+      }
+      return temp;
+    });
+
+    return finalResult;
+  }
+
+  Future<ZxyPaginatedResponse<ZxyMedia>> searchShows(
+    int page,
+    String keyword,
+  ) async {
+    var url = "$_baseUrl/search/show?page=$page&keyword=$keyword";
+    final response = await _client.get(Uri.parse(url), headers: _getHeaders());
+    if (response.statusCode != 200) {
+      if (kDebugMode) {
+        print(
+          "Invalid response from search api ${response.statusCode} ${response.body}",
+        );
+      }
+      throw "Invalid response from Search api";
+    }
+    final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
+    final finalResult = ZxyPaginatedResponse<ZxyMedia>.fromJson(responseMap, (
+      results,
+    ) {
+      final List<ZxyMedia> temp = [];
+      for (var item in results) {
+        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.shows));
+      }
+      return temp;
+    });
+
+    return finalResult;
   }
 }

@@ -40,7 +40,7 @@ class HomeViewModel {
     homeViewLists.value.add(
       HomeViewListItem(
         title: "Trending Shows",
-        type: ZxyMediaType.series,
+        type: ZxyMediaType.shows,
         state: trendingShowsState,
       ),
     );
@@ -56,7 +56,7 @@ class HomeViewModel {
     homeViewLists.value.add(
       HomeViewListItem(
         title: "Top Rated Shows",
-        type: ZxyMediaType.series,
+        type: ZxyMediaType.shows,
         state: topShowsState,
       ),
     );
@@ -74,6 +74,7 @@ class HomeViewModel {
       initialiseTopRatedShows(topShowsState),
       initialiseTopRatedMovies(topMovieState),
       initialiseGenre(),
+      initialiseConfig(),
     ]);
   }
 
@@ -94,6 +95,19 @@ class HomeViewModel {
     } catch (e) {
       if (kDebugMode) {
         print("Error getting genre $e");
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> initialiseConfig() async {
+    try {
+      final imageConfig = await _mediaUc.getConfiguration();
+
+      AppConstants.imageConfig = imageConfig;
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error getting image config $e");
       }
       rethrow;
     }

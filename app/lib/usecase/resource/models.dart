@@ -66,29 +66,32 @@ class ZxyMedia {
   });
 
   @override
-  factory ZxyMedia.fromJson(Map<String, dynamic> json, ZxyMediaType type) => ZxyMedia(
-    adult: json["adult"],
-    backdropPath: json["backdrop_path"],
-    genreIds: List<int>.from(json["genre_ids"].map((x) => x)),
-    id: json["id"],
-    type: type,
-    originalLanguage: json["original_language"]!,
-    originalTitle: json["original_title"],
-    originalName: json["original_name"],
-    overview: json["overview"],
-    popularity: json["popularity"]?.toDouble(),
-    posterPath: json["poster_path"] ?? "",
-    releaseDate: json["releaseDate"] != null
-        ? DateTime.parse(json["release_date"])
-        : null,
-    firstAirDate: json["first_air_date"] != null
-        ? DateTime.parse(json["first_air_date"])
-        : null,
-    title: json["title"],
-    name: json["name"],
-    voteAverage: json["vote_average"]?.toDouble(),
-    voteCount: json["vote_count"],
-  );
+  factory ZxyMedia.fromJson(Map<String, dynamic> json, ZxyMediaType type) =>
+      ZxyMedia(
+        adult: json["adult"],
+        backdropPath: json["backdrop_path"],
+        genreIds: json["genre_ids"] != null
+            ? List<int>.from(json["genre_ids"].map((x) => x))
+            : [],
+        id: json["id"],
+        type: type,
+        originalLanguage: json["original_language"]!,
+        originalTitle: json["original_title"],
+        originalName: json["original_name"],
+        overview: json["overview"],
+        popularity: json["popularity"]?.toDouble(),
+        posterPath: json["poster_path"] ?? "",
+        releaseDate: json["releaseDate"] != null
+            ? DateTime.parse(json["release_date"])
+            : null,
+        firstAirDate: json["first_air_date"] != null
+            ? DateTime.tryParse(json["first_air_date"])
+            : null,
+        title: json["title"],
+        name: json["name"],
+        voteAverage: json["vote_average"]?.toDouble(),
+        voteCount: json["vote_count"],
+      );
 }
 
 class GenreResponse {
@@ -115,4 +118,35 @@ class Genre {
 
   factory Genre.fromJson(Map<String, dynamic> json) =>
       Genre(id: json["id"], name: json["name"]);
+}
+
+class ImageConfiguation {
+  final String baseUrl;
+  final String secureBaseUrl;
+  final List<String> backdropSizes;
+  final List<String> logoSizes;
+  final List<String> posterSizes;
+  final List<String> profileSizes;
+  final List<String> stillSizes;
+
+  ImageConfiguation({
+    required this.baseUrl,
+    required this.secureBaseUrl,
+    required this.backdropSizes,
+    required this.logoSizes,
+    required this.posterSizes,
+    required this.profileSizes,
+    required this.stillSizes,
+  });
+
+  factory ImageConfiguation.fromJson(Map<String, dynamic> json) =>
+      ImageConfiguation(
+        baseUrl: json["base_url"],
+        secureBaseUrl: json["secure_base_url"],
+        backdropSizes: List<String>.from(json["backdrop_sizes"].map((x) => x)),
+        logoSizes: List<String>.from(json["logo_sizes"].map((x) => x)),
+        posterSizes: List<String>.from(json["poster_sizes"].map((x) => x)),
+        profileSizes: List<String>.from(json["profile_sizes"].map((x) => x)),
+        stillSizes: List<String>.from(json["still_sizes"].map((x) => x)),
+      );
 }

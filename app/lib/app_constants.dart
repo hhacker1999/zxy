@@ -32,7 +32,6 @@ class FilterValue {
 
 class AppConstants {
   static const String baseUrl = "http://localhost:6969";
-  static final String tmdbImageBaseUrl = "https://image.tmdb.org/t/p/";
   static const String tmdbSmallLogo =
       "https://upload.wikimedia.org/wikipedia/commons/8/89/Tmdb.new.logo.svg";
   static late final Map<int, Genre> movieGenre;
@@ -136,7 +135,7 @@ class AppConstants {
 
   static const Map<String, String> iso6392Languages = {
     'eng': 'English',
-    'fra': 'French',
+    'fre': 'French',
     'deu': 'German',
     'zho': 'Chinese',
     'spa': 'Spanish',
@@ -148,6 +147,7 @@ class AppConstants {
     'ara': 'Arabic',
     'hin': 'Hindi',
     'tur': 'Turkish',
+    'dut': 'Dutch',
     'nld': 'Dutch',
     'swe': 'Swedish',
     'nor': 'Norwegian',
@@ -160,12 +160,12 @@ class AppConstants {
     'ces': 'Czech',
     'ell': 'Greek',
     'hun': 'Hungarian',
-    // Specific to 639-2 (no 2-letter code exists)
     'haw': 'Hawaiian',
     'yue': 'Cantonese',
     'fil': 'Filipino',
     'ukr': 'Ukranian',
   };
+  static late ImageConfiguation imageConfig;
 }
 
 class AppIcons {
@@ -175,4 +175,6 @@ class AppIcons {
   static const String show = "icons/show.svg";
   static const String settings = "icons/settings.svg";
   static const String play = "icons/play.svg";
+  static const String image = "icons/image.svg";
+  static const String logo = "icons/logo.png";
 }

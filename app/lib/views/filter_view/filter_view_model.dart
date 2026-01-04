@@ -4,7 +4,7 @@ import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
 
-enum ZxyMediaType { movie, series }
+enum ZxyMediaType { movie, shows }
 
 class FilterViewModel {
   final MediaUsecase mediaUc;
@@ -19,6 +19,8 @@ class FilterViewModel {
   final ValueNotifier<ZxyMedia?> selectedItem = ValueNotifier(null);
 
   final ValueNotifier<bool> loading = ValueNotifier(false);
+
+  ZxyMediaType get type => _type;
 
   FilterViewModel({
     required ZxyMediaType type,

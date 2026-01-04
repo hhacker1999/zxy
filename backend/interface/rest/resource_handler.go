@@ -215,3 +215,91 @@ func (i *RestInterface) HandleGetGenre(w http.ResponseWriter, r *http.Request) {
 	response.StatusCode = http.StatusOK
 	response.Data = genre
 }
+
+func (i *RestInterface) HandleGetConfiguration(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
+
+	config, err := i.tmdbUc.GetConfiguration(
+		at,
+	)
+
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusInternalServerError
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+	response.Data = config
+}
+
+func (i *RestInterface) HandleSearchShows(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	pathParams := r.URL.Query()
+	timeLine := pathParams.Get("keyword")
+	if len(timeLine) == 0 {
+		response.Error = "Keyword cannot be empty"
+		response.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	page := 1
+	pageStr := pathParams.Get("page")
+	pageInt, err := strconv.Atoi(pageStr)
+	if err == nil {
+		page = pageInt
+	}
+
+	details, err := i.tmdbUc.SearchShows(
+		"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU",
+		page,
+		timeLine,
+	)
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusInternalServerError
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+	response.Data = details
+}
+
+func (i *RestInterface) HandleSearchMovies(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	pathParams := r.URL.Query()
+	timeLine := pathParams.Get("keyword")
+	if len(timeLine) == 0 {
+		response.Error = "Keyword cannot be empty"
+		response.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	page := 1
+	pageStr := pathParams.Get("page")
+	pageInt, err := strconv.Atoi(pageStr)
+	if err == nil {
+		page = pageInt
+	}
+
+	details, err := i.tmdbUc.SearchMovie(
+		"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU",
+		page,
+		timeLine,
+	)
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusInternalServerError
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+	response.Data = details
+}
