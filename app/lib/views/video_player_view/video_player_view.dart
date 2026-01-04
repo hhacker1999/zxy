@@ -1,14 +1,12 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
-import 'dart:ui';
-
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/shared/glass_container.dart';
@@ -121,6 +119,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   @override
   void initState() {
     super.initState();
+    print("Link playing");
+    print(widget.input.streams[widget.input.index].url);
+    print("--------------------------------------------------");
     _state = ZxyPlayerState();
     _player = Player(configuration: PlayerConfiguration());
     _controller = VideoController(
@@ -161,7 +162,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
 
   void onMediaInitialized(Tracks tracks) {
     _state.videoDetails.value = tracks.video.first;
-    final List<AudioTrack> audioTracks = List.from(tracks.audio);
+    final List<AudioTrack> audioTracks = List<AudioTrack>.from(
+      tracks.audio,
+    ).where((e) => e.language != null).toList();
     audioTracks.sort((a, b) {
       if (a.bitrate == null) {
         return -1;
@@ -191,8 +194,13 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       audioTracks,
       trackIndex == -1 ? 0 : trackIndex,
     );
-    print("selected track is ${audioTracks[_state.audioDetails.value!.$2]}");
-    _player.setAudioTrack(audioTracks[_state.audioDetails.value!.$2]);
+    if (audioTracks.isNotEmpty) {
+      print("selected track is ${audioTracks[_state.audioDetails.value!.$2]}");
+      _player.setAudioTrack(audioTracks[_state.audioDetails.value!.$2]);
+    }
+
+    final subtitles = tracks.subtitle.where((e) => e.language != null).toList();
+    _state.subtitleDetails.value = (subtitles, -1);
     _player.setSubtitleTrack(SubtitleTrack.no());
     _player.play();
   }
@@ -242,6 +250,10 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       _state.seekInfo.value = _state.seekInfo.value.copyWith(buffered: buffer);
     });
 
+    _player.stream.track.listen((track) {
+      print(track.subtitle);
+    });
+
     _bufferingSub = _player.stream.buffering.listen((buffering) {
       print("--------------------------------------------------");
       print("buffering received from server");
@@ -269,7 +281,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
 
   @override
   Widget build(BuildContext context) {
-    print("build is being called");
     return Scaffold(
       body: LayoutBuilder(
         builder: (_, constr) {
@@ -296,6 +307,19 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                         controller: _controller,
                         controls: NoVideoControls,
                         width: constr.maxWidth,
+                        subtitleViewConfiguration: SubtitleViewConfiguration(
+                          style: TextStyle(
+                            height: 1.4,
+                            fontSize: 24.0,
+                            letterSpacing: 0.0,
+                            wordSpacing: 0.0,
+                            color: Color(0xffffffff),
+                            fontWeight: FontWeight.normal,
+                            backgroundColor: Color(0xaa000000),
+                          ),
+                          textAlign: TextAlign.center,
+                          padding: EdgeInsets.all(24.0),
+                        ),
                       ),
                     ),
                     Align(
@@ -311,25 +335,10 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                         },
                       ),
                     ),
-                    ValueListenableBuilder(
-                      valueListenable: _state.settingsVisible,
-                      builder: (_, settingsVisible, child) {
-                        return AnimatedPositioned(
-                          curve: Curves.elasticOut,
-                          top: 0,
-                          bottom: 0,
-                          right: settingsVisible ? 0 : -400,
-                          duration: const Duration(milliseconds: 800),
-                          child: child!,
-                        );
-                      },
-                      child: GlassContainer(
-                        height: constr.maxHeight - 40,
-                        width: 400,
-                        padding: const EdgeInsets.all(20),
-                        radius: AppTheme.roundedMedium,
-                        child: SizedBox(),
-                      ),
+                    VideoSettingsSidebar(
+                      player: _player,
+                      state: _state,
+                      height: constr.maxHeight - 40,
                     ),
                     Align(
                       alignment: Alignment.bottomCenter,
@@ -359,6 +368,183 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class VideoSettingsSidebar extends StatelessWidget {
+  final double height;
+  final Player player;
+  const VideoSettingsSidebar({
+    super.key,
+    required ZxyPlayerState state,
+    required this.height,
+    required this.player,
+  }) : _state = state;
+
+  final ZxyPlayerState _state;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: _state.settingsVisible,
+      builder: (_, settingsVisible, child) {
+        return AnimatedPositioned(
+          curve: Curves.elasticOut,
+          top: 0,
+          bottom: 0,
+          right: settingsVisible ? 0 : -400,
+          duration: const Duration(milliseconds: 800),
+          child: child!,
+        );
+      },
+      child: GlassContainer(
+        height: height,
+        width: 400,
+        padding: const EdgeInsets.all(20),
+        radius: AppTheme.roundedMedium,
+        child: MultiValueListenableBuilder(
+          notifiers: [
+            _state.audioDetails,
+            _state.videoDetails,
+            _state.subtitleDetails,
+          ],
+          builder: (_) {
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Audio Tracks"),
+                  if (_state.audioDetails.value != null &&
+                      _state.audioDetails.value!.$1.isNotEmpty)
+                    ...List.generate(_state.audioDetails.value!.$1.length + 1, (
+                      index,
+                    ) {
+                      final radioSelectedVal =
+                          _state.audioDetails.value!.$2 + 1;
+                      final currentBuildAudioInfo = _state
+                          .audioDetails
+                          .value!
+                          .$1[index != 0 ? index - 1 : 0];
+                      return Row(
+                        spacing: AppTheme.spacingS,
+                        children: [
+                          CupertinoRadio(
+                            value: index,
+                            groupValue: radioSelectedVal,
+                            onChanged: (_) {
+                              if (index == 0) {
+                                player.setAudioTrack(AudioTrack.no());
+                                _state.audioDetails.value = (
+                                  _state.audioDetails.value!.$1,
+                                  -1,
+                                );
+                                return;
+                              }
+                              player.setAudioTrack(currentBuildAudioInfo);
+                              _state.audioDetails.value = (
+                                _state.audioDetails.value!.$1,
+                                index - 1,
+                              );
+                            },
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              if (index == 0) {
+                                player.setAudioTrack(AudioTrack.no());
+                                _state.audioDetails.value = (
+                                  _state.audioDetails.value!.$1,
+                                  -1,
+                                );
+                                return;
+                              }
+                              player.setAudioTrack(currentBuildAudioInfo);
+                              _state.audioDetails.value = (
+                                _state.audioDetails.value!.$1,
+                                index - 1,
+                              );
+                            },
+                            child: Text(
+                              index == 0
+                                  ? "None"
+                                  : "[${currentBuildAudioInfo.language!.length == 3 ? AppConstants.iso6392Languages[currentBuildAudioInfo.language] : AppConstants.isoLanguages[currentBuildAudioInfo.language]}] ${currentBuildAudioInfo.codec ?? ''} ${currentBuildAudioInfo.title ?? ''} ${currentBuildAudioInfo.channelscount ?? 0}ch",
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  AppTheme.boxHeightM,
+                  Text("Subtitle Tracks"),
+                  if (_state.subtitleDetails.value != null)
+                    ...List.generate(
+                      _state.subtitleDetails.value!.$1.length + 1,
+                      (index) {
+                        final radioSelectedVal =
+                            _state.subtitleDetails.value!.$2 + 1;
+                        final currentBuildsubtitleInfo =
+                            _state.subtitleDetails.value!.$1.isNotEmpty
+                            ? _state.subtitleDetails.value!.$1[index != 0
+                                  ? index - 1
+                                  : 0]
+                            : null;
+                        return Row(
+                          spacing: AppTheme.spacingS,
+                          children: [
+                            CupertinoRadio(
+                              value: index,
+                              groupValue: radioSelectedVal,
+                              onChanged: (_) {
+                                if (index == 0) {
+                                  player.setSubtitleTrack(SubtitleTrack.no());
+                                  _state.subtitleDetails.value = (
+                                    _state.subtitleDetails.value!.$1,
+                                    -1,
+                                  );
+                                  return;
+                                }
+                                player.setSubtitleTrack(
+                                  currentBuildsubtitleInfo!,
+                                );
+                                _state.subtitleDetails.value = (
+                                  _state.subtitleDetails.value!.$1,
+                                  index - 1,
+                                );
+                              },
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                if (index == 0) {
+                                  player.setSubtitleTrack(SubtitleTrack.no());
+                                  _state.subtitleDetails.value = (
+                                    _state.subtitleDetails.value!.$1,
+                                    -1,
+                                  );
+                                  return;
+                                }
+                                player.setSubtitleTrack(
+                                  currentBuildsubtitleInfo!,
+                                );
+                                _state.subtitleDetails.value = (
+                                  _state.subtitleDetails.value!.$1,
+                                  index - 1,
+                                );
+                              },
+                              child: Text(
+                                index == 0
+                                    ? "None"
+                                    : "[${currentBuildsubtitleInfo!.language!.length == 3 ? AppConstants.iso6392Languages[currentBuildsubtitleInfo.language] : AppConstants.isoLanguages[currentBuildsubtitleInfo.language]}] ${currentBuildsubtitleInfo.title ?? 0}",
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

@@ -138,7 +138,7 @@ class CreatedBy {
     creditId: json["credit_id"],
     name: json["name"],
     gender: json["gender"],
-    profilePath: json["profile_path"],
+    profilePath: json["profile_path"] ?? "",
   );
 
   Map<String, dynamic> toJson() => {

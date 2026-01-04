@@ -109,6 +109,63 @@ class AppConstants {
     featuredFilterShow,
     yearFilter,
   ];
+
+  static const Map<String, String> isoLanguages = {
+    'en': 'English',
+    'es': 'Spanish',
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'zh': 'Chinese',
+    'pt': 'Portuguese',
+    'ru': 'Russian',
+    'hi': 'Hindi',
+    'ar': 'Arabic',
+    'tr': 'Turkish',
+    'nl': 'Dutch',
+    'sv': 'Swedish',
+    'da': 'Danish',
+    'no': 'Norwegian',
+    'fi': 'Finnish',
+    'pl': 'Polish',
+    'vi': 'Vietnamese',
+    'uk': 'Ukranian',
+  };
+
+  static const Map<String, String> iso6392Languages = {
+    'eng': 'English',
+    'fra': 'French',
+    'deu': 'German',
+    'zho': 'Chinese',
+    'spa': 'Spanish',
+    'ita': 'Italian',
+    'jpn': 'Japanese',
+    'kor': 'Korean',
+    'rus': 'Russian',
+    'por': 'Portuguese',
+    'ara': 'Arabic',
+    'hin': 'Hindi',
+    'tur': 'Turkish',
+    'nld': 'Dutch',
+    'swe': 'Swedish',
+    'nor': 'Norwegian',
+    'dan': 'Danish',
+    'fin': 'Finnish',
+    'pol': 'Polish',
+    'vie': 'Vietnamese',
+    'ind': 'Indonesian',
+    'tha': 'Thai',
+    'ces': 'Czech',
+    'ell': 'Greek',
+    'hun': 'Hungarian',
+    // Specific to 639-2 (no 2-letter code exists)
+    'haw': 'Hawaiian',
+    'yue': 'Cantonese',
+    'fil': 'Filipino',
+    'ukr': 'Ukranian',
+  };
 }
 
 class AppIcons {
