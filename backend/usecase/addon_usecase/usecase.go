@@ -19,11 +19,11 @@ func New(addonUrl string) *Usecase {
 	}
 }
 
-func (u *Usecase) GetMovieStream(id int) ([]models.AddonStream, error) {
+func (u *Usecase) GetMovieStream(id string) ([]models.AddonStream, error) {
 	fmt.Println("Getting movie streams for id ", id)
 	var res models.AddonStreamResponse
 	addonResponse, err := http.DefaultClient.Get(
-		u.addonUrl + fmt.Sprintf("/stream/movie/tmdb%d.json", id),
+		u.addonUrl + fmt.Sprintf("/stream/movie/%s.json", id),
 	)
 	if err != nil {
 		fmt.Println("Error sending movie stream request ", err)
@@ -55,14 +55,14 @@ func (u *Usecase) GetMovieStream(id int) ([]models.AddonStream, error) {
 }
 
 func (u *Usecase) GetSeriesStream(
-	id int,
+	id string,
 	season int,
 	episode int,
 ) ([]models.AddonStream, error) {
 	fmt.Println("Getting streams for series ", id, season, episode)
 	var res models.AddonStreamResponse
 	addonResponse, err := http.DefaultClient.Get(
-		u.addonUrl + fmt.Sprintf("/stream/series/tmdb%d:%d:%d.json", id, season, episode),
+		u.addonUrl + fmt.Sprintf("/stream/series/%s:%d:%d.json", id, season, episode),
 	)
 	if err != nil {
 		fmt.Println("Error sending series stream request ", err)

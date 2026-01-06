@@ -23,13 +23,8 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 		response.StatusCode = http.StatusBadRequest
 		return
 	}
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		response.Error = "Invalid id"
-		response.StatusCode = http.StatusBadRequest
-		return
-	}
 	var data []models.AddonStream
+  var err error
 
 	if streamType == "series" {
 		season := params.Get("season")
@@ -57,9 +52,9 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 			response.StatusCode = http.StatusBadRequest
 			return
 		}
-		data, err = i.addonuc.GetSeriesStream(idInt, seasonInt, episodeInt)
+		data, err = i.addonuc.GetSeriesStream(id, seasonInt, episodeInt)
 	} else {
-		data, err = i.addonuc.GetMovieStream(idInt)
+		data, err = i.addonuc.GetMovieStream(id)
 	}
 
 	if err != nil {

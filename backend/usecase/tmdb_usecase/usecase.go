@@ -172,7 +172,7 @@ func (u *Usecase) GetShowsLibrary(params map[string]string, at string) ([]byte, 
 }
 func (u *Usecase) GetMovieDetails(id string, at string) ([]byte, error) {
 	url := fmt.Sprintf(
-		"%s/movie/%s?append_to_response=credits,images",
+		"%s/movie/%s?append_to_response=credits,images,external_ids",
 		u.tmdbApiBaseUrl, id,
 	)
 
@@ -207,7 +207,7 @@ func (u *Usecase) GetMovieDetails(id string, at string) ([]byte, error) {
 
 func (u *Usecase) GetShowDetails(id string, at string) ([]byte, error) {
 	url := fmt.Sprintf(
-		"%s/tv/%s?append_to_response=credits",
+		"%s/tv/%s?append_to_response=credits,external_ids",
 		u.tmdbApiBaseUrl, id,
 	)
 
