@@ -13,7 +13,7 @@ class StreamUsecase {
     _client = http.Client();
   }
 
-  Future<List<StreamItem>> getMovieStreams(int id) async {
+  Future<List<StreamItem>> getMovieStreams(String id) async {
     final response = await _client.get(
       Uri.parse("${AppConstants.baseUrl}$_streamPath?type=movie&id=$id"),
     );
@@ -30,7 +30,7 @@ class StreamUsecase {
   }
 
   Future<List<StreamItem>> getSeriesStreams(
-    int id,
+    String id,
     int season,
     int episode,
   ) async {

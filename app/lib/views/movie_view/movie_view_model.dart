@@ -12,6 +12,7 @@ class MovieViewModel {
   final StreamUsecase streamUc;
   late final ZxyMedia initialMovieDetails;
   int? _selectedStream;
+  String? imdbId;
 
   int? get selectedStream => _selectedStream;
 
@@ -32,8 +33,8 @@ class MovieViewModel {
   Future<void> initialise(ZxyMedia movie) async {
     initialMovieDetails = movie;
     try {
-      _getMovieStreams();
       final details = await mediaUc.getMovieDetails(initialMovieDetails.id);
+      imdbId = details.externalIds.imdbId;
       _movieDetailsState.value = ItemLoaded(data: details);
       _getMovieStreams();
     } catch (e) {
@@ -48,7 +49,7 @@ class MovieViewModel {
   Future<void> _getMovieStreams() async {
     try {
       _movieStreamsState.value = ItemLoading();
-      final streams = await streamUc.getMovieStreams(initialMovieDetails.id);
+      final streams = await streamUc.getMovieStreams(imdbId!);
       _movieStreamsState.value = ItemLoaded(data: streams);
     } catch (e) {
       if (kDebugMode) {

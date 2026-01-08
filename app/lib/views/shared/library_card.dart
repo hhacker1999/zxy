@@ -18,14 +18,21 @@ class LibraryListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 240,
+      height: 280,
       child: ListView.separated(
         separatorBuilder: (_, _) {
           return SizedBox(width: AppTheme.spacingXL);
         },
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, index) {
-          return LibraryCard(resource: resource[index], onTap: onTap);
+          return Align(
+            alignment: Alignment.topCenter,
+            child: LibraryCard(
+              resource: resource[index],
+              onTap: onTap,
+              height: 240,
+            ),
+          );
         },
         itemCount: resource.length,
       ),
@@ -60,12 +67,13 @@ class LibraryCard extends StatelessWidget {
         onTap(resource);
       },
       child: ZxyImage(
+        enableShadow: true,
         height: height,
         width: width,
         isPoster: true,
         path: resource.posterPath,
         radius: AppTheme.roundedMedium,
-        size: "w342",
+        size: "w185",
       ),
     );
   }

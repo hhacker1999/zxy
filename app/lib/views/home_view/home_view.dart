@@ -95,7 +95,7 @@ class LibraryList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: Theme.of(context).textTheme.titleLarge),
-        SizedBox(height: AppTheme.spacingS),
+        SizedBox(height: AppTheme.spacingL),
         LibraryListItem(resource: resource, onTap: onTap),
       ],
     );

@@ -15,7 +15,7 @@ class BaseScaffold extends StatelessWidget {
         builder: (_, color, _) {
           return AnimatedContainer(
             padding: const EdgeInsets.all(AppTheme.spacingM),
-            duration: const Duration(seconds: 1),
+            duration: const Duration(milliseconds: 500),
             height: double.maxFinite,
             width: double.maxFinite,
             decoration: BoxDecoration(

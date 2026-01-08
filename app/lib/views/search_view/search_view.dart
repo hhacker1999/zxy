@@ -1,8 +1,11 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view.dart';
+import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/search_view/search_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/shared/library_card.dart';
@@ -95,6 +98,8 @@ class _SearchViewState extends State<SearchView> {
                         }
 
                         return GridView.builder(
+                          clipBehavior: Clip.hardEdge,
+                          padding: EdgeInsets.zero,
                           controller: scrollController,
                           itemCount: items.length,
                           gridDelegate:
@@ -105,11 +110,30 @@ class _SearchViewState extends State<SearchView> {
                                 crossAxisCount: ct.toInt(),
                               ),
                           itemBuilder: (_, index) {
-                            return LibraryCard(
-                              resource: items[index],
-                              onTap: (_) {},
-                              // width: width,
-                              // height: width / (2 / 3),
+                            return ClipRect(
+                              child: Banner(
+                                message: items[index].type == ZxyMediaType.movie
+                                    ? "Movie"
+                                    : "Show",
+                                color: items[index].type == ZxyMediaType.movie
+                                    ? Colors.red
+                                    : Colors.blue,
+                                location: BannerLocation.topEnd,
+                                child: LibraryCard(
+                                  resource: items[index],
+                                  onTap: (_) {
+                                    Navigator.pushNamed(
+                                      context,
+                                      items[index].type == ZxyMediaType.movie
+                                          ? AppRoutes.movieView
+                                          : AppRoutes.showView,
+                                      arguments: items[index],
+                                    );
+                                  },
+                                  // width: width,
+                                  // height: width / (2 / 3),
+                                ),
+                              ),
                             );
                           },
                         );

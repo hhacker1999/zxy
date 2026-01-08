@@ -34,6 +34,7 @@ class SeriesDetails {
   final double voteAverage;
   final int voteCount;
   final Credits credits;
+  final ExternalIds externalIds;
 
   SeriesDetails({
     required this.adult,
@@ -69,6 +70,7 @@ class SeriesDetails {
     required this.voteAverage,
     required this.voteCount,
     required this.credits,
+    required this.externalIds,
   });
 
   factory SeriesDetails.fromJson(Map<String, dynamic> json) => SeriesDetails(
@@ -115,6 +117,7 @@ class SeriesDetails {
     voteAverage: json["vote_average"]?.toDouble(),
     voteCount: json["vote_count"],
     credits: Credits.fromJson(json["credits"]),
+    externalIds: ExternalIds.fromJson(json["external_ids"]),
   );
 }
 
@@ -535,6 +538,7 @@ class MovieDetails {
   final int voteCount;
   final Credits credits;
   final Images images;
+  final ExternalIds externalIds;
 
   MovieDetails({
     required this.adult,
@@ -564,6 +568,7 @@ class MovieDetails {
     required this.voteCount,
     required this.credits,
     required this.images,
+    required this.externalIds,
   });
 
   factory MovieDetails.fromJson(Map<String, dynamic> json) => MovieDetails(
@@ -600,6 +605,7 @@ class MovieDetails {
     voteCount: json["vote_count"],
     credits: Credits.fromJson(json["credits"]),
     images: Images.fromJson(json["images"]),
+    externalIds: ExternalIds.fromJson(json["external_ids"]),
   );
 }
 
@@ -693,4 +699,28 @@ class ProductionCompany {
     "name": name,
     "origin_country": originCountry,
   };
+}
+
+class ExternalIds {
+  final String imdbId;
+  final String? wikidataId;
+  final String? facebookId;
+  final String? instagramId;
+  final String? twitterId;
+
+  ExternalIds({
+    required this.imdbId,
+    required this.wikidataId,
+    required this.facebookId,
+    required this.instagramId,
+    required this.twitterId,
+  });
+
+  factory ExternalIds.fromJson(Map<String, dynamic> json) => ExternalIds(
+    imdbId: json["imdb_id"],
+    wikidataId: json["wikidata_id"],
+    facebookId: json["facebook_id"],
+    instagramId: json["instagram_id"],
+    twitterId: json["twitter_id"],
+  );
 }

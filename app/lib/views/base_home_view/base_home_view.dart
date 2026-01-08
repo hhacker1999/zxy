@@ -10,6 +10,7 @@ import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
 import 'package:zxy_app/views/filter_view/filter_view.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view.dart';
+import 'package:zxy_app/views/shared/base_scaffold.dart';
 
 class BaseHomeView extends StatefulWidget {
   final Dependencies deps;
@@ -71,125 +72,105 @@ class _BaseHomeViewState extends State<BaseHomeView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: ValueListenableBuilder(
-        valueListenable: context.read<ImageBloc>().bgGradColor,
-        builder: (_, color, _) {
-          return AnimatedContainer(
-            padding: const EdgeInsets.all(AppTheme.spacingM),
-            duration: const Duration(seconds: 1),
-            height: double.maxFinite,
-            width: double.maxFinite,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: color != null
-                    ? [color.withOpacity(0.3), AppTheme.backgroundDark]
-                    : [AppTheme.backgroundDark, AppTheme.backgroundDark],
-                stops: color != null ? [0.0, 1.0] : [0.0, 1.0],
+    return BaseScaffold(
+      builder: (_, color) {
+        return Column(
+          children: [
+            TopHeader(
+              searchController: searchController,
+              onSearch: () {
+                if (searchController.value.text.isNotEmpty) {
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.searchView,
+                    arguments: searchController.value.text,
+                  );
+                  searchController.clear();
+                }
+              },
+            ),
+            AppTheme.boxHeightM,
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: ValueListenableBuilder(
+                      valueListenable: vm.selectedIndex,
+                      builder: (_, value, _) {
+                        return ValueListenableBuilder(
+                          valueListenable: context
+                              .read<ImageBloc>()
+                              .bgGradColor,
+                          builder: (_, color, _) {
+                            return Container(
+                              width: double.maxFinite,
+                              height: double.maxFinite,
+                              padding: EdgeInsets.all(AppTheme.spacingM),
+                              decoration: BoxDecoration(
+                                borderRadius: AppTheme.roundedMedium,
+                                color: AppTheme.cardBgColor,
+                              ),
+                              child: Column(
+                                spacing: AppTheme.spacingM,
+                                children: List.generate(leftCards.length, (
+                                  index,
+                                ) {
+                                  return ColorAnimatedCard(
+                                    onTap: () {
+                                      vm.selectedIndex.value = index;
+                                    },
+                                    isSelected: value == index,
+                                    baseColor: AppTheme.lightGreyBg,
+                                    animationSelectedColor:
+                                        color ?? AppTheme.accentColor,
+                                    child: Row(
+                                      children: [
+                                        SvgPicture.asset(
+                                          leftCards[index].$2,
+                                          color: AppTheme.textPrimary,
+                                          height: 25,
+                                          width: 25,
+                                        ),
+                                        SizedBox(width: AppTheme.spacingS),
+                                        Text(
+                                          leftCards[index].$1,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleLarge,
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(width: AppTheme.spacingM),
+                  Expanded(
+                    flex: 13,
+                    child: ValueListenableBuilder(
+                      valueListenable: vm.selectedIndex,
+                      builder: (_, index, _) {
+                        return ZxyFadeIndexedStack(
+                          key: ValueKey("Switcher"),
+                          duration: const Duration(milliseconds: 500),
+                          index: index,
+                          children: baseChildren,
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Column(
-              children: [
-                TopHeader(
-                  searchController: searchController,
-                  onSearch: () {
-                    if (searchController.value.text.isNotEmpty) {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.searchView,
-                        arguments: searchController.value.text,
-                      );
-                      searchController.clear();
-                    }
-                  },
-                ),
-                AppTheme.boxHeightM,
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: ValueListenableBuilder(
-                          valueListenable: vm.selectedIndex,
-                          builder: (_, value, _) {
-                            return ValueListenableBuilder(
-                              valueListenable: context
-                                  .read<ImageBloc>()
-                                  .bgGradColor,
-                              builder: (_, color, _) {
-                                return Container(
-                                  width: double.maxFinite,
-                                  height: double.maxFinite,
-                                  padding: EdgeInsets.all(AppTheme.spacingM),
-                                  decoration: BoxDecoration(
-                                    borderRadius: AppTheme.roundedMedium,
-                                    color: AppTheme.cardBgColor,
-                                  ),
-                                  child: Column(
-                                    spacing: AppTheme.spacingM,
-                                    children: List.generate(leftCards.length, (
-                                      index,
-                                    ) {
-                                      return ColorAnimatedCard(
-                                        onTap: () {
-                                          vm.selectedIndex.value = index;
-                                        },
-                                        isSelected: value == index,
-                                        baseColor: AppTheme.lightGreyBg,
-                                        animationSelectedColor:
-                                            color ?? AppTheme.accentColor,
-                                        child: Row(
-                                          children: [
-                                            SvgPicture.asset(
-                                              leftCards[index].$2,
-                                              color: AppTheme.textPrimary,
-                                              height: 25,
-                                              width: 25,
-                                            ),
-                                            SizedBox(width: AppTheme.spacingS),
-                                            Text(
-                                              leftCards[index].$1,
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.titleLarge,
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    }),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                      SizedBox(width: AppTheme.spacingM),
-                      Expanded(
-                        flex: 13,
-                        child: ValueListenableBuilder(
-                          valueListenable: vm.selectedIndex,
-                          builder: (_, index, _) {
-                            return ZxyFadeIndexedStack(
-                              key: ValueKey("Switcher"),
-                              duration: const Duration(milliseconds: 500),
-                              index: index,
-                              children: baseChildren,
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+          ],
+        );
+      },
     );
   }
 }
@@ -389,6 +370,7 @@ class _ZxyFadeIndexedStackState extends State<ZxyFadeIndexedStack>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _opacityAnim;
+  late List<bool> activated;
 
   @override
   void initState() {
@@ -398,12 +380,23 @@ class _ZxyFadeIndexedStackState extends State<ZxyFadeIndexedStack>
 
     // Start fully visible
     _controller.value = 1.0;
+    intialiseActivateList();
+  }
+
+  void intialiseActivateList() {
+    activated = List.generate(widget.children.length, (index) {
+      return index == widget.index;
+    });
   }
 
   @override
   void didUpdateWidget(covariant ZxyFadeIndexedStack oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.children.length != widget.children.length) {
+      intialiseActivateList();
+    }
     if (oldWidget.index != widget.index) {
+      activated[widget.index] = true;
       _controller.forward(from: 0.0);
     }
   }
@@ -418,7 +411,12 @@ class _ZxyFadeIndexedStackState extends State<ZxyFadeIndexedStack>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _opacityAnim,
-      child: IndexedStack(index: widget.index, children: widget.children),
+      child: IndexedStack(
+        index: widget.index,
+        children: List.generate(widget.children.length, (index) {
+          return activated[index] ? widget.children[index] : const SizedBox();
+        }),
+      ),
     );
   }
 }

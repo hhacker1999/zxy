@@ -48,65 +48,37 @@ class _ZxyImageState extends State<ZxyImage> {
             isCalledLoad = true;
           }
         }
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
-          child: provider == null
-              ? Container(
-                  key: ValueKey("loader"),
-                  decoration: BoxDecoration(
-                    boxShadow: widget.enableShadow
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(
-                                0.4,
-                              ), // Subtle dark color
-                              blurRadius: 6, // Keeps the shadow close
-                              spreadRadius: 1, // Small spread for definition
-                              offset: const Offset(
-                                0,
-                                3,
-                              ), // Moves shadow slightly down
-                            ),
-                          ]
-                        : null,
-                    borderRadius: widget.radius,
-                  ),
-                  height: widget.height,
-                  width: widget.width,
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: SvgPicture.asset(
-                      AppIcons.image,
-                      color: AppTheme.textSecondary,
-                      height: 80,
-                      width: 80,
+        return Container(
+          key: ValueKey("image"),
+          decoration: BoxDecoration(
+            boxShadow: widget.enableShadow
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.4), // Subtle dark color
+                      blurRadius: 6, // Keeps the shadow close
+                      spreadRadius: 1, // Small spread for definition
+                      offset: const Offset(0, 3), // Moves shadow slightly down
                     ),
+                  ]
+                : null,
+            borderRadius: widget.radius,
+            image: provider != null
+                ? DecorationImage(image: provider, fit: widget.fit)
+                : null,
+          ),
+          height: widget.height,
+          width: widget.width,
+          child: provider == null
+              ? Align(
+                  alignment: Alignment.center,
+                  child: SvgPicture.asset(
+                    AppIcons.image,
+                    color: AppTheme.textSecondary,
+                    height: 80,
+                    width: 80,
                   ),
                 )
-              : Container(
-                  key: ValueKey("image"),
-                  decoration: BoxDecoration(
-                    boxShadow: widget.enableShadow
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(
-                                0.4,
-                              ), // Subtle dark color
-                              blurRadius: 6, // Keeps the shadow close
-                              spreadRadius: 1, // Small spread for definition
-                              offset: const Offset(
-                                0,
-                                3,
-                              ), // Moves shadow slightly down
-                            ),
-                          ]
-                        : null,
-                    borderRadius: widget.radius,
-                    image: DecorationImage(image: provider, fit: widget.fit),
-                  ),
-                  height: widget.height,
-                  width: widget.width,
-                ),
+              : null,
         );
       },
     );

@@ -35,14 +35,14 @@ class ZxyMedia {
   final String? originalTitle;
   final String? originalName;
   final String overview;
-  final double popularity;
+  final double? popularity;
   final String posterPath;
   DateTime? releaseDate;
   DateTime? firstAirDate;
   final String? title;
   final String? name;
-  final double voteAverage;
-  final int voteCount;
+  final double? voteAverage;
+  final int? voteCount;
   final ZxyMediaType type;
 
   ZxyMedia({
@@ -79,7 +79,7 @@ class ZxyMedia {
         originalTitle: json["original_title"],
         originalName: json["original_name"],
         overview: json["overview"],
-        popularity: json["popularity"]?.toDouble(),
+        popularity: json["popularity"]?.toDouble() ?? 0,
         posterPath: json["poster_path"] ?? "",
         releaseDate: json["releaseDate"] != null
             ? DateTime.parse(json["release_date"])
@@ -89,8 +89,8 @@ class ZxyMedia {
             : null,
         title: json["title"],
         name: json["name"],
-        voteAverage: json["vote_average"]?.toDouble(),
-        voteCount: json["vote_count"],
+        voteAverage: json["vote_average"]?.toDouble() ?? 0,
+        voteCount: json["vote_count"] ?? 0,
       );
 }
 

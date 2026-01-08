@@ -1,9 +1,11 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:zxy_app/app_constants.dart';
@@ -265,6 +267,16 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     });
   }
 
+  void onHover() {
+    if (!_state.isOverlayVisible.value) {
+      _state.isOverlayVisible.value = true;
+    }
+    _hoverTimer?.cancel();
+    _hoverTimer = Timer(const Duration(seconds: 4), () {
+      _state.isOverlayVisible.value = false;
+    });
+  }
+
   @override
   void dispose() {
     _playbackSub.cancel();
@@ -291,78 +303,112 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
             width: constr.maxWidth,
             child: MouseRegion(
               onHover: (_) {
-                if (!_state.isOverlayVisible.value) {
-                  _state.isOverlayVisible.value = true;
-                }
-                _hoverTimer?.cancel();
-                _hoverTimer = Timer(const Duration(seconds: 4), () {
-                  _state.isOverlayVisible.value = false;
-                });
+                onHover();
               },
-              child: Listener(
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Video(
-                        controller: _controller,
-                        controls: NoVideoControls,
-                        width: constr.maxWidth,
-                        subtitleViewConfiguration: SubtitleViewConfiguration(
-                          style: TextStyle(
-                            height: 1.4,
-                            fontSize: 24.0,
-                            letterSpacing: 0.0,
-                            wordSpacing: 0.0,
-                            color: Color(0xffffffff),
-                            fontWeight: FontWeight.normal,
-                            backgroundColor: Color(0xaa000000),
+              child: CallbackShortcuts(
+                bindings: {
+                  SingleActivator(LogicalKeyboardKey.space): () {
+                    print("space is detected");
+                    if (_state.isPlaying.value) {
+                      _state.isPlaying.value = false;
+                      _player.pause();
+                    } else {
+                      _state.isPlaying.value = true;
+                      _player.play();
+                    }
+                    onHover();
+                  },
+                  SingleActivator(LogicalKeyboardKey.arrowRight): () {
+                    final currDur = _state.seekInfo.value.current;
+                    _player.seek(currDur + Duration(seconds: 15));
+                    onHover();
+                  },
+                  SingleActivator(LogicalKeyboardKey.arrowLeft): () {
+                    final currDur = _state.seekInfo.value.current;
+                    _player.seek(currDur - Duration(seconds: 15));
+                    onHover();
+                  },
+                  SingleActivator(LogicalKeyboardKey.arrowUp): () {
+                    final currVol = _state.volumeDetails.value;
+                    final volumeToSet = min(100, currVol + 10);
+                    _state.volumeDetails.value = volumeToSet.toDouble();
+                    _player.setVolume(volumeToSet.toDouble());
+                    onHover();
+                  },
+                  SingleActivator(LogicalKeyboardKey.arrowDown): () {
+                    final currVol = _state.volumeDetails.value;
+                    final volumeToSet = max(0, currVol - 10);
+                    _state.volumeDetails.value = volumeToSet.toDouble();
+                    _player.setVolume(volumeToSet.toDouble());
+                    onHover();
+                  },
+                },
+                child: Focus(
+                  autofocus: true,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Video(
+                          controller: _controller,
+                          controls: NoVideoControls,
+                          width: constr.maxWidth,
+                          subtitleViewConfiguration: SubtitleViewConfiguration(
+                            style: TextStyle(
+                              height: 1.4,
+                              fontSize: 24.0,
+                              letterSpacing: 0.0,
+                              wordSpacing: 0.0,
+                              color: Color(0xffffffff),
+                              fontWeight: FontWeight.normal,
+                              backgroundColor: Color(0xaa000000),
+                            ),
+                            textAlign: TextAlign.center,
+                            padding: EdgeInsets.all(24.0),
                           ),
-                          textAlign: TextAlign.center,
-                          padding: EdgeInsets.all(24.0),
                         ),
                       ),
-                    ),
-                    Align(
-                      alignment: Alignment.center,
-                      child: MultiValueListenableBuilder(
-                        notifiers: [_state.buffering],
-                        builder: (_) {
-                          final isBuffering = _state.buffering.value;
-                          return Visibility(
-                            visible: isBuffering,
-                            child: CupertinoActivityIndicator(),
-                          );
-                        },
+                      Align(
+                        alignment: Alignment.center,
+                        child: MultiValueListenableBuilder(
+                          notifiers: [_state.buffering],
+                          builder: (_) {
+                            final isBuffering = _state.buffering.value;
+                            return Visibility(
+                              visible: isBuffering,
+                              child: CupertinoActivityIndicator(),
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                    VideoSettingsSidebar(
-                      player: _player,
-                      state: _state,
-                      height: constr.maxHeight - 40,
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: ValueListenableBuilder(
-                        valueListenable: _state.isOverlayVisible,
-                        builder: (_, visible, _) {
-                          return AnimatedVisibileOpacity(
-                            visible: visible,
-                            duration: const Duration(milliseconds: 400),
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 100),
-                              child: ProgressHudWithBar(
-                                iconHeight: constr.maxHeight * 0.1,
-                                state: _state,
-                                pinRadius: pinRadius,
-                                progressHeight: progressHeight,
-                                player: _player,
+                      VideoSettingsSidebar(
+                        player: _player,
+                        state: _state,
+                        height: constr.maxHeight - 40,
+                      ),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: ValueListenableBuilder(
+                          valueListenable: _state.isOverlayVisible,
+                          builder: (_, visible, _) {
+                            return AnimatedVisibileOpacity(
+                              visible: visible,
+                              duration: const Duration(milliseconds: 400),
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 100),
+                                child: ProgressHudWithBar(
+                                  iconHeight: constr.maxHeight * 0.1,
+                                  state: _state,
+                                  pinRadius: pinRadius,
+                                  progressHeight: progressHeight,
+                                  player: _player,
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -449,26 +495,29 @@ class VideoSettingsSidebar extends StatelessWidget {
                               );
                             },
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              if (index == 0) {
-                                player.setAudioTrack(AudioTrack.no());
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                if (index == 0) {
+                                  player.setAudioTrack(AudioTrack.no());
+                                  _state.audioDetails.value = (
+                                    _state.audioDetails.value!.$1,
+                                    -1,
+                                  );
+                                  return;
+                                }
+                                player.setAudioTrack(currentBuildAudioInfo);
                                 _state.audioDetails.value = (
                                   _state.audioDetails.value!.$1,
-                                  -1,
+                                  index - 1,
                                 );
-                                return;
-                              }
-                              player.setAudioTrack(currentBuildAudioInfo);
-                              _state.audioDetails.value = (
-                                _state.audioDetails.value!.$1,
-                                index - 1,
-                              );
-                            },
-                            child: Text(
-                              index == 0
-                                  ? "None"
-                                  : "[${currentBuildAudioInfo.language!.length == 3 ? AppConstants.iso6392Languages[currentBuildAudioInfo.language] : AppConstants.isoLanguages[currentBuildAudioInfo.language]}] ${currentBuildAudioInfo.codec ?? ''} ${currentBuildAudioInfo.title ?? ''} ${currentBuildAudioInfo.channelscount ?? 0}ch",
+                              },
+                              child: Text(
+                                index == 0
+                                    ? "None"
+                                    : "[${currentBuildAudioInfo.language!.length == 3 ? AppConstants.iso6392Languages[currentBuildAudioInfo.language] : AppConstants.isoLanguages[currentBuildAudioInfo.language]}] ${currentBuildAudioInfo.codec ?? ''} ${currentBuildAudioInfo.title ?? ''} ${currentBuildAudioInfo.channelscount ?? 0}ch",
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         ],

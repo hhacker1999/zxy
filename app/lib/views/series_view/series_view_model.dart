@@ -16,6 +16,7 @@ class SeriesViewModel {
   final Map<String, List<StreamItem>> _streams = {};
 
   int? _selectedStream = 0;
+  String? imdbId;
 
   int? get selectedStream => _selectedStream;
 
@@ -40,6 +41,7 @@ class SeriesViewModel {
     initialSeriesDetails = series;
     try {
       final details = await mediaUc.getSeriesDetails(series.id);
+      imdbId = details.externalIds.imdbId;
       seasons = List.empty(growable: true);
       final List<Future<SeasonDetails>> seasonFutures = List.empty(
         growable: true,
@@ -106,7 +108,7 @@ class SeriesViewModel {
     try {
       _episodeStreamsState.value = ItemLoading();
       final streams = await streamUc.getSeriesStreams(
-        initialSeriesDetails.id,
+        imdbId!,
         seasons[activeSeasonEpisode.value.$1].seasonNumber,
         seasons[activeSeasonEpisode.value.$1]
             .episodes[activeSeasonEpisode.value.$2!]
