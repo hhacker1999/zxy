@@ -12,6 +12,8 @@ import 'package:zxy_app/views/movie_view/movie_view.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
 import 'package:zxy_app/views/search_view/search_view.dart';
 import 'package:zxy_app/views/search_view/search_view_model.dart';
+import 'package:zxy_app/views/login_view/login_view.dart';
+import 'package:zxy_app/views/login_view/login_view_model.dart';
 import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/fade_page_route.dart';
@@ -109,6 +111,16 @@ class _MyAppState extends State<MyApp> {
                     );
                   },
                 );
+              case AppRoutes.loginView:
+                return FadePageRoute(
+                  builder: (_) {
+                    return Provider(
+                      create: (_) => LoginViewModel(authUC: deps.authUc),
+                      dispose: (_, vm) => vm.dispose(),
+                      builder: (_, _) => const LoginView(),
+                    );
+                  },
+                );
               case AppRoutes.videoPlayerView:
                 return MaterialPageRoute(
                   builder: (_) {
@@ -120,12 +132,12 @@ class _MyAppState extends State<MyApp> {
               default:
                 return MaterialPageRoute(
                   builder: (_) {
-                    return SplashView();
+                    return SizedBox();
                   },
                 );
             }
           },
-          initialRoute: AppRoutes.splash,
+          initialRoute: AppRoutes.loginView,
         );
       },
     );

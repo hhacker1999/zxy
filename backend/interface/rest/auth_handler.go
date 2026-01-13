@@ -58,6 +58,7 @@ func (i *RestInterface) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
+  fmt.Println(string(data))
 	var input Input
 	err = json.Unmarshal(data, &input)
 	if err != nil {

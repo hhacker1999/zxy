@@ -1,0 +1,5 @@
+.env
+.vscode/
+.dart_tool/
+.fvm/
+.idea/
