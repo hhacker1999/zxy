@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
+import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view.dart';
@@ -18,6 +19,7 @@ import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/fade_page_route.dart';
 import 'package:zxy_app/views/splash_view/splash_view.dart';
+import 'package:zxy_app/views/splash_view/splash_view_model.dart';
 import 'package:zxy_app/views/video_player_view/video_player_view.dart';
 
 void main() {
@@ -55,6 +57,11 @@ class _MyAppState extends State<MyApp> {
         ),
         Provider<ImageBloc>(
           create: (_) => ImageBloc(),
+          dispose: (_, bloc) => bloc.dispose(),
+          lazy: false,
+        ),
+        Provider<UserBloc>(
+          create: (_) => UserBloc(),
           dispose: (_, bloc) => bloc.dispose(),
           lazy: false,
         ),
@@ -132,12 +139,17 @@ class _MyAppState extends State<MyApp> {
               default:
                 return MaterialPageRoute(
                   builder: (_) {
-                    return SizedBox();
+                    return Provider<SplashViewModel>(
+                      create: (_) => SplashViewModel(deps.authUc),
+                      builder: (_, _) {
+                        return SplashView();
+                      },
+                    );
                   },
                 );
             }
           },
-          initialRoute: AppRoutes.loginView,
+          initialRoute: AppRoutes.splash,
         );
       },
     );

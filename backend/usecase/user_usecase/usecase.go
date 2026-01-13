@@ -28,9 +28,9 @@ func New(
 	sessionRepo *sessionrepository.Repository,
 ) *Usecase {
 	return &Usecase{
-		db:       db,
-		userRepo: userRepo,
-    sessionRepo: sessionRepo,
+		db:          db,
+		userRepo:    userRepo,
+		sessionRepo: sessionRepo,
 	}
 }
 
@@ -156,6 +156,17 @@ func (u *Usecase) LogInProfile(
 	}
 
 	return token, nil
+}
+
+func (u *Usecase) GetUser(userId int) (models.User, error) {
+	user, err := u.userRepo.GetUserFromId(userId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return user, apperrors.InvalidInput{Err: "User is not registered"}
+		}
+		return user, apperrors.SomethingWentWrongError{}
+	}
+	return user, nil
 }
 
 func GetRandomString(length int) string {

@@ -73,8 +73,6 @@ class HomeViewModel {
       initialiseTrendingMovies(trendingMoviesState),
       initialiseTopRatedShows(topShowsState),
       initialiseTopRatedMovies(topMovieState),
-      initialiseGenre(),
-      initialiseConfig(),
     ]);
   }
 

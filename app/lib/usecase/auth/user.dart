@@ -39,27 +39,23 @@ class User {
 class Profile {
   final int id;
   final String name;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  // final DateTime createdAt;
+  // final DateTime updatedAt;
 
   Profile({
     required this.id,
     required this.name,
-    required this.createdAt,
-    required this.updatedAt,
+    // required this.createdAt,
+    // required this.updatedAt,
   });
 
-  factory Profile.fromJson(Map<String, dynamic> json) => Profile(
-    id: json["id"],
-    name: json["name"],
-    createdAt: DateTime.parse(json["created_at"]),
-    updatedAt: DateTime.parse(json["updated_at"]),
-  );
+  factory Profile.fromJson(Map<String, dynamic> json) =>
+      Profile(id: json["id"], name: json["name"]);
 
   Map<String, dynamic> toJson() => {
     "id": id,
     "name": name,
-    "created_at": createdAt.toIso8601String(),
-    "updated_at": updatedAt.toIso8601String(),
+    // "created_at": createdAt.toIso8601String(),
+    // "updated_at": updatedAt.toIso8601String(),
   };
 }

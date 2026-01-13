@@ -115,7 +115,7 @@ class _FilterViewState extends State<FilterView> {
                 }
                 final currOffset = _controller.offset;
                 final maxOffset = _controller.position.maxScrollExtent;
-                if ((maxOffset - currOffset) < 200) {
+                if ((currOffset) / maxOffset > 0.5) {
                   vm.loadItems();
                 }
                 return false;

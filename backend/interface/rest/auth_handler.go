@@ -58,7 +58,7 @@ func (i *RestInterface) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-  fmt.Println(string(data))
+	fmt.Println(string(data))
 	var input Input
 	err = json.Unmarshal(data, &input)
 	if err != nil {
@@ -125,4 +125,19 @@ func (i *RestInterface) handleProfileLogin(w http.ResponseWriter, r *http.Reques
 	res.Data = map[string]string{
 		"message": "Profile logged in successfully",
 	}
+}
+
+func (i *RestInterface) handleGetUser(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	user, err := i.userUC.GetUser(userId)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = err.Error()
+		return
+	}
+	res.StatusCode = http.StatusOK
+	res.Data = user
 }

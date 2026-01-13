@@ -1,112 +1,100 @@
 import 'dart:convert';
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
 import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/service/http_service.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
 
 class AuthUsecase {
-  late final http.Client _client;
+  late final HttpService _httpService;
   final FlutterSecureStorage _storage;
-  late String _profileToken;
-  late String _sessionToken;
 
-  AuthUsecase(FlutterSecureStorage storage) : _storage = storage {
-    _client = http.Client();
-  }
+  AuthUsecase(FlutterSecureStorage storage, HttpService service)
+    : _storage = storage,
+      _httpService = service;
 
-  Future<(String?, String?)> initialise() async {
+  Future<bool> initialise() async {
     String? st;
-    String? pt;
     st = await _storage.read(key: "st");
-    pt = await _storage.read(key: "pt");
 
     if (st != null) {
-      _sessionToken = st;
-      if (pt != null) {
-        _profileToken = pt;
-      }
+      _httpService.st = st;
     }
-
-    return (st, pt);
+    return st != null;
   }
 
-  Future<void> signup(String name, String email, String password) async {
-    final res = await _client.post(
+  Future<HttpError?> signup(String name, String email, String password) async {
+    final res = await _httpService.post(
       Uri.parse("${AppConstants.baseUrl}/signup"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"name": name, "email": email, "password": password}),
+      body: {"name": name, "email": email, "password": password},
     );
-    final body = jsonDecode(res.body);
-    if (res.statusCode != 200) {
-      if (body != null) {
-        throw body["error"];
-      }
-      throw "Invalid status code";
-    }
+    return res.error;
   }
 
-  Future<User> login(String email, String password) async {
-    final res = await _client.post(
+  Future<(User?, HttpError?)> login(String email, String password) async {
+    final res = await _httpService.post(
       Uri.parse("${AppConstants.baseUrl}/login"),
-      body: jsonEncode({"email": email, "password": password}),
-      headers: {"Content-Type": "application/json"},
+      body: {"email": email, "password": password},
     );
-    final body = jsonDecode(res.body);
-    if (res.statusCode != 200) {
-      if (body != null) {
-        throw body["error"];
-      }
-      throw "Invalid status code";
+    if (res.error != null) {
+      return (null, res.error);
     }
+    final body = jsonDecode(res.body);
     final user = User.fromJson(body);
     final cookieHeader = res.headers["set-cookie"];
     if (cookieHeader == null) {
-      throw "Something went wrong";
+      return (null, HttpSomethingWentWrong());
     }
     final cookies = cookieHeader.split("; ");
     if (cookies.isEmpty) {
-      throw "Something went wrong";
+      return (null, HttpSomethingWentWrong());
     }
     final stCookie = cookies.first.split("=");
     if (stCookie.length != 2) {
-      throw "Something went wrong";
+      return (null, HttpSomethingWentWrong());
     }
-    _sessionToken = stCookie[1];
+    _httpService.st = stCookie[1];
+    await _storage.write(key: "st", value: stCookie[1]);
 
-    return user;
+    return (user, null);
   }
 
-  Future<(String, String)> loginProfile(int profileId) async {
-    final res = await _client.post(
+  Future<HttpError?> loginProfile(int profileId) async {
+    final res = await _httpService.post(
       Uri.parse("${AppConstants.baseUrl}/profile/login"),
-      body: jsonEncode({"profile_id": profileId}),
-      headers: {
-        "cookie": "session_token =$_sessionToken",
-        "Content-Type": "application/json",
-      },
+      body: {"profile_id": profileId},
+      auth: RequestAuth.session,
     );
-    final body = jsonDecode(res.body);
-    if (res.statusCode != 200) {
-      if (body != null) {
-        throw body["error"];
-      }
-      throw "Invalid status code";
+    if (res.error != null) {
+      return res.error;
     }
     final cookieHeader = res.headers["set-cookie"];
     if (cookieHeader == null) {
-      throw "Something went wrong";
+      throw HttpSomethingWentWrong();
     }
     final cookies = cookieHeader.split("; ");
     if (cookies.isEmpty) {
-      throw "Something went wrong";
+      throw HttpSomethingWentWrong();
     }
     final stCookie = cookies.first.split("=");
     if (stCookie.length != 2) {
-      throw "Something went wrong";
+      throw HttpSomethingWentWrong();
     }
-    _profileToken = stCookie[1];
+    _httpService.pt = stCookie[1];
 
-    return (_sessionToken, _profileToken);
+    return null;
+  }
+
+  Future<(User?, HttpError?)> getUser() async {
+    final res = await _httpService.get(
+      Uri.parse("${AppConstants.baseUrl}/user"),
+      auth: RequestAuth.session,
+    );
+    if (res.error != null) {
+      return (null, res.error);
+    }
+    final body = jsonDecode(res.body);
+    final user = User.fromJson(body);
+
+    return (user, null);
   }
 }

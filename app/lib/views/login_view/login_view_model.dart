@@ -1,7 +1,9 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
+import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
 
 class LoginViewModel {
@@ -14,7 +16,7 @@ class LoginViewModel {
 
   void toggleMode() {
     isLoginMode.value = !isLoginMode.value;
-    error.value = null; // Clear error on toggle
+    error.value = null;
   }
 
   Future<void> login(
@@ -33,19 +35,23 @@ class LoginViewModel {
 
     isLoading.value = true;
     error.value = null;
-
-    try {
-      final user = await authUC.login(email, password);
-      debugPrint("Login success: ${user.name}");
-      final token = await authUC.loginProfile(user.profiles.first.id);
-      debugPrint("Profile Login success: $token");
-      Navigator.of(context).pushReplacementNamed(AppRoutes.baseHomeView);
-    } catch (e) {
-      error.value = e.toString();
-      rethrow;
-    } finally {
+    final user = await authUC.login(email, password);
+    if (user.$2 != null) {
+      error.value = user.$2!.error;
       isLoading.value = false;
+      return;
     }
+    debugPrint("Login success: ${user.$1!.name}");
+    final profileErr = await authUC.loginProfile(user.$1!.profiles.first.id);
+    if (profileErr != null) {
+      error.value = profileErr.error;
+      isLoading.value = false;
+      return;
+    }
+    debugPrint("Profile Login success");
+    isLoading.value = false;
+    context.read<UserBloc>().user = user.$1!;
+    Navigator.of(context).pushReplacementNamed(AppRoutes.baseHomeView);
   }
 
   Future<void> signup(
@@ -74,15 +80,12 @@ class LoginViewModel {
 
     isLoading.value = true;
     error.value = null;
-
-    try {
-      await authUC.signup(name, email, password);
+    final err = await authUC.signup(name, email, password);
+    if (err == null) {
       debugPrint("Signup success");
-    } catch (e) {
-      error.value = e.toString();
-    } finally {
-      isLoading.value = false;
     }
+    error.value = err?.error;
+    isLoading.value = false;
   }
 
   bool _validateEmail(String email) {
