@@ -26,22 +26,35 @@ class ImageBloc {
   final ValueNotifier<ColorScheme?> _colorScheme = ValueNotifier(null);
   ValueListenable<ColorScheme?> get colorScheme => _colorScheme;
 
-  void setGradColorFromImage(String path) {
+  Future<void> setGradColorFromImage(String path) async {
     if (_images.containsKey(path)) {
-      final imgColor = _images[path]!.color;
-      if (imgColor != null) {
-        _bgGradColor.value = imgColor;
-        // _colorScheme.value = _images[path]!.scheme;
+      Color? imgColor = _images[path]!.color;
+      if (imgColor == null) {
+        var img = _images[path]!.images.values.firstWhere(
+          (e) => e.value != null,
+          orElse: () {
+            return ValueNotifier(null);
+          },
+        );
+        if (img.value == null) {
+          return;
+        }
+        final color = await _getColorFromImage(img.value!);
+        _images[path]!.color = color.primary;
+        _images[path]!.scheme = color;
+        imgColor = color.primary;
       }
+      _bgGradColor.value = imgColor;
+      // _colorScheme.value = _images[path]!.scheme;
     }
   }
 
   ValueListenable<MemoryImage?> getImage(String size, String path) {
     late final ValueNotifier<MemoryImage?> notifier;
-    bool containsColor = false;
+    // bool containsColor = false;
     if (_images.containsKey(path)) {
       final info = _images[path]!;
-      containsColor = info.color != null;
+      // containsColor = info.color != null;
       if (info.images.containsKey(size)) {
         notifier = info.images[size]!;
       } else {
@@ -53,7 +66,7 @@ class ImageBloc {
       _images[path] = ImageData(images: {size: notifier});
     }
     if (notifier.value == null) {
-      _getImage(size, path, notifier, containsColor: containsColor);
+      _getImage(size, path, notifier, dontGetColor: true);
       // print("Image not found in cache $path");
     }
 
@@ -64,14 +77,14 @@ class ImageBloc {
     String size,
     String path,
     ValueNotifier<MemoryImage?> notifier, {
-    required bool containsColor,
+    required bool dontGetColor,
   }) async {
     try {
       final res = await _client.get(
         Uri.parse("${AppConstants.imageConfig.secureBaseUrl}/$size/$path}"),
       );
       if (res.statusCode == 200) {
-        if (!containsColor) {
+        if (!dontGetColor) {
           final color = await _getColorFromImage(MemoryImage(res.bodyBytes));
           _images[path]!.color = color.primary;
         }

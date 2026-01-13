@@ -23,6 +23,7 @@ dependencies:
   adaptive_aura: ^0.0.5
   material_color_utilities: ^0.11.0  # Official Google package
   image: ^4.1.0
+  flutter_secure_storage: ^10.0.0
 
 dev_dependencies:
   flutter_test:

@@ -9,4 +9,5 @@ class AppRoutes {
   static const String videoPlayerView = "/video_player_view";
   static const String filterView = "/filterView";
   static const String searchView = "/searchView";
+  static const String loginView = "/loginView";
 }

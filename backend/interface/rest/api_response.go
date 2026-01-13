@@ -13,11 +13,17 @@ type ApiResponse struct {
 }
 
 func (r *ApiResponse) SendResponse(w http.ResponseWriter) {
+	if r.StatusCode == 0 {
+		r.StatusCode = http.StatusOK
+	}
 	if r.Data == nil {
 		w.WriteHeader(r.StatusCode)
 		if len(r.Error) != 0 {
 			w.Header().Set("Content-Type", "application/text")
-			_, err := w.Write([]byte(r.Error))
+			marshalledError, _ := json.Marshal(map[string]string{
+				"error": r.Error,
+			})
+			_, err := w.Write(marshalledError)
 			if err != nil {
 				fmt.Println("Error writing error to response writer ", err)
 			}
@@ -32,8 +38,11 @@ func (r *ApiResponse) SendResponse(w http.ResponseWriter) {
 		if err != nil {
 			fmt.Println("Error marhsalling data ", err)
 			w.WriteHeader(http.StatusInternalServerError)
+			marshalledError, _ := json.Marshal(map[string]string{
+				"error": "Internal server error",
+			})
 			w.Header().Set("Content-Type", "application/text")
-			_, err := w.Write([]byte("Internal server error"))
+			_, err := w.Write(marshalledError)
 			if err == nil {
 				fmt.Println("Error writing error to response writer ", err)
 			}
