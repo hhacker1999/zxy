@@ -4,11 +4,10 @@ import 'package:http/http.dart' as http;
 enum RequestAuth { none, session, profile }
 
 class HttpResponse {
-  final HttpError? error;
   final String body;
   late final Map<String, String> headers;
 
-  HttpResponse({this.error, this.body = "", Map<String, String>? hdrs}) {
+  HttpResponse({this.body = "", Map<String, String>? hdrs}) {
     headers = hdrs ?? {};
   }
 }
@@ -25,6 +24,11 @@ class HttpInternalServerError implements HttpError {
 
   @override
   String get error => _error;
+
+  @override
+  String toString() {
+    return _error;
+  }
 }
 
 class HttpSomethingWentWrong implements HttpError {
@@ -35,6 +39,11 @@ class HttpSomethingWentWrong implements HttpError {
 
   @override
   String get error => _error;
+
+  @override
+  String toString() {
+    return _error;
+  }
 }
 
 class HttpUnAuthorised implements HttpError {
@@ -44,6 +53,11 @@ class HttpUnAuthorised implements HttpError {
 
   @override
   String get error => _error;
+
+  @override
+  String toString() {
+    return error;
+  }
 }
 
 class HttpBadRequest implements HttpError {
@@ -53,6 +67,11 @@ class HttpBadRequest implements HttpError {
 
   @override
   String get error => _error;
+
+  @override
+  String toString() {
+    return _error;
+  }
 }
 
 class HttpService {
@@ -61,8 +80,8 @@ class HttpService {
     _client = http.Client();
   }
 
-  late final String _st;
-  late final String _pt;
+  String? _st;
+  String? _pt;
 
   set st(String st) => _st = st;
   set pt(String pt) => _pt = pt;
@@ -75,14 +94,13 @@ class HttpService {
       print("Sending HTTP get request to $uri");
       final res = await _client.get(uri, headers: _getHeaders(auth, false));
       print("Response received with body${res.body}");
-      return HttpResponse(
-        body: res.body,
-        error: _getErrorFromStatusCode(res),
-        hdrs: res.headers,
-      );
+      _checkError(res);
+      return HttpResponse(body: res.body, hdrs: res.headers);
     } catch (e) {
-      final err = HttpSomethingWentWrong(error: e.toString());
-      return HttpResponse(error: err);
+      if (e is HttpError) {
+        rethrow;
+      }
+      throw HttpSomethingWentWrong(error: e.toString());
     }
   }
 
@@ -99,40 +117,37 @@ class HttpService {
         headers: _getHeaders(auth, body != null),
       );
       print("Response received with body${res.body}");
-      return HttpResponse(
-        body: res.body,
-        error: _getErrorFromStatusCode(res),
-        hdrs: res.headers,
-      );
+      _checkError(res);
+      return HttpResponse(body: res.body, hdrs: res.headers);
     } catch (e) {
-      final err = HttpSomethingWentWrong(error: e.toString());
-      return HttpResponse(error: err);
+      if (e is HttpError) {
+        rethrow;
+      }
+      throw HttpSomethingWentWrong(error: e.toString());
     }
   }
 
-  HttpError? _getErrorFromStatusCode(http.Response res) {
+  void _checkError(http.Response res) {
     if (res.statusCode == 401) {
-      var body = jsonDecode(res.body);
+      var body = res.body.isNotEmpty ? jsonDecode(res.body) : {};
       final err = HttpUnAuthorised(error: body["error"]);
-      return err;
+      throw err;
     }
     if (res.statusCode == 500) {
-      var body = jsonDecode(res.body);
+      var body = res.body.isNotEmpty ? jsonDecode(res.body) : {};
       final err = HttpInternalServerError(error: body["error"]);
-      return err;
+      throw err;
     }
     if (res.statusCode == 400) {
-      var body = jsonDecode(res.body);
+      var body = res.body.isNotEmpty ? jsonDecode(res.body) : {};
       final err = HttpBadRequest(error: body["error"]);
-      return err;
+      throw err;
     }
     if (res.statusCode != 200) {
-      var body = jsonDecode(res.body);
+      var body = res.body.isNotEmpty ? jsonDecode(res.body) : {};
       final err = HttpSomethingWentWrong(error: body["error"]);
-      return err;
+      throw err;
     }
-
-    return null;
   }
 
   Map<String, String>? _getHeaders(RequestAuth auth, bool hasBody) {

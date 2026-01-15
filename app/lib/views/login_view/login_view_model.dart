@@ -24,34 +24,31 @@ class LoginViewModel {
     String email,
     String password,
   ) async {
-    if (!_validateEmail(email)) {
-      error.value = "Invalid email format";
-      return;
-    }
-    if (password.isEmpty) {
-      error.value = "Password cannot be empty";
-      return;
-    }
+    try {
+      if (!_validateEmail(email)) {
+        error.value = "Invalid email format";
+        return;
+      }
+      if (password.isEmpty) {
+        error.value = "Password cannot be empty";
+        return;
+      }
 
-    isLoading.value = true;
-    error.value = null;
-    final user = await authUC.login(email, password);
-    if (user.$2 != null) {
-      error.value = user.$2!.error;
+      isLoading.value = true;
+      error.value = null;
+      final user = await authUC.login(email, password);
+      debugPrint("Login success: ${user.name}");
+      await authUC.loginProfile(user.profiles.first.id);
+      debugPrint("Profile Login success");
       isLoading.value = false;
-      return;
-    }
-    debugPrint("Login success: ${user.$1!.name}");
-    final profileErr = await authUC.loginProfile(user.$1!.profiles.first.id);
-    if (profileErr != null) {
-      error.value = profileErr.error;
+      context.read<UserBloc>().user = user;
+      Navigator.of(context).pushReplacementNamed(AppRoutes.baseHomeView);
       isLoading.value = false;
-      return;
+    } catch (e) {
+      isLoading.value = false;
+      error.value = e.toString();
+      rethrow;
     }
-    debugPrint("Profile Login success");
-    isLoading.value = false;
-    context.read<UserBloc>().user = user.$1!;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.baseHomeView);
   }
 
   Future<void> signup(
@@ -61,31 +58,33 @@ class LoginViewModel {
     String password,
     String confirmPassword,
   ) async {
-    if (name.isEmpty) {
-      error.value = "Name cannot be empty";
-      return;
+    try {
+      if (name.isEmpty) {
+        error.value = "Name cannot be empty";
+        return;
+      }
+      if (!_validateEmail(email)) {
+        error.value = "Invalid email format";
+        return;
+      }
+      if (password.isEmpty) {
+        error.value = "Password cannot be empty";
+        return;
+      }
+      if (password != confirmPassword) {
+        error.value = "Passwords do not match";
+        return;
+      }
+      error.value = null;
+      isLoading.value = true;
+      error.value = null;
+      await authUC.signup(name, email, password);
+      isLoading.value = false;
+    } catch (e) {
+      isLoading.value = false;
+      error.value = e.toString();
+      rethrow;
     }
-    if (!_validateEmail(email)) {
-      error.value = "Invalid email format";
-      return;
-    }
-    if (password.isEmpty) {
-      error.value = "Password cannot be empty";
-      return;
-    }
-    if (password != confirmPassword) {
-      error.value = "Passwords do not match";
-      return;
-    }
-
-    isLoading.value = true;
-    error.value = null;
-    final err = await authUC.signup(name, email, password);
-    if (err == null) {
-      debugPrint("Signup success");
-    }
-    error.value = err?.error;
-    isLoading.value = false;
   }
 
   bool _validateEmail(String email) {

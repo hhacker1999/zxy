@@ -12,12 +12,7 @@ import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/shared/glass_container.dart';
-
-class VideoPlayerInput {
-  final List<StreamItem> streams;
-  final int index;
-  VideoPlayerInput({required this.streams, required this.index});
-}
+import 'package:zxy_app/views/video_handler.dart';
 
 class SeekValueNotifier extends ChangeNotifier
     implements ValueListenable<SeekBarInfo?> {
@@ -97,8 +92,8 @@ class SeekBarInfo {
 }
 
 class VideoPlayerView extends StatefulWidget {
-  final VideoPlayerInput input;
-  const VideoPlayerView({super.key, required this.input});
+  final VideoHandler handler;
+  const VideoPlayerView({super.key, required this.handler});
 
   @override
   State<VideoPlayerView> createState() => _VideoPlayerViewState();
@@ -114,6 +109,8 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   late final StreamSubscription<bool> _bufferingSub;
   late final StreamSubscription<bool> _playingSub;
   late final ZxyPlayerState _state;
+  late List<StreamItem> _streams;
+  int _selectedStream = 0;
   Timer? _hoverTimer;
   double pinRadius = 20;
   double progressHeight = 10;
@@ -121,8 +118,10 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   @override
   void initState() {
     super.initState();
+    _streams = widget.handler.getCurrentStreams();
+    _selectedStream = widget.handler.getSelectedStreamIndex();
     print("Link playing");
-    print(widget.input.streams[widget.input.index].url);
+    print(_streams[_selectedStream].url);
     print("--------------------------------------------------");
     _state = ZxyPlayerState();
     _player = Player(configuration: PlayerConfiguration());
@@ -153,12 +152,12 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       player.setProperty('cscale', 'ewa_lanczossharp'),
     ]).then((_) {
       _player.open(
-        Media(widget.input.streams[widget.input.index].url),
+        Media(_streams[_selectedStream].url),
         play: _state.isPlaying.value,
       );
     });
-    print(widget.input.streams[widget.input.index].description);
-    print(widget.input.streams[widget.input.index].url);
+    print(_streams[_selectedStream].description);
+    print(_streams[_selectedStream].url);
     setupSubscriptions();
   }
 
@@ -204,7 +203,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     final subtitles = tracks.subtitle.where((e) => e.language != null).toList();
     _state.subtitleDetails.value = (subtitles, -1);
     _player.setSubtitleTrack(SubtitleTrack.no());
-    _player.play();
+    _player.play().then((_) => widget.handler.onPlay());
   }
 
   void setupSubscriptions() {
@@ -240,12 +239,22 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
 
     _playbackSub = _player.stream.position.listen((position) {
       _state.seekInfo.value = _state.seekInfo.value.copyWith(current: position);
+      widget.handler.onProgress(position);
     });
 
     _currentSub = _player.stream.duration.listen((duration) {
+      if (_state.seekInfo.value.playback == Duration.zero &&
+          duration != Duration.zero &&
+          widget.handler.getStartingPercentage() != 0) {
+        // NOTE: Video is initialised so we need to pickup from where we left off
+        final startDuration =
+            duration.inSeconds * (widget.handler.getStartingPercentage() / 100);
+        _player.seek(Duration(seconds: startDuration.floor()));
+      }
       _state.seekInfo.value = _state.seekInfo.value.copyWith(
         playback: duration,
       );
+      widget.handler.onDurationUpdate(duration);
     });
 
     _bufferSub = _player.stream.buffer.listen((buffer) {
@@ -277,8 +286,21 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     });
   }
 
+  void onPauseOrPlay() {
+    if (_state.isPlaying.value) {
+      _state.isPlaying.value = false;
+      _player.pause();
+      widget.handler.onPause();
+    } else {
+      _state.isPlaying.value = true;
+      _player.play();
+      widget.handler.onPause();
+    }
+  }
+
   @override
   void dispose() {
+    _player.pause();
     _playbackSub.cancel();
     _currentSub.cancel();
     _bufferSub.cancel();
@@ -308,14 +330,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
               child: CallbackShortcuts(
                 bindings: {
                   SingleActivator(LogicalKeyboardKey.space): () {
-                    print("space is detected");
-                    if (_state.isPlaying.value) {
-                      _state.isPlaying.value = false;
-                      _player.pause();
-                    } else {
-                      _state.isPlaying.value = true;
-                      _player.play();
-                    }
+                    onPauseOrPlay();
                     onHover();
                   },
                   SingleActivator(LogicalKeyboardKey.arrowRight): () {
@@ -396,6 +411,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 100),
                                 child: ProgressHudWithBar(
+                                  onPauseOrPlay: onPauseOrPlay,
                                   iconHeight: constr.maxHeight * 0.1,
                                   state: _state,
                                   pinRadius: pinRadius,
@@ -720,6 +736,7 @@ class ProgressHudWithBar extends StatelessWidget {
     required ZxyPlayerState state,
     required this.pinRadius,
     required this.progressHeight,
+    required this.onPauseOrPlay,
     required Player player,
     required this.iconHeight,
   }) : _state = state,
@@ -730,6 +747,7 @@ class ProgressHudWithBar extends StatelessWidget {
   final double progressHeight;
   final Player _player;
   final double iconHeight;
+  final VoidCallback onPauseOrPlay;
 
   @override
   Widget build(BuildContext context) {
@@ -823,13 +841,7 @@ class ProgressHudWithBar extends StatelessWidget {
                       children: [
                         GestureDetector(
                           onTap: () {
-                            if (isPlaying) {
-                              _player.pause();
-                              _state.isPlaying.value = false;
-                            } else {
-                              _player.play();
-                              _state.isPlaying.value = true;
-                            }
+                            onPauseOrPlay();
                           },
                           child: Icon(
                             isPlaying ? Icons.pause : Icons.play_arrow,

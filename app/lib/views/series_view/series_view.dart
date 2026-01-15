@@ -14,7 +14,6 @@ import 'package:zxy_app/views/view_item_state.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
-import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
 class ShowView extends StatefulWidget {
@@ -234,8 +233,8 @@ class _ShowViewState extends State<ShowView> {
                                                             context,
                                                             AppRoutes
                                                                 .videoPlayerView,
-                                                            arguments: vm
-                                                                .getPlayerStreams(),
+                                                            // arguments: vm
+                                                            //     .getPlayerStreams(),
                                                           );
                                                         },
                                                         color: color,

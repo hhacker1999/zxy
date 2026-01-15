@@ -28,7 +28,6 @@ class HomeViewModel {
       return;
     }
 
-    _mediaUc.setReadAccessToken(token);
     final ValueNotifier<ViewItemState<List<ZxyMedia>>> topMovieState =
         ValueNotifier(ItemLoading<List<ZxyMedia>>());
     final ValueNotifier<ViewItemState<List<ZxyMedia>>> topShowsState =
@@ -92,7 +91,7 @@ class HomeViewModel {
       AppConstants.showGenre = showGenre;
     } catch (e) {
       if (kDebugMode) {
-        print("Error getting genre $e");
+        print("Error getting genre ${e.toString()}");
       }
       rethrow;
     }

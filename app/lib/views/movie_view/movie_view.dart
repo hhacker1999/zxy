@@ -182,12 +182,13 @@ class _MovieViewState extends State<MovieView> {
                                   valueListenable: vm.movieStreamState,
                                   builder: (_, streamState, _) {
                                     return StreamRow(
-                                      onTap: () {
-                                        Navigator.pushNamed(
+                                      onTap: () async {
+                                        await Navigator.pushNamed(
                                           context,
                                           AppRoutes.videoPlayerView,
-                                          arguments: vm.getPlayerStreams(),
+                                          arguments: vm,
                                         );
+                                        vm.onPause();
                                       },
                                       color: color,
                                       streamState: streamState,

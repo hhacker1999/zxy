@@ -20,6 +20,7 @@ import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/fade_page_route.dart';
 import 'package:zxy_app/views/splash_view/splash_view.dart';
 import 'package:zxy_app/views/splash_view/splash_view_model.dart';
+import 'package:zxy_app/views/video_handler.dart';
 import 'package:zxy_app/views/video_player_view/video_player_view.dart';
 
 void main() {
@@ -87,6 +88,7 @@ class _MyAppState extends State<MyApp> {
                       create: (_) => MovieViewModel(
                         mediaUc: deps.mediaUc,
                         streamUc: deps.streamUc,
+                        progressUc: deps.progUc,
                       ),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) => MovieView(movie: args),
@@ -132,7 +134,7 @@ class _MyAppState extends State<MyApp> {
                 return MaterialPageRoute(
                   builder: (_) {
                     return VideoPlayerView(
-                      input: settings.arguments as VideoPlayerInput,
+                      handler: settings.arguments as VideoHandler,
                     );
                   },
                 );

@@ -57,9 +57,11 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Get("/search/movie", i.SessionHandler(i.HandleSearchMovies, true))
 	router.Get("/movie/{id}", i.SessionHandler(i.HandleGetMovieInfo, true))
 	router.Get("/show/{id}", i.SessionHandler(i.HandleGetShowInfo, true))
-	router.Get("/genre", i.SessionHandler(i.HandleGetGenre, true))
-	router.Get("/configuration", i.SessionHandler(i.HandleGetConfiguration, true))
+	router.Get("/genre", i.HandleGetGenre)
+	router.Get("/configuration", i.HandleGetConfiguration)
 	router.Get("/continue_watching", i.SessionHandler(i.HandleGetContinueWatching, true))
+	router.Get("/movie/{id}/progress", i.SessionHandler(i.HandleGetMovieProgress, true))
+	router.Get("/show/{id}/progress", i.SessionHandler(i.HandleGetShowProgress, true))
 	router.Post("/movie/update_progress", i.SessionHandler(i.HandleMovieProgressUpdate, true))
 	router.Post("/show/update_progress", i.SessionHandler(i.HandleShowProgressUpdate, true))
 	return router

@@ -126,14 +126,6 @@ class SeriesViewModel {
     }
   }
 
-  VideoPlayerInput getPlayerStreams() {
-    return VideoPlayerInput(
-      streams:
-          (_episodeStreamsState.value as ItemLoaded<List<StreamItem>>).data,
-      index: _selectedStream ?? 0,
-    );
-  }
-
   void dispose() {
     _seriesDetailsState.dispose();
     _episodeStreamsState.dispose();

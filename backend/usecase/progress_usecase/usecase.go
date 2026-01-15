@@ -54,6 +54,52 @@ func (u *Usecase) GetContinueWatching(
 	return res, nil
 }
 
+func (u *Usecase) GetShowProgress(
+	userId int,
+	profileId int,
+	showId string,
+) ([]playbackrepository.ProgressUpdate, error) {
+
+	res, err := u.pbr.GetProgressMultiple(
+		userId,
+		profileId,
+		showId,
+		false,
+		0,
+		0,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		} else {
+			return nil, apperrors.SomethingWentWrongError{}
+		}
+	}
+
+	return res, nil
+}
+
+func (u *Usecase) GetMovieProgress(
+	userId int,
+	profileId int,
+	movieId string,
+) (playbackrepository.ProgressUpdate, error) {
+	res, err := u.pbr.GetProgress(
+		userId,
+		profileId,
+		movieId,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return playbackrepository.ProgressUpdate{}, nil
+		} else {
+			return playbackrepository.ProgressUpdate{}, apperrors.SomethingWentWrongError{}
+		}
+	}
+
+	return res, nil
+}
+
 func (u *Usecase) UpdatePlaybackProgress(
 	userId int,
 	profileId int,

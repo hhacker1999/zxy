@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func (i *RestInterface) HandleGetContinueWatching(w http.ResponseWriter, r *http.Request) {
@@ -126,4 +128,60 @@ func (i *RestInterface) HandleShowProgressUpdate(w http.ResponseWriter, r *http.
 	}
 
 	response.StatusCode = http.StatusOK
+}
+
+func (i *RestInterface) HandleGetShowProgress(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+
+	showId := chi.URLParam(r, "id")
+	if len(showId) == 0 {
+		response.StatusCode = http.StatusBadRequest
+		response.Error = "Invalid show id"
+		return
+	}
+
+	// at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
+
+	data, err := i.progressUC.GetShowProgress(userId, profileId, showId)
+
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusInternalServerError
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+	response.Data = data
+}
+
+func (i *RestInterface) HandleGetMovieProgress(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+
+	movieId := chi.URLParam(r, "id")
+	if len(movieId) == 0 {
+		response.StatusCode = http.StatusBadRequest
+		response.Error = "Invalid show id"
+		return
+	}
+
+	// at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
+
+	data, err := i.progressUC.GetMovieProgress(userId, profileId, movieId)
+
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusInternalServerError
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+	response.Data = data
 }

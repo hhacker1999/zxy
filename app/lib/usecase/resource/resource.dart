@@ -1,8 +1,7 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/service/http_service.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
@@ -14,31 +13,13 @@ const _trendingShow = "/trending/shows";
 const _tv = "/discover/shows";
 
 class MediaUsecase {
-  String? _readAccessToken;
-  late final http.Client _client;
+  final HttpService _httpService;
 
-  MediaUsecase() {
-    _client = http.Client();
-  }
-
-  void setReadAccessToken(String token) {
-    _readAccessToken = token;
-  }
-
-  Map<String, String> _getHeaders() {
-    if (_readAccessToken == null) {
-      throw "Token not initialised";
-    }
-    return {
-      "Authorization": "Bearer $_readAccessToken",
-      "accept": "application/json",
-    };
-  }
+  MediaUsecase(this._httpService);
 
   Future<ZxyPaginatedResponse<ZxyMedia>> discoverMovies({
     Map<String, String>? filter,
   }) async {
-    print(filter);
     var url = _baseUrl + _movie;
     if (filter != null) {
       var entries = filter.entries.toList();
@@ -52,15 +33,10 @@ class MediaUsecase {
         url += "${element.key}=${element.value}";
       }
     }
-    final response = await _client.get(Uri.parse(url), headers: _getHeaders());
-    if (response.statusCode != 200) {
-      if (kDebugMode) {
-        print(
-          "Invalid response from Resource api ${response.statusCode} ${response.body}",
-        );
-      }
-      throw "Invalid response from Resource api";
-    }
+    final response = await _httpService.get(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+    );
     final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
     final finalResult = ZxyPaginatedResponse<ZxyMedia>.fromJson(responseMap, (
       results,
@@ -78,7 +54,6 @@ class MediaUsecase {
   Future<ZxyPaginatedResponse<ZxyMedia>> discoverShows({
     Map<String, String>? filter,
   }) async {
-    print(filter);
     var url = _baseUrl + _tv;
     if (filter != null) {
       var entries = filter.entries.toList();
@@ -92,15 +67,10 @@ class MediaUsecase {
         url += "${element.key}=${element.value}";
       }
     }
-    final response = await _client.get(Uri.parse(url), headers: _getHeaders());
-    if (response.statusCode != 200) {
-      if (kDebugMode) {
-        print(
-          "Invalid response from Resource api ${response.statusCode} ${response.body}",
-        );
-      }
-      throw "Invalid response from Resource api";
-    }
+    final response = await _httpService.get(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+    );
     final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
     final finalResult = ZxyPaginatedResponse<ZxyMedia>.fromJson(responseMap, (
       results,
@@ -116,47 +86,29 @@ class MediaUsecase {
   }
 
   Future<MovieDetails> getMovieDetails(int id) async {
-    final res = await _client.get(
+    final res = await _httpService.get(
       Uri.parse("$_baseUrl/movie/$id?append_to_response=credits"),
-      headers: _getHeaders(),
+      auth: RequestAuth.profile,
     );
     final resBody = res.body;
-    if (res.statusCode != 200) {
-      if (kDebugMode) {
-        print("Invalid status code from Resource ${res.statusCode} $resBody");
-      }
-      throw "Invalid status code";
-    }
     return MovieDetails.fromJson(jsonDecode(resBody));
   }
 
   Future<SeriesDetails> getSeriesDetails(int id) async {
-    final res = await _client.get(
+    final res = await _httpService.get(
       Uri.parse("$_baseUrl/show/$id?append_to_response=credits"),
-      headers: _getHeaders(),
+      auth: RequestAuth.profile,
     );
     final resBody = res.body;
-    if (res.statusCode != 200) {
-      if (kDebugMode) {
-        print("Invalid status code from Resource ${res.statusCode} $resBody");
-      }
-      throw "Invalid status code";
-    }
     return SeriesDetails.fromJson(jsonDecode(resBody));
   }
 
   Future<SeasonDetails> getSeasonDetails(int id, int seasonNo) async {
-    final res = await _client.get(
+    final res = await _httpService.get(
       Uri.parse("$_baseUrl/show/$id:$seasonNo?append_to_response=credits"),
-      headers: _getHeaders(),
+      auth: RequestAuth.profile,
     );
     final resBody = res.body;
-    if (res.statusCode != 200) {
-      if (kDebugMode) {
-        print("Invalid status code from Resource ${res.statusCode} $resBody");
-      }
-      throw "Invalid status code";
-    }
     return SeasonDetails.fromJson(jsonDecode(resBody));
   }
 
@@ -165,19 +117,13 @@ class MediaUsecase {
     int seasonNo,
     int episodeNumber,
   ) async {
-    final res = await _client.get(
+    final res = await _httpService.get(
       Uri.parse(
         "$_baseUrl/show/$id:$seasonNo:$episodeNumber?append_to_response=credits",
       ),
-      headers: _getHeaders(),
+      auth: RequestAuth.profile,
     );
     final resBody = res.body;
-    if (res.statusCode != 200) {
-      if (kDebugMode) {
-        print("Invalid status code from Resource ${res.statusCode} $resBody");
-      }
-      throw "Invalid status code";
-    }
     return EpisodeDetails.fromJson(jsonDecode(resBody));
   }
 
@@ -197,15 +143,10 @@ class MediaUsecase {
         url += "${element.key}=${element.value}";
       }
     }
-    final response = await _client.get(Uri.parse(url), headers: _getHeaders());
-    if (response.statusCode != 200) {
-      if (kDebugMode) {
-        print(
-          "Invalid response from Trending api ${response.statusCode} ${response.body}",
-        );
-      }
-      throw "Invalid response from Trending api";
-    }
+    final response = await _httpService.get(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+    );
     final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
     final finalResult = ZxyPaginatedResponse<ZxyMedia>.fromJson(responseMap, (
       results,
@@ -236,15 +177,10 @@ class MediaUsecase {
         url += "${element.key}=${element.value}";
       }
     }
-    final response = await _client.get(Uri.parse(url), headers: _getHeaders());
-    if (response.statusCode != 200) {
-      if (kDebugMode) {
-        print(
-          "Invalid response from Trending api ${response.statusCode} ${response.body}",
-        );
-      }
-      throw "Invalid response from Trending api";
-    }
+    final response = await _httpService.get(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+    );
     final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
     final finalResult = ZxyPaginatedResponse<ZxyMedia>.fromJson(responseMap, (
       results,
@@ -260,24 +196,18 @@ class MediaUsecase {
   }
 
   Future<GenreResponse> getGenre() async {
-    final res = await _client.get(Uri.parse("$_baseUrl/genre"));
-    if (res.statusCode != 200) {
-      if (kDebugMode) {
-        print("Invalid status code getting genre ${res.body}");
-      }
-      throw "Something went wrong";
-    }
+    final res = await _httpService.get(
+      Uri.parse("$_baseUrl/genre"),
+      auth: RequestAuth.profile,
+    );
     return GenreResponse.fromJson(jsonDecode(res.body));
   }
 
   Future<ImageConfiguation> getConfiguration() async {
-    final res = await _client.get(Uri.parse("$_baseUrl/configuration"));
-    if (res.statusCode != 200) {
-      if (kDebugMode) {
-        print("Invalid status code getting genre ${res.body}");
-      }
-      throw "Something went wrong";
-    }
+    final res = await _httpService.get(
+      Uri.parse("$_baseUrl/configuration"),
+      auth: RequestAuth.profile,
+    );
     return ImageConfiguation.fromJson(jsonDecode(res.body)["images"]);
   }
 
@@ -286,15 +216,10 @@ class MediaUsecase {
     String keyword,
   ) async {
     var url = "$_baseUrl/search/movie?page=$page&keyword=$keyword";
-    final response = await _client.get(Uri.parse(url), headers: _getHeaders());
-    if (response.statusCode != 200) {
-      if (kDebugMode) {
-        print(
-          "Invalid response from search api ${response.statusCode} ${response.body}",
-        );
-      }
-      throw "Invalid response from Search api";
-    }
+    final response = await _httpService.get(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+    );
     final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
     final finalResult = ZxyPaginatedResponse<ZxyMedia>.fromJson(responseMap, (
       results,
@@ -314,15 +239,10 @@ class MediaUsecase {
     String keyword,
   ) async {
     var url = "$_baseUrl/search/show?page=$page&keyword=$keyword";
-    final response = await _client.get(Uri.parse(url), headers: _getHeaders());
-    if (response.statusCode != 200) {
-      if (kDebugMode) {
-        print(
-          "Invalid response from search api ${response.statusCode} ${response.body}",
-        );
-      }
-      throw "Invalid response from Search api";
-    }
+    final response = await _httpService.get(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+    );
     final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
     final finalResult = ZxyPaginatedResponse<ZxyMedia>.fromJson(responseMap, (
       results,
