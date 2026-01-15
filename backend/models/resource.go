@@ -97,7 +97,7 @@ type TMDBShow struct {
 	LastAirDate         string              `json:"last_air_date"`
 	LastEpisodeToAir    Episode             `json:"last_episode_to_air"`
 	Name                string              `json:"name"`
-	NextEpisodeToAir    string              `json:"next_episode_to_air"`
+	NextEpisodeToAir    Episode             `json:"next_episode_to_air"`
 	Networks            []Network           `json:"networks"`
 	NumberOfEpisodes    int64               `json:"number_of_episodes"`
 	NumberOfSeasons     int64               `json:"number_of_seasons"`
@@ -116,6 +116,8 @@ type TMDBShow struct {
 	VoteAverage         float64             `json:"vote_average"`
 	VoteCount           int64               `json:"vote_count"`
 	Seasons             []Season            `json:"seasons"`
+	ExternalIDS         ExternalIDS         `json:"external_ids"`
+	Credits             Credits             `json:"credits"`
 }
 
 type GuestStar struct {

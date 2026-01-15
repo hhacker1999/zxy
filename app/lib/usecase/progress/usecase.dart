@@ -38,7 +38,7 @@ class ProgressUsecase {
       Uri.parse("${AppConstants.baseUrl}/show/$showId/progress"),
       auth: RequestAuth.profile,
     );
-    if (res.body.isEmpty) {
+    if (res.body.isEmpty || res.body == "null") {
       return List<WatchProgress>.empty();
     }
     final List<Map<String, dynamic>> parsed = List.from(jsonDecode(res.body));
@@ -54,16 +54,16 @@ class ProgressUsecase {
   }
 
   Future<void> updateWatchProgressShow(
-    int mediaId,
+    String mediaId,
     int season,
     int episode,
     double progress,
   ) {
     return _service.post(
-      Uri.parse("${AppConstants.baseUrl}/movie/update_progress"),
+      Uri.parse("${AppConstants.baseUrl}/show/update_progress"),
       auth: RequestAuth.profile,
       body: {
-        "show_id": mediaId,
+        "show_id": mediaId.toString(),
         "progress": progress,
         "episode": episode,
         "season": season,

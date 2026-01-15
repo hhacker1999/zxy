@@ -64,7 +64,7 @@ func (u *Usecase) GetShowProgress(
 		userId,
 		profileId,
 		showId,
-		false,
+		true,
 		0,
 		0,
 	)

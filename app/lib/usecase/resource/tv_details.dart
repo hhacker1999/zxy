@@ -11,10 +11,10 @@ class SeriesDetails {
   final int id;
   final bool inProduction;
   final List<String> languages;
-  final DateTime lastAirDate;
-  final LastEpisodeToAir lastEpisodeToAir;
+  final DateTime? lastAirDate;
+  final Episode? lastEpisodeToAir;
   final String name;
-  final dynamic nextEpisodeToAir;
+  final Episode? nextEpisodeToAir;
   final List<Network> networks;
   final int numberOfEpisodes;
   final int numberOfSeasons;
@@ -26,14 +26,14 @@ class SeriesDetails {
   final String posterPath;
   final List<Network> productionCompanies;
   final List<ProductionCountry> productionCountries;
-  final List<Season> seasons;
+  final List<SeasonDetails> seasons;
   final List<SpokenLanguage> spokenLanguages;
   final String status;
   final String tagline;
   final String type;
   final double voteAverage;
   final int voteCount;
-  final Credits credits;
+  final Credits? credits;
   final ExternalIds externalIds;
 
   SeriesDetails({
@@ -86,10 +86,12 @@ class SeriesDetails {
     id: json["id"],
     inProduction: json["in_production"],
     languages: List<String>.from(json["languages"].map((x) => x)),
-    lastAirDate: DateTime.parse(json["last_air_date"]),
-    lastEpisodeToAir: LastEpisodeToAir.fromJson(json["last_episode_to_air"]),
+    lastAirDate: DateTime.tryParse(json["last_air_date"]),
+    lastEpisodeToAir: Episode.fromJson(json["last_episode_to_air"]),
     name: json["name"],
-    nextEpisodeToAir: json["next_episode_to_air"],
+    nextEpisodeToAir: json["next_episode_to_air"] != null
+        ? Episode.fromJson(json["next_episode_to_air"])
+        : null,
     networks: List<Network>.from(
       json["networks"].map((x) => Network.fromJson(x)),
     ),
@@ -107,7 +109,9 @@ class SeriesDetails {
     productionCountries: List<ProductionCountry>.from(
       json["production_countries"].map((x) => ProductionCountry.fromJson(x)),
     ),
-    seasons: List<Season>.from(json["seasons"].map((x) => Season.fromJson(x))),
+    seasons: List<SeasonDetails>.from(
+      json["seasons"].map((x) => SeasonDetails.fromJson(x)),
+    ),
     spokenLanguages: List<SpokenLanguage>.from(
       json["spoken_languages"].map((x) => SpokenLanguage.fromJson(x)),
     ),
@@ -116,8 +120,16 @@ class SeriesDetails {
     type: json["type"],
     voteAverage: json["vote_average"]?.toDouble(),
     voteCount: json["vote_count"],
-    credits: Credits.fromJson(json["credits"]),
-    externalIds: ExternalIds.fromJson(json["external_ids"]),
+    credits: json["credits"] != null ? Credits.fromJson(json["credits"]) : null,
+    externalIds: json["external_ids"] != null
+        ? ExternalIds.fromJson(json["external_ids"])
+        : ExternalIds(
+            imdbId: "",
+            wikidataId: null,
+            facebookId: null,
+            instagramId: null,
+            twitterId: null,
+          ),
   );
 }
 
@@ -290,8 +302,8 @@ class Season {
 
   factory Season.fromJson(Map<String, dynamic> json) => Season(
     airDate: json["air_date"] != null ? DateTime.parse(json["air_date"]) : null,
-    episodeCount: json["episode_count"],
-    id: json["id"],
+    episodeCount: json["episode_count"] ?? 0,
+    id: json["id"] ?? 0,
     name: json["name"],
     overview: json["overview"],
     posterPath: json["poster_path"] is! int ? json["poster_path"] : "",
@@ -354,7 +366,7 @@ class SeasonDetails {
       json["networks"].map((x) => Network.fromJson(x)),
     ),
     overview: json["overview"],
-    seasonDetailsId: json["id"],
+    seasonDetailsId: json["id"] ?? 0,
     posterPath: json["poster_path"],
     seasonNumber: json["season_number"],
     voteAverage: json["vote_average"]?.toDouble(),
@@ -395,7 +407,9 @@ class Episode {
   });
 
   factory Episode.fromJson(Map<String, dynamic> json) => Episode(
-    airDate: json["air_date"] != null ? DateTime.parse(json["air_date"]) : null,
+    airDate: json["air_date"] != null
+        ? DateTime.tryParse(json["air_date"])
+        : null,
     episodeNumber: json["episode_number"],
     episodeType: json["episode_type"],
     id: json["id"],
@@ -408,7 +422,9 @@ class Episode {
     stillPath: json["still_path"],
     voteAverage: json["vote_average"]?.toDouble(),
     voteCount: json["vote_count"],
-    crew: List<Crew>.from(json["crew"].map((x) => Crew.fromJson(x))),
+    crew: json["crew"] != null
+        ? List<Crew>.from(json["crew"].map((x) => Crew.fromJson(x)))
+        : [],
   );
 }
 

@@ -103,6 +103,7 @@ class _MyAppState extends State<MyApp> {
                       create: (_) => SeriesViewModel(
                         mediaUc: deps.mediaUc,
                         streamUc: deps.streamUc,
+                        progressUc: deps.progUc,
                       ),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) => ShowView(show: args),

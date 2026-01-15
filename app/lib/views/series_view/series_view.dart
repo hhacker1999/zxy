@@ -56,13 +56,15 @@ class _ShowViewState extends State<ShowView> {
                   return Center(child: CupertinoActivityIndicator());
                 }
                 final details = (state as ItemLoaded<SeriesDetails>).data;
-                final nonEmptyCast = details.credits.cast
-                    .where(
-                      (member) =>
-                          member.profilePath != null &&
-                          member.profilePath!.isNotEmpty,
-                    )
-                    .toList();
+                final nonEmptyCast =
+                    details.credits?.cast
+                        .where(
+                          (member) =>
+                              member.profilePath != null &&
+                              member.profilePath!.isNotEmpty,
+                        )
+                        .toList() ??
+                    [];
                 return Column(
                   children: [
                     TopHeader(
@@ -228,14 +230,14 @@ class _ShowViewState extends State<ShowView> {
                                                         null) ...[
                                                       AppTheme.boxHeightL,
                                                       StreamRow(
-                                                        onTap: () {
-                                                          Navigator.pushNamed(
+                                                        onTap: () async {
+                                                          await Navigator.pushNamed(
                                                             context,
                                                             AppRoutes
                                                                 .videoPlayerView,
-                                                            // arguments: vm
-                                                            //     .getPlayerStreams(),
+                                                            arguments: vm,
                                                           );
+                                                          vm.onPause();
                                                         },
                                                         color: color,
                                                         streamState:

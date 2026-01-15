@@ -129,12 +129,23 @@ func (r *Repository) GetProgress(
 ) (ProgressUpdate, error) {
 	var res ProgressUpdate
 	row := r.db.QueryRow(
-		`select user_id, profile_id, media_id, progress, is_watched from watch_progress where
+		`select user_id, profile_id, media_id, progress, is_watched, created_at, updated_at from watch_progress where
     user_id = $1 and  profile_id = $2 and media_id = $3
-    `, userId, profileId, mediaId,
+    `,
+		userId,
+		profileId,
+		mediaId,
 	)
 
-	err := row.Scan(&res.UserId, &res.ProfileId, &res.MediaId, &res.Progress, &res.IsWatched)
+	err := row.Scan(
+		&res.UserId,
+		&res.ProfileId,
+		&res.MediaId,
+		&res.Progress,
+		&res.IsWatched,
+		&res.CreatedAt,
+		&res.UpdatedAt,
+	)
 	if err != nil {
 		fmt.Println("Error getting progress", err)
 	}
@@ -160,8 +171,7 @@ func (r *Repository) GetProgressMultiple(
 
 	if len(mediaId) != 0 {
 		if isShow {
-			query += " and media_id like '$3:%'"
-			params = append(params, mediaId)
+			query += fmt.Sprintf(" and media_id like '%s:%%'", mediaId)
 		} else {
 			query += " and media_id = $3"
 			params = append(params, mediaId)
@@ -180,6 +190,11 @@ func (r *Repository) GetProgressMultiple(
 	rows, err := r.db.Query(
 		query, params...,
 	)
+	if err != nil {
+		fmt.Println("Error getting multiple progress", err)
+		return nil, err
+	}
+
 	for rows.Next() {
 		var temp ProgressUpdate
 		err = rows.Scan(

@@ -294,7 +294,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     } else {
       _state.isPlaying.value = true;
       _player.play();
-      widget.handler.onPause();
+      widget.handler.onPlay();
     }
   }
 
