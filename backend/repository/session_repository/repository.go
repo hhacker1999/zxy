@@ -55,7 +55,7 @@ func (r *Repository) GetUserSessionFromId(sessionId int) (models.Session, error)
 		fmt.Println("Error getting user session", err)
 	}
 
-	return res, nil
+	return res, err
 }
 
 func (r *Repository) CreateProfileSession(session models.ProfileSession) error {
@@ -77,13 +77,20 @@ func (r *Repository) CreateProfileSession(session models.ProfileSession) error {
 func (r *Repository) GetProfileSession(token string) (models.ProfileSession, error) {
 	var res models.ProfileSession
 	row := r.db.QueryRow(
-		`select id, profile_id, session_id, token, expiry, refresh_token from sessions where token = $1`,
+		`select id, profile_id, session_id, token, expiry, refresh_token from profile_sessions where token = $1`,
 		token,
 	)
-	err := row.Scan(&res.Id, &res.ProfileId, &res.SessionId, &res.Token, &res.Expiry, &res.RefreshToken)
+	err := row.Scan(
+		&res.Id,
+		&res.ProfileId,
+		&res.SessionId,
+		&res.Token,
+		&res.Expiry,
+		&res.RefreshToken,
+	)
 	if err != nil {
 		fmt.Println("Error getting profile session", err)
 	}
 
-	return res, nil
+	return res, err
 }

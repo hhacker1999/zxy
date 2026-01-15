@@ -1,0 +1,129 @@
+package rest
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+)
+
+func (i *RestInterface) HandleGetContinueWatching(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+
+	// at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
+
+	data, err := i.progressUC.GetContinueWatching(userId, profileId)
+
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusInternalServerError
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+	response.Data = data
+}
+
+func (i *RestInterface) HandleMovieProgressUpdate(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+
+	type Input struct {
+		MovieId  string  `json:"movie_id"`
+		Progress float64 `json:"progress"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		response.StatusCode = http.StatusInternalServerError
+		response.Error = "Something went wrong"
+		return
+	}
+
+	defer r.Body.Close()
+	var input Input
+	err = json.Unmarshal(bodyBytes, &input)
+	if err != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Error = "Invalid Input"
+		return
+	}
+
+	err = i.progressUC.UpdatePlaybackProgress(
+		userId,
+		profileId,
+		input.MovieId,
+		input.Progress,
+	)
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+}
+
+func (i *RestInterface) HandleShowProgressUpdate(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+
+	type Input struct {
+		ShowId   string  `json:"show_id"`
+		Progress float64 `json:"progress"`
+		Season   int     `json:"season"`
+		Episode  int     `json:"episode"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		response.StatusCode = http.StatusInternalServerError
+		response.Error = "Something went wrong"
+		return
+	}
+
+	defer r.Body.Close()
+	var input Input
+	err = json.Unmarshal(bodyBytes, &input)
+	if err != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Error = "Invalid Input"
+		return
+	}
+
+	if input.Season == 0 {
+		response.StatusCode = http.StatusBadRequest
+		response.Error = "Invalid Season"
+		return
+	}
+
+	if input.Episode == 0 {
+		response.StatusCode = http.StatusBadRequest
+		response.Error = "Invalid Episode"
+		return
+	}
+
+	err = i.progressUC.UpdatePlaybackProgress(
+		userId,
+		profileId,
+		fmt.Sprintf("%s:%d:%d", input.ShowId, input.Season, input.Episode),
+		input.Progress,
+	)
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+}

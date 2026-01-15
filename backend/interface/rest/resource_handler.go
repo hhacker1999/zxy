@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"zxy/models"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -46,28 +47,11 @@ func (i *RestInterface) HandleGetShowInfo(w http.ResponseWriter, r *http.Request
 	splitted := strings.Split(showId, ":")
 	at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
 
-	var details []byte
+	var details models.TMDBShow
 	var err error
 	if len(splitted) == 1 {
 		details, err = i.tmdbUc.GetShowDetails(
 			showId,
-			at,
-		)
-	}
-
-	if len(splitted) == 2 {
-		details, err = i.tmdbUc.GetSeasonDetails(
-			splitted[0],
-			splitted[1],
-			at,
-		)
-	}
-
-	if len(splitted) == 3 {
-		details, err = i.tmdbUc.GetEpisodeDetails(
-			splitted[0],
-			splitted[1],
-			splitted[2],
 			at,
 		)
 	}

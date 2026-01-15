@@ -205,7 +205,8 @@ func (u *Usecase) GetMovieDetails(id string, at string) ([]byte, error) {
 	return body, nil
 }
 
-func (u *Usecase) GetShowDetails(id string, at string) ([]byte, error) {
+func (u *Usecase) GetShowDetails(id string, at string) (models.TMDBShow, error) {
+	var details models.TMDBShow
 	url := fmt.Sprintf(
 		"%s/tv/%s?append_to_response=credits,external_ids",
 		u.tmdbApiBaseUrl, id,
@@ -222,22 +223,93 @@ func (u *Usecase) GetShowDetails(id string, at string) ([]byte, error) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("Error sending get series request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return details, apperrors.SomethingWentWrongError{}
 	}
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Println("Invalid status code from get series request to TMDB", res.StatusCode)
-		return nil, apperrors.SomethingWentWrongError{}
+		return details, apperrors.SomethingWentWrongError{}
 	}
 
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("Error reading response of get series request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return details, apperrors.SomethingWentWrongError{}
 	}
 
-	return body, nil
+	err = json.Unmarshal(body, &details)
+	if err != nil {
+		fmt.Println("Error unmarshalling show response", err)
+		return details, apperrors.SomethingWentWrongError{}
+	}
+
+	url = fmt.Sprintf(
+		"%s/tv/%s?append_to_response=",
+		u.tmdbApiBaseUrl, id,
+	)
+
+	for i, v := range details.Seasons {
+		if v.SeasonNumber == 0 {
+			continue
+		}
+		url += fmt.Sprintf("season/%d", v.SeasonNumber)
+		if i != len(details.Seasons)-1 {
+			url += ","
+		}
+	}
+
+	req, _ = http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add(
+		"Authorization",
+		fmt.Sprintf("Bearer %s", at),
+	)
+
+	res, err = http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending get series request to TMDB", err)
+		return details, apperrors.SomethingWentWrongError{}
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code from get series request to TMDB", res.StatusCode)
+		return details, apperrors.SomethingWentWrongError{}
+	}
+
+	defer res.Body.Close()
+	body, err = io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response of get series request to TMDB", err)
+		return details, apperrors.SomethingWentWrongError{}
+	}
+
+	rawMap := make(map[string]json.RawMessage, 0)
+	err = json.Unmarshal(body, &rawMap)
+	if err != nil {
+		fmt.Println("Error unmarshalling show response", err)
+		return details, apperrors.SomethingWentWrongError{}
+	}
+
+	var seasons []models.Season
+
+	for _, v := range details.Seasons {
+		if v.SeasonNumber == 0 {
+			continue
+		}
+		var temp models.Season
+		err = json.Unmarshal(rawMap[fmt.Sprintf("season/%d", v.SeasonNumber)], &temp)
+		if err != nil {
+			fmt.Println("Error unmarshalling show season response", err)
+			return details, apperrors.SomethingWentWrongError{}
+		}
+    seasons = append(seasons, temp)
+
+	}
+  details.Seasons = seasons
+
+	return details, nil
 }
 
 func (u *Usecase) GetSeasonDetails(id string, season string, at string) ([]byte, error) {

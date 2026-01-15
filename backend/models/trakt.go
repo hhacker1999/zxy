@@ -18,15 +18,15 @@ type TraktPlaybackHistoryItem struct {
 	ResetAt       *time.Time `json:"reset_at"`
 	Show          Item       `json:"show"`
 	Movie         Item       `json:"movie"`
-	Seasons       []Season   `json:"seasons"`
+	Seasons       []TraktSeason   `json:"seasons"`
 }
 
-type Season struct {
+type TraktSeason struct {
 	Number   int64     `json:"number"`
 	Episodes []Episode `json:"episodes"`
 }
 
-type Episode struct {
+type TraktEpisode struct {
 	Number        int64     `json:"number"`
 	Plays         int64     `json:"plays"`
 	LastWatchedAt time.Time `json:"last_watched_at"`

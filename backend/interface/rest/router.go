@@ -8,6 +8,7 @@ import (
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
 	addonusecase "zxy/usecase/addon_usecase"
+	progressusecase "zxy/usecase/progress_usecase"
 	tmdbusecase "zxy/usecase/tmdb_usecase"
 	userusecase "zxy/usecase/user_usecase"
 
@@ -20,6 +21,7 @@ type RestInterface struct {
 	userUC      *userusecase.Usecase
 	userRepo    *userrepository.Repository
 	sessionRepo *sessionrepository.Repository
+	progressUC  *progressusecase.Usecase
 }
 
 func New(
@@ -28,6 +30,7 @@ func New(
 	userUC *userusecase.Usecase,
 	userRepo *userrepository.Repository,
 	sessionRepo *sessionrepository.Repository,
+	progressUC *progressusecase.Usecase,
 ) *RestInterface {
 	return &RestInterface{
 		addonuc:     addonuc,
@@ -35,6 +38,7 @@ func New(
 		userUC:      userUC,
 		userRepo:    userRepo,
 		sessionRepo: sessionRepo,
+		progressUC:  progressUC,
 	}
 }
 
@@ -44,17 +48,20 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/login", i.handleLogin)
 	router.Post("/profile/login", i.SessionHandler(i.handleProfileLogin, false))
 	router.Get("/user", i.SessionHandler(i.handleGetUser, false))
-	router.Get("/streams", i.HandleGetStream)
-	router.Get("/discover/movies", i.HandleDiscoverMovies)
-	router.Get("/discover/shows", i.HandleDiscoverShows)
-	router.Get("/trending/movies", i.HandleGetTrendingMovies)
-	router.Get("/trending/shows", i.HandleGetTrendingShows)
-	router.Get("/search/show", i.HandleSearchShows)
-	router.Get("/search/movie", i.HandleSearchMovies)
-	router.Get("/movie/{id}", i.HandleGetMovieInfo)
-	router.Get("/show/{id}", i.HandleGetShowInfo)
-	router.Get("/genre", i.HandleGetGenre)
-	router.Get("/configuration", i.HandleGetConfiguration)
+	router.Get("/streams", i.SessionHandler(i.HandleGetStream, true))
+	router.Get("/discover/movies", i.SessionHandler(i.HandleDiscoverMovies, true))
+	router.Get("/discover/shows", i.SessionHandler(i.HandleDiscoverShows, true))
+	router.Get("/trending/movies", i.SessionHandler(i.HandleGetTrendingMovies, true))
+	router.Get("/trending/shows", i.SessionHandler(i.HandleGetTrendingShows, true))
+	router.Get("/search/show", i.SessionHandler(i.HandleSearchShows, true))
+	router.Get("/search/movie", i.SessionHandler(i.HandleSearchMovies, true))
+	router.Get("/movie/{id}", i.SessionHandler(i.HandleGetMovieInfo, true))
+	router.Get("/show/{id}", i.SessionHandler(i.HandleGetShowInfo, true))
+	router.Get("/genre", i.SessionHandler(i.HandleGetGenre, true))
+	router.Get("/configuration", i.SessionHandler(i.HandleGetConfiguration, true))
+	router.Get("/continue_watching", i.SessionHandler(i.HandleGetContinueWatching, true))
+	router.Post("/movie/update_progress", i.SessionHandler(i.HandleMovieProgressUpdate, true))
+	router.Post("/show/update_progress", i.SessionHandler(i.HandleShowProgressUpdate, true))
 	return router
 }
 
