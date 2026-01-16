@@ -7,6 +7,8 @@ import (
 	"net/http"
 	apperrors "zxy/app_errors"
 	"zxy/models"
+
+	"github.com/razsteinmetz/go-ptn"
 )
 
 type Usecase struct {
@@ -19,7 +21,7 @@ func New(addonUrl string) *Usecase {
 	}
 }
 
-func (u *Usecase) GetMovieStream(id string) ([]models.AddonStream, error) {
+func (u *Usecase) GetMovieStream(id string) ([]models.StreamResult, error) {
 	fmt.Println("Getting movie streams for id ", id)
 	var res models.AddonStreamResponse
 	addonResponse, err := http.DefaultClient.Get(
@@ -51,14 +53,36 @@ func (u *Usecase) GetMovieStream(id string) ([]models.AddonStream, error) {
 		return nil, apperrors.SomethingWentWrongError{}
 	}
 
-	return res.Streams, nil
+	var finalResult []models.StreamResult
+
+	for _, v := range res.Streams {
+		if len(v.BehaviorHints.Filename) != 0 {
+			info, err := ptn.Parse(v.BehaviorHints.Filename)
+			if err != nil {
+				fmt.Println("Error parsing file name", err)
+			}
+			temp := models.StreamResult{
+				Name:          v.Name,
+				Description:   v.Description,
+				Url:           v.URL,
+				Resolution:    info.Resolution,
+				Container:     info.Container,
+				Language:      info.Language,
+				BehaviorHints: v.BehaviorHints,
+			}
+			finalResult = append(finalResult, temp)
+		}
+
+	}
+
+	return finalResult, nil
 }
 
 func (u *Usecase) GetSeriesStream(
 	id string,
 	season int,
 	episode int,
-) ([]models.AddonStream, error) {
+) ([]models.StreamResult, error) {
 	fmt.Println("Getting streams for series ", id, season, episode)
 	var res models.AddonStreamResponse
 	addonResponse, err := http.DefaultClient.Get(
@@ -90,5 +114,27 @@ func (u *Usecase) GetSeriesStream(
 		return nil, apperrors.SomethingWentWrongError{}
 	}
 
-	return res.Streams, nil
+	var finalResult []models.StreamResult
+
+	for _, v := range res.Streams {
+		if len(v.BehaviorHints.Filename) != 0 {
+			info, err := ptn.Parse(v.BehaviorHints.Filename)
+			if err != nil {
+				fmt.Println("Error parsing file name", err)
+			}
+			temp := models.StreamResult{
+				Name:          v.Name,
+				Description:   v.Description,
+				Url:           v.URL,
+				Resolution:    info.Resolution,
+				Container:     info.Container,
+				Language:      info.Language,
+				BehaviorHints: v.BehaviorHints,
+			}
+			finalResult = append(finalResult, temp)
+		}
+
+	}
+
+	return finalResult, nil
 }

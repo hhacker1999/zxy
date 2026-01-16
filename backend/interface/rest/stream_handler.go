@@ -23,7 +23,7 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 		response.StatusCode = http.StatusBadRequest
 		return
 	}
-	var data []models.AddonStream
+	var data []models.StreamResult
   var err error
 
 	if streamType == "series" {
