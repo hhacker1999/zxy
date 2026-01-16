@@ -1,9 +1,24 @@
 import 'package:flutter/foundation.dart';
 import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/usecase/progress/model.dart';
+import 'package:zxy_app/usecase/progress/usecase.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
+import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/view_item_state.dart';
+
+class ContinueWatchingCardInfo {
+  final WatchProgress progress;
+  final bool isShow;
+  final dynamic media;
+
+  const ContinueWatchingCardInfo({
+    required this.progress,
+    required this.isShow,
+    required this.media,
+  });
+}
 
 class HomeViewListItem {
   final String title;
@@ -19,9 +34,16 @@ class HomeViewListItem {
 
 class HomeViewModel {
   final MediaUsecase _mediaUc;
-  HomeViewModel({required MediaUsecase tmdbUc}) : _mediaUc = tmdbUc;
+  final ProgressUsecase _progressUc;
+  HomeViewModel({required MediaUsecase tmdbUc, required ProgressUsecase pguc})
+    : _mediaUc = tmdbUc,
+      _progressUc = pguc;
 
   final ValueNotifier<List<HomeViewListItem>> homeViewLists = ValueNotifier([]);
+  final ValueNotifier<ViewItemState<List<ContinueWatchingCardInfo>>>
+  continueWatchingState = ValueNotifier(
+    ItemLoading<List<ContinueWatchingCardInfo>>(),
+  );
 
   Future<void> initialise(String token) async {
     if (homeViewLists.value.isNotEmpty) {
@@ -72,7 +94,42 @@ class HomeViewModel {
       initialiseTrendingMovies(trendingMoviesState),
       initialiseTopRatedShows(topShowsState),
       initialiseTopRatedMovies(topMovieState),
+      _initialiseContinueWatching(),
     ]);
+  }
+
+  Future<void> _initialiseContinueWatching() async {
+    try {
+      final res = await _progressUc.getContinueWatching();
+
+      final List<Future> futures = List.empty(growable: true);
+      for (var item in res) {
+        final splitted = item.mediaId.split(":");
+        if (splitted.length > 1) {
+          futures.add(_mediaUc.getSeriesDetails(int.parse(splitted[0])));
+        } else {
+          futures.add(_mediaUc.getMovieDetails(int.parse(splitted[0])));
+        }
+      }
+      final futureRes = await Future.wait(futures);
+      final List<ContinueWatchingCardInfo> infoList = List.empty(
+        growable: true,
+      );
+      for (int i = 0; i < res.length; i++) {
+        var item = res[i];
+        infoList.add(
+          ContinueWatchingCardInfo(
+            progress: item,
+            media: futureRes[i],
+            isShow: futureRes[i] is MovieDetails,
+          ),
+        );
+      }
+      continueWatchingState.value = ItemLoaded(data: infoList);
+    } catch (e) {
+      continueWatchingState.value = ItemError(error: e.toString());
+      rethrow;
+    }
   }
 
   Future<void> initialiseGenre() async {
@@ -195,5 +252,6 @@ class HomeViewModel {
     for (int i = 0; i < homeViewLists.value.length; i++) {
       homeViewLists.value[i].state.dispose();
     }
+    continueWatchingState.dispose();
   }
 }

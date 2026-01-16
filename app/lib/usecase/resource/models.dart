@@ -1,3 +1,4 @@
+import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 
 class ZxyPaginatedResponse<T> {
@@ -108,16 +109,6 @@ class GenreResponse {
       json["show_genre"].map((x) => Genre.fromJson(x)),
     ),
   );
-}
-
-class Genre {
-  final int id;
-  final String name;
-
-  Genre({required this.id, required this.name});
-
-  factory Genre.fromJson(Map<String, dynamic> json) =>
-      Genre(id: json["id"], name: json["name"]);
 }
 
 class ImageConfiguation {

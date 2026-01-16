@@ -47,7 +47,7 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         Provider<HomeViewModel>(
-          create: (_) => HomeViewModel(tmdbUc: deps.mediaUc),
+          create: (_) => HomeViewModel(tmdbUc: deps.mediaUc, pguc: deps.progUc),
           dispose: (_, model) => model.dispose(),
           lazy: true,
         ),

@@ -63,19 +63,6 @@ class SeriesViewModel implements VideoHandler {
       for (var element in progressRes) {
         _progressNotifier.value[element.mediaId] = element;
       }
-      // final List<Future<SeasonDetails>> seasonFutures = List.empty(
-      //   growable: true,
-      // );
-      // for (var element in details.seasons) {
-      //   seasonFutures.add(getSeasonDetails(element));
-      // }
-      // final res = await Future.wait(seasonFutures);
-      // for (var element in res) {
-      //   if (element.seasonNumber == 0 || element.name == "Specials") {
-      //     continue;
-      //   }
-      //   seasons.add(element);
-      // }
       _seriesDetailsState.value = ItemLoaded(data: details);
     } catch (e) {
       if (kDebugMode) {
@@ -89,22 +76,6 @@ class SeriesViewModel implements VideoHandler {
   void onStreamSelect(int index) {
     _selectedStream = index;
   }
-
-  // Future<SeasonDetails> getSeasonDetails(Season season) async {
-  //   try {
-  //     final details = await mediaUc.getSeasonDetails(
-  //       initialSeriesDetails.id,
-  //       season.seasonNumber,
-  //     );
-  //     return details;
-  //   } catch (e) {
-  //     if (kDebugMode) {
-  //       print(e);
-  //     }
-  //     rethrow;
-  //   }
-  // }
-
   void onSeasonSelect(int index) {
     if (activeSeasonEpisode.value.$1 == index) {
       return;

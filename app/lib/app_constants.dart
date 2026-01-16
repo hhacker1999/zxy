@@ -1,4 +1,5 @@
 import 'package:zxy_app/usecase/resource/models.dart';
+import 'package:zxy_app/usecase/resource/tv_details.dart';
 
 enum FilterType { trending, year, featured, topRated, popular }
 
