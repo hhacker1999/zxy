@@ -355,22 +355,26 @@ class SeasonDetails {
     required this.voteAverage,
   });
 
-  factory SeasonDetails.fromJson(Map<String, dynamic> json) => SeasonDetails(
-    id: json["id"].toString(),
-    airDate: json["air_date"] != null ? DateTime.parse(json["air_date"]) : null,
-    episodes: List<Episode>.from(
-      json["episodes"].map((x) => Episode.fromJson(x)),
-    ),
-    name: json["name"],
-    networks: List<Network>.from(
-      json["networks"].map((x) => Network.fromJson(x)),
-    ),
-    overview: json["overview"],
-    seasonDetailsId: json["id"] ?? 0,
-    posterPath: json["poster_path"],
-    seasonNumber: json["season_number"],
-    voteAverage: json["vote_average"]?.toDouble(),
-  );
+  factory SeasonDetails.fromJson(Map<String, dynamic> json) {
+    return SeasonDetails(
+      id: json["id"].toString(),
+      airDate: json["air_date"] != null
+          ? DateTime.tryParse(json["air_date"])
+          : null,
+      episodes: List<Episode>.from(
+        json["episodes"].map((x) => Episode.fromJson(x)),
+      ),
+      name: json["name"],
+      networks: List<Network>.from(
+        json["networks"].map((x) => Network.fromJson(x)),
+      ),
+      overview: json["overview"],
+      seasonDetailsId: json["id"] ?? 0,
+      posterPath: json["poster_path"],
+      seasonNumber: json["season_number"],
+      voteAverage: json["vote_average"]?.toDouble(),
+    );
+  }
 }
 
 class Episode {

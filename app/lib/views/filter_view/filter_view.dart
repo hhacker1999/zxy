@@ -147,6 +147,7 @@ class _FilterViewState extends State<FilterView> {
                         ),
                         itemBuilder: (_, index) {
                           return LibraryCard(
+                            key: ValueKey(index),
                             resource: items[index],
                             onTap: (_) {
                               Navigator.pushNamed(
@@ -154,7 +155,7 @@ class _FilterViewState extends State<FilterView> {
                                 vm.type == ZxyMediaType.shows
                                     ? AppRoutes.showView
                                     : AppRoutes.movieView,
-                                arguments: items[index],
+                                arguments: items[index].id,
                               );
                             },
                             // width: width,

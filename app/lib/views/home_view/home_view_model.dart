@@ -94,11 +94,11 @@ class HomeViewModel {
       initialiseTrendingMovies(trendingMoviesState),
       initialiseTopRatedShows(topShowsState),
       initialiseTopRatedMovies(topMovieState),
-      _initialiseContinueWatching(),
+      initialiseContinueWatching(),
     ]);
   }
 
-  Future<void> _initialiseContinueWatching() async {
+  Future<void> initialiseContinueWatching() async {
     try {
       final res = await _progressUc.getContinueWatching();
 
@@ -121,7 +121,7 @@ class HomeViewModel {
           ContinueWatchingCardInfo(
             progress: item,
             media: futureRes[i],
-            isShow: futureRes[i] is MovieDetails,
+            isShow: futureRes[i] is SeriesDetails,
           ),
         );
       }

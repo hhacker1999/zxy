@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
-import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
@@ -16,7 +15,6 @@ class SeriesViewModel implements VideoHandler {
   final StreamUsecase streamUc;
   final ProgressUsecase progressUc;
 
-  late final ZxyMedia initialSeriesDetails;
   late final List<SeasonDetails> seasons;
   final Map<String, List<StreamItem>> _streams = {};
 
@@ -50,10 +48,9 @@ class SeriesViewModel implements VideoHandler {
   final ValueNotifier<(int, int?)> activeSeasonEpisode =
       ValueNotifier<(int, int?)>((0, null));
 
-  Future<void> initialise(ZxyMedia series) async {
-    initialSeriesDetails = series;
+  Future<void> initialise(int id) async {
     try {
-      final details = await mediaUc.getSeriesDetails(series.id);
+      final details = await mediaUc.getSeriesDetails(id);
       imdbId = details.externalIds.imdbId;
       seasons = details.seasons;
 
@@ -76,6 +73,7 @@ class SeriesViewModel implements VideoHandler {
   void onStreamSelect(int index) {
     _selectedStream = index;
   }
+
   void onSeasonSelect(int index) {
     if (activeSeasonEpisode.value.$1 == index) {
       return;

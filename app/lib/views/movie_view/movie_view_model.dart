@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
-import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
@@ -14,7 +13,6 @@ class MovieViewModel implements VideoHandler {
   final MediaUsecase mediaUc;
   final StreamUsecase streamUc;
   final ProgressUsecase progressUc;
-  late final ZxyMedia initialMovieDetails;
   int? _selectedStream;
   String? imdbId;
 
@@ -41,10 +39,9 @@ class MovieViewModel implements VideoHandler {
   ValueListenable<ViewItemState<List<StreamItem>>> get movieStreamState =>
       _movieStreamsState;
 
-  Future<void> initialise(ZxyMedia movie) async {
-    initialMovieDetails = movie;
+  Future<void> initialise(int id) async {
     try {
-      final details = await mediaUc.getMovieDetails(initialMovieDetails.id);
+      final details = await mediaUc.getMovieDetails(id);
       imdbId = details.externalIds.imdbId;
       _movieDetailsState.value = ItemLoaded(data: details);
       final progress = await progressUc.getMovieProgress(details.id.toString());

@@ -33,6 +33,9 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
+
 class _MyAppState extends State<MyApp> {
   late final Dependencies deps;
 
@@ -69,6 +72,7 @@ class _MyAppState extends State<MyApp> {
       ],
       builder: (context, _) {
         return MaterialApp(
+          navigatorObservers: [routeObserver],
           title: 'Flutter Demo',
           themeMode: ThemeMode.dark,
           theme: AppTheme.purpleTheme,
@@ -81,7 +85,6 @@ class _MyAppState extends State<MyApp> {
                   },
                 );
               case AppRoutes.movieView:
-                final args = settings.arguments as ZxyMedia;
                 return FadePageRoute(
                   builder: (_) {
                     return Provider(
@@ -91,12 +94,13 @@ class _MyAppState extends State<MyApp> {
                         progressUc: deps.progUc,
                       ),
                       dispose: (_, vm) => vm.dispose(),
-                      builder: (_, _) => MovieView(movie: args),
+                      builder: (_, _) =>
+                          MovieView(id: settings.arguments as int),
                     );
                   },
                 );
               case AppRoutes.showView:
-                final args = settings.arguments as ZxyMedia;
+                final args = settings.arguments as int;
                 return FadePageRoute(
                   builder: (_) {
                     return Provider(
@@ -106,7 +110,7 @@ class _MyAppState extends State<MyApp> {
                         progressUc: deps.progUc,
                       ),
                       dispose: (_, vm) => vm.dispose(),
-                      builder: (_, _) => ShowView(show: args),
+                      builder: (_, _) => ShowView(id: args),
                     );
                   },
                 );

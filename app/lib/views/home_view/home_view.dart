@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
+import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
+import 'package:zxy_app/views/continue_watching_card.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/shared/library_card.dart';
 import 'package:zxy_app/views/view_item_state.dart';
@@ -30,50 +32,114 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: ValueListenableBuilder(
-        valueListenable: homeViewModel.homeViewLists,
-        builder: (_, list, _) {
-          return ListView.separated(
-            itemCount: list.length,
-            separatorBuilder: (_, _) {
-              return SizedBox(height: AppTheme.spacingXL);
-            },
-            itemBuilder: (_, index) {
-              return ValueListenableBuilder<ViewItemState>(
-                valueListenable: list[index].state,
-                builder: (_, value, _) {
-                  if (value is ItemLoading) {
-                    return Center(child: CupertinoActivityIndicator());
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AppTheme.spacingXL),
+          child: Column(
+            children: [
+              ValueListenableBuilder<
+                ViewItemState<List<ContinueWatchingCardInfo>>
+              >(
+                valueListenable: homeViewModel.continueWatchingState,
+                builder: (_, state, _) {
+                  if (state is ItemLoaded<List<ContinueWatchingCardInfo>>) {
+                    final data = state.data;
+                    if (data.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Continue Watching",
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        AppTheme.boxHeightM,
+                        SizedBox(
+                          height: 260,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: data.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: AppTheme.spacingM),
+                            itemBuilder: (_, index) {
+                              return ContinueWatchingCard(
+                                info: data[index],
+                                onTap: () {
+                                  if (data[index].isShow) {
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.showView,
+                                      arguments: (data[index].media as SeriesDetails).id,
+                                    );
+                                  } else {
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.movieView,
+                                      arguments: (data[index].media as MovieDetails).id,
+                                    );
+                                  }
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                        AppTheme.boxHeightXL,
+                      ],
+                    );
                   }
-                  if (value is ItemError) {
-                    return Center(child: Text(value.error));
-                  }
-                  final List<ZxyMedia> resourceList =
-                      (value as ItemLoaded<List<ZxyMedia>>).data;
-                  return LibraryList(
-                    resource: resourceList,
-                    title: list[index].title,
-                    onTap: (res) {
-                      if (list[index].type == ZxyMediaType.movie) {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.movieView,
-                          arguments: res,
-                        );
-                      } else {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.showView,
-                          arguments: res,
-                        );
-                      }
-                    },
+                  return const SizedBox.shrink();
+                },
+              ),
+              ValueListenableBuilder(
+                valueListenable: homeViewModel.homeViewLists,
+                builder: (_, list, _) {
+                  return Column(
+                    children: list.map((item) {
+                      return Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: AppTheme.spacingXL,
+                        ),
+                        child: ValueListenableBuilder<ViewItemState>(
+                          valueListenable: item.state,
+                          builder: (_, value, _) {
+                            if (value is ItemLoading) {
+                              return const Center(
+                                child: CupertinoActivityIndicator(),
+                              );
+                            }
+                            if (value is ItemError) {
+                              return Center(child: Text(value.error));
+                            }
+                            final List<ZxyMedia> resourceList =
+                                (value as ItemLoaded<List<ZxyMedia>>).data;
+                            return LibraryList(
+                              resource: resourceList,
+                              title: item.title,
+                              onTap: (res) {
+                                if (item.type == ZxyMediaType.movie) {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.movieView,
+                                    arguments: res.id,
+                                  );
+                                } else {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.showView,
+                                    arguments: res.id,
+                                  );
+                                }
+                              },
+                            );
+                          },
+                        ),
+                      );
+                    }).toList(),
                   );
                 },
-              );
-            },
-          );
-        },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

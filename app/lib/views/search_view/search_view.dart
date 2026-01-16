@@ -111,6 +111,7 @@ class _SearchViewState extends State<SearchView> {
                               ),
                           itemBuilder: (_, index) {
                             return ClipRect(
+                              key: ValueKey(items[index].id),
                               child: Banner(
                                 message: items[index].type == ZxyMediaType.movie
                                     ? "Movie"
@@ -127,7 +128,7 @@ class _SearchViewState extends State<SearchView> {
                                       items[index].type == ZxyMediaType.movie
                                           ? AppRoutes.movieView
                                           : AppRoutes.showView,
-                                      arguments: items[index],
+                                      arguments: items[index].id,
                                     );
                                   },
                                   // width: width,

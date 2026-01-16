@@ -17,8 +17,8 @@ import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
 class ShowView extends StatefulWidget {
-  final ZxyMedia show;
-  const ShowView({super.key, required this.show});
+  final int id;
+  const ShowView({super.key, required this.id});
 
   @override
   State<ShowView> createState() => _ShowViewState();
@@ -34,7 +34,7 @@ class _ShowViewState extends State<ShowView> {
     super.initState();
     vm = context.read<SeriesViewModel>();
     searchController = TextEditingController();
-    vm.initialise(widget.show);
+    vm.initialise(widget.id);
   }
 
   @override

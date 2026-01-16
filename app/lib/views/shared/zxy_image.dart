@@ -49,7 +49,6 @@ class _ZxyImageState extends State<ZxyImage> {
           }
         }
         return Container(
-          key: ValueKey("image"),
           decoration: BoxDecoration(
             boxShadow: widget.enableShadow
                 ? [

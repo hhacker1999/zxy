@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
-import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
@@ -16,8 +15,8 @@ import 'package:zxy_app/views/shared/zxy_image.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class MovieView extends StatefulWidget {
-  final ZxyMedia movie;
-  const MovieView({super.key, required this.movie});
+  final int id;
+  const MovieView({super.key, required this.id});
 
   @override
   State<MovieView> createState() => _MovieViewState();
@@ -32,7 +31,7 @@ class _MovieViewState extends State<MovieView> {
     super.initState();
     vm = context.read<MovieViewModel>();
     searchController = TextEditingController();
-    vm.initialise(widget.movie);
+    vm.initialise(widget.id);
   }
 
   @override

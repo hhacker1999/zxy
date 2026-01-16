@@ -51,6 +51,7 @@ class ImageBloc {
 
   ValueListenable<MemoryImage?> getImage(String size, String path) {
     late final ValueNotifier<MemoryImage?> notifier;
+    bool createdNew = false;
     // bool containsColor = false;
     if (_images.containsKey(path)) {
       final info = _images[path]!;
@@ -58,16 +59,17 @@ class ImageBloc {
       if (info.images.containsKey(size)) {
         notifier = info.images[size]!;
       } else {
+        createdNew = true;
         notifier = ValueNotifier(null);
         _images[path]!.images[size] = notifier;
       }
     } else {
+      createdNew = true;
       notifier = ValueNotifier(null);
       _images[path] = ImageData(images: {size: notifier});
     }
-    if (notifier.value == null) {
+    if (createdNew) {
       _getImage(size, path, notifier, dontGetColor: true);
-      // print("Image not found in cache $path");
     }
 
     return notifier;

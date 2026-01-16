@@ -14,7 +14,7 @@ class ProgressUsecase {
       Uri.parse("${AppConstants.baseUrl}/continue_watching"),
       auth: RequestAuth.profile,
     );
-    if (res.body.isEmpty) {
+    if (res.body.isEmpty || res.body == "null") {
       return List<WatchProgress>.empty();
     }
     final List<Map<String, dynamic>> parsed = List.from(jsonDecode(res.body));
