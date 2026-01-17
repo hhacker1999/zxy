@@ -6,9 +6,11 @@ import 'package:zxy_app/bloc/image_bloc.dart';
 class BaseScaffold extends StatelessWidget {
   final Widget? bottomNavigationBar;
   final Widget Function(BuildContext, Color?) builder;
+  final EdgeInsets? padding;
   const BaseScaffold({
     super.key,
     required this.builder,
+    this.padding,
     this.bottomNavigationBar,
   });
 
@@ -21,7 +23,7 @@ class BaseScaffold extends StatelessWidget {
         valueListenable: context.read<ImageBloc>().bgGradColor,
         builder: (_, color, _) {
           return AnimatedContainer(
-            padding: const EdgeInsets.all(AppTheme.spacingM),
+            padding: padding ?? const EdgeInsets.all(AppTheme.spacingM),
             duration: const Duration(milliseconds: 500),
             height: double.maxFinite,
             width: double.maxFinite,

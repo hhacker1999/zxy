@@ -10,8 +10,7 @@ import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/continue_watching_card.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
-import 'package:zxy_app/views/shared/library_card.dart';
-import 'package:zxy_app/views/shared/zxy_image.dart';
+import 'package:zxy_app/views/shared/library_list.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class HomeView extends StatefulWidget {
@@ -138,67 +137,27 @@ class _TopBannerState extends State<TopBanner> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (_, constr) {
-        final width = constr.maxWidth;
-        final height = (width * 9) / 16;
-        return Column(
-          children: [
-            Container(
-              clipBehavior: Clip.hardEdge,
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          spacing: AppTheme.spacingXS,
+          children: List.generate(widget.media.length, (index) {
+            return Container(
+              height: 10,
+              width: 10,
               decoration: BoxDecoration(
-                borderRadius: AppTheme.roundedLarge,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.4),
-                    blurRadius: 6,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(5),
+                color: page == index
+                    ? AppTheme.textPrimary
+                    : AppTheme.textSecondary,
               ),
-              height: height,
-              width: width,
-              child: PageView.builder(
-                scrollDirection: Axis.horizontal,
-                controller: _controller,
-                itemBuilder: (_, index) {
-                  return InkWell(
-                    onTap: () {},
-                    child: HomeViewBannerItem(
-                      media: widget.media[index],
-                      height: height,
-                      width: width,
-                      size: Screen.of(context).shouldRenderMobile
-                          ? "w780"
-                          : "w1280",
-                    ),
-                  );
-                },
-              ),
-            ),
-            AppTheme.boxHeightM,
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: AppTheme.spacingXS,
-              children: List.generate(widget.media.length, (index) {
-                return Container(
-                  height: 10,
-                  width: 10,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                    color: page == index
-                        ? AppTheme.textPrimary
-                        : AppTheme.textSecondary,
-                  ),
-                );
-              }),
-            ),
-            AppTheme.boxHeightL,
-          ],
-        );
-      },
+            );
+          }),
+        ),
+        AppTheme.boxHeightL,
+      ],
     );
   }
 }
@@ -268,71 +227,6 @@ class ContinueWatchingHeader extends StatelessWidget {
         }
         return const SizedBox.shrink();
       },
-    );
-  }
-}
-
-class LibraryList extends StatelessWidget {
-  final String title;
-  final void Function(ZxyMedia) onTap;
-  const LibraryList({
-    super.key,
-    required this.resource,
-    required this.title,
-    required this.onTap,
-  });
-
-  final List<ZxyMedia> resource;
-
-  @override
-  Widget build(BuildContext context) {
-    final screenData = Screen.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: screenData.shouldRenderMobile
-              ? Theme.of(context).textTheme.titleMedium
-              : Theme.of(context).textTheme.titleLarge,
-        ),
-        SizedBox(
-          height: screenData.shouldRenderMobile
-              ? AppTheme.spacingM
-              : AppTheme.spacingL,
-        ),
-        LibraryListItem(resource: resource, onTap: onTap),
-      ],
-    );
-  }
-}
-
-class HomeViewBannerItem extends StatelessWidget {
-  final ZxyMedia media;
-  final double height;
-  final double width;
-  final String size;
-  const HomeViewBannerItem({
-    super.key,
-    required this.media,
-    required this.height,
-    required this.width,
-    required this.size,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ZxyImage(
-          height: height,
-          width: width,
-          path: media.backdropPath!,
-          isPoster: false,
-          size: size,
-        ),
-      ],
     );
   }
 }

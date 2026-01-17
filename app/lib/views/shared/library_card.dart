@@ -11,8 +11,10 @@ class LibraryListItem extends StatelessWidget {
     super.key,
     required this.resource,
     required this.onTap,
+    required this.updateColorOnHover,
   });
 
+  final bool updateColorOnHover;
   final List<ZxyMedia> resource;
   final void Function(ZxyMedia) onTap;
   static const _posterAspectRatio = (2 / 3);
@@ -35,6 +37,7 @@ class LibraryListItem extends StatelessWidget {
           return Align(
             alignment: Alignment.topCenter,
             child: LibraryCard(
+              updateColorOnHover: updateColorOnHover,
               resource: resource[index],
               onTap: onTap,
               height: itemHeight,
@@ -53,6 +56,7 @@ class LibraryCard extends StatelessWidget {
   final double height;
   final double imageHeight;
   final double width;
+  final bool updateColorOnHover;
   const LibraryCard({
     super.key,
     required this.resource,
@@ -60,6 +64,7 @@ class LibraryCard extends StatelessWidget {
     this.height = 290,
     this.imageHeight = 240,
     this.width = 160,
+    required this.updateColorOnHover,
   });
 
   final ZxyMedia resource;
@@ -70,7 +75,7 @@ class LibraryCard extends StatelessWidget {
     return InkWell(
       hoverColor: Colors.transparent,
       onHover: (entered) {
-        if (entered) {
+        if (entered && updateColorOnHover) {
           context.read<ImageBloc>().setGradColorFromImage(resource.posterPath);
         }
       },

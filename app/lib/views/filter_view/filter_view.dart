@@ -164,6 +164,7 @@ class _FilterViewState extends State<FilterView> {
                         itemBuilder: (_, index) {
                           return Center(
                             child: LibraryCard(
+                              updateColorOnHover: true,
                               key: ValueKey(index),
                               resource: items[index],
                               onTap: (_) {

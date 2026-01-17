@@ -125,6 +125,7 @@ class _SearchViewState extends State<SearchView> {
                                     : Colors.blue,
                                 location: BannerLocation.topEnd,
                                 child: LibraryCard(
+                                  updateColorOnHover: true,
                                   resource: items[index],
                                   onTap: (_) {
                                     Navigator.pushNamed(

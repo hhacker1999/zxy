@@ -194,24 +194,24 @@ class BelongsToCollection {
 }
 
 class Collection {
-  final int? id;
-  final String? name;
+  final int id;
+  final String name;
   final String? originalLanguage;
   final String? originalName;
   final String? overview;
-  final String? posterPath;
+  final String posterPath;
   final String? backdropPath;
-  final List<Part>? parts;
+  final List<Part> parts;
 
   Collection({
-    this.id,
-    this.name,
+    required this.id,
+    required this.name,
     this.originalLanguage,
     this.originalName,
     this.overview,
-    this.posterPath,
+    required this.posterPath,
     this.backdropPath,
-    this.parts,
+    required this.parts,
   });
 
   factory Collection.fromJson(Map<String, dynamic> json) => Collection(
@@ -244,11 +244,11 @@ class Collection {
 class Part {
   final bool? adult;
   final String? backdropPath;
-  final int? id;
+  final int id;
   final String? name;
   final String? originalName;
   final String? overview;
-  final String? posterPath;
+  final String posterPath;
   final String? mediaType;
   final String? originalLanguage;
   final List<int>? genreIds;
@@ -263,11 +263,11 @@ class Part {
   Part({
     this.adult,
     this.backdropPath,
-    this.id,
+    required this.id,
     this.name,
     this.originalName,
     this.overview,
-    this.posterPath,
+    required this.posterPath,
     this.mediaType,
     this.originalLanguage,
     this.genreIds,
@@ -294,9 +294,7 @@ class Part {
         ? []
         : List<int>.from(json["genre_ids"]!.map((x) => x)),
     popularity: json["popularity"]?.toDouble(),
-    releaseDate: json["release_date"] == null
-        ? null
-        : DateTime.parse(json["release_date"]),
+    releaseDate: DateTime.tryParse(json["release_date"]),
     video: json["video"],
     voteAverage: json["vote_average"]?.toDouble(),
     voteCount: json["vote_count"],
@@ -330,11 +328,16 @@ class Part {
 
 class SimilarMovies {
   final int? page;
-  final List<Part>? results;
+  final List<Part> results;
   final int? totalPages;
   final int? totalResults;
 
-  SimilarMovies({this.page, this.results, this.totalPages, this.totalResults});
+  SimilarMovies({
+    this.page,
+    required this.results,
+    this.totalPages,
+    this.totalResults,
+  });
 
   factory SimilarMovies.fromJson(Map<String, dynamic> json) => SimilarMovies(
     page: json["page"],
