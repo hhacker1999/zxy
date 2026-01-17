@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
-import 'package:zxy_app/views/base_home_view/base_home_view.dart';
 import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/shared/drop_down.dart';
@@ -57,15 +56,16 @@ class _ShowViewState extends State<ShowView> {
                   return Center(child: CupertinoActivityIndicator());
                 }
                 final details = (state as ItemLoaded<SeriesDetails>).data;
-                final nonEmptyCast =
-                    details.credits?.cast
-                        .where(
-                          (member) =>
-                              member.profilePath != null &&
-                              member.profilePath!.isNotEmpty,
-                        )
-                        .toList() ??
-                    [];
+                List<Cast> nonEmptyCast = List.empty();
+                if (details.credits != null && details.credits!.cast != null) {
+                  nonEmptyCast = details.credits!.cast!
+                      .where(
+                        (member) =>
+                            member.profilePath != null &&
+                            member.profilePath!.isNotEmpty,
+                      )
+                      .toList();
+                }
                 return Column(
                   children: [
                     TopHeader(
@@ -103,7 +103,7 @@ class _ShowViewState extends State<ShowView> {
                                           child: ZxyImage(
                                             enableShadow: true,
                                             radius: AppTheme.roundedSmall,
-                                            path: details.posterPath,
+                                            path: details.posterPath ?? "",
                                             isPoster: true,
                                             size: "w342",
                                           ),
@@ -150,7 +150,7 @@ class _ShowViewState extends State<ShowView> {
                                                           AppTheme.spacingM,
                                                       children: [
                                                         Text(
-                                                          "${details.firstAirDate.year}",
+                                                          "${details.firstAirDate?.year ?? 'NA'}",
                                                           style: Theme.of(context)
                                                               .textTheme
                                                               .labelLarge!

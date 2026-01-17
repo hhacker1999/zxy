@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
+import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
@@ -66,7 +67,7 @@ class ContinueWatchingCard extends StatelessWidget {
                     width: width,
                     height: imageHeight,
                     enableShadow: true,
-                    path: backdropPath,
+                    path: backdropPath ?? "",
                     size: screenData.shouldRenderMobile ? "w300" : "w780",
                     isPoster: false,
                     fit: BoxFit.cover,
@@ -100,7 +101,7 @@ class ContinueWatchingCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    title,
+                    title ?? "",
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: screenData.shouldRenderMobile

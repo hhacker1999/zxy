@@ -171,9 +171,10 @@ func (u *Usecase) GetShowsLibrary(params map[string]string, at string) ([]byte, 
 
 	return body, nil
 }
-func (u *Usecase) GetMovieDetails(id string, at string) ([]byte, error) {
+func (u *Usecase) GetMovieDetails(id string, at string) (models.TMDBMovie, error) {
+	var response models.TMDBMovie
 	url := fmt.Sprintf(
-		"%s/movie/%s?append_to_response=credits,images,external_ids",
+		"%s/movie/%s?append_to_response=credits,images,external_ids,similar,belongs_to_collection",
 		u.tmdbApiBaseUrl, id,
 	)
 
@@ -188,28 +189,77 @@ func (u *Usecase) GetMovieDetails(id string, at string) ([]byte, error) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("Error sending get movie request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return response, apperrors.SomethingWentWrongError{}
 	}
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Println("Invalid status code from get movie request to TMDB", res.StatusCode)
-		return nil, apperrors.SomethingWentWrongError{}
+		return response, apperrors.SomethingWentWrongError{}
 	}
 
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("Error reading response of get movie request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return response, apperrors.SomethingWentWrongError{}
 	}
 
-	return body, nil
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		fmt.Println("Error unmarshalling get movie response", err)
+		return response, apperrors.SomethingWentWrongError{}
+	}
+
+	if response.BelongsToCollection.ID != 0 {
+
+		url = fmt.Sprintf(
+			"%s/collection/%d",
+			u.tmdbApiBaseUrl,
+			response.BelongsToCollection.ID,
+		)
+
+		req, _ = http.NewRequest("GET", url, nil)
+
+		req.Header.Add("accept", "application/json")
+		req.Header.Add(
+			"Authorization",
+			fmt.Sprintf("Bearer %s", at),
+		)
+
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			fmt.Println("Error sending get collection request to TMDB", err)
+			return response, apperrors.SomethingWentWrongError{}
+		}
+
+		if res.StatusCode != http.StatusOK {
+			fmt.Println("Invalid status code from get collection request to TMDB", res.StatusCode)
+			return response, apperrors.SomethingWentWrongError{}
+		}
+
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println("Error reading response of get collection request to TMDB", err)
+			return response, apperrors.SomethingWentWrongError{}
+		}
+
+		var collection models.Collection
+		err = json.Unmarshal(body, &collection)
+		if err != nil {
+			fmt.Println("Error unmarshalling get collection response", err)
+			return response, apperrors.SomethingWentWrongError{}
+		}
+		response.Collection = collection
+	}
+
+	return response, nil
 }
 
 func (u *Usecase) GetShowDetails(id string, at string) (models.TMDBShow, error) {
 	var details models.TMDBShow
 	url := fmt.Sprintf(
-		"%s/tv/%s?append_to_response=credits,external_ids",
+		"%s/tv/%s?append_to_response=credits,external_ids,images,similar",
 		u.tmdbApiBaseUrl, id,
 	)
 

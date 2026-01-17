@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
+import 'package:zxy_app/usecase/resource/models.dart';
+import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
@@ -54,13 +56,17 @@ class _MovieViewState extends State<MovieView> {
                   return Center(child: CupertinoActivityIndicator());
                 }
                 final details = (state as ItemLoaded<MovieDetails>).data;
-                final nonEmptyCast = details.credits.cast
-                    .where(
-                      (member) =>
-                          member.profilePath != null &&
-                          member.profilePath!.isNotEmpty,
-                    )
-                    .toList();
+
+                List<Cast> nonEmptyCast = List.empty();
+                if (details.credits != null && details.credits!.cast != null) {
+                  nonEmptyCast = details.credits!.cast!
+                      .where(
+                        (member) =>
+                            member.profilePath != null &&
+                            member.profilePath!.isNotEmpty,
+                      )
+                      .toList();
+                }
                 return SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,9 +144,9 @@ class _MovieViewState extends State<MovieView> {
                                 Row(
                                   spacing: AppTheme.spacingS,
                                   children: List.generate(
-                                    details.genres.length,
+                                    details.genres?.length ?? 0,
                                     (index) {
-                                      var genre = details.genres[index];
+                                      var genre = details.genres![index];
                                       return Text(
                                         genre.name,
                                         style: Theme.of(context)

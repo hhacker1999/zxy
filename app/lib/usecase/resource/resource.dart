@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/service/http_service.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
+import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 
@@ -103,16 +104,16 @@ class MediaUsecase {
     return SeriesDetails.fromJson(jsonDecode(resBody));
   }
 
-  Future<SeasonDetails> getSeasonDetails(int id, int seasonNo) async {
+  Future<Season> getSeasonDetails(int id, int seasonNo) async {
     final res = await _httpService.get(
       Uri.parse("$_baseUrl/show/$id:$seasonNo?append_to_response=credits"),
       auth: RequestAuth.profile,
     );
     final resBody = res.body;
-    return SeasonDetails.fromJson(jsonDecode(resBody));
+    return Season.fromJson(jsonDecode(resBody));
   }
 
-  Future<EpisodeDetails> getEpisodeDetails(
+  Future<Episode> getEpisodeDetails(
     int id,
     int seasonNo,
     int episodeNumber,
@@ -124,7 +125,7 @@ class MediaUsecase {
       auth: RequestAuth.profile,
     );
     final resBody = res.body;
-    return EpisodeDetails.fromJson(jsonDecode(resBody));
+    return Episode.fromJson(jsonDecode(resBody));
   }
 
   Future<ZxyPaginatedResponse<ZxyMedia>> getTrendingMovies({

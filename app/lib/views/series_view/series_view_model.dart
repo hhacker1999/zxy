@@ -15,7 +15,7 @@ class SeriesViewModel implements VideoHandler {
   final StreamUsecase streamUc;
   final ProgressUsecase progressUc;
 
-  late final List<SeasonDetails> seasons;
+  late final List<Season> seasons;
   final Map<String, List<StreamItem>> _streams = {};
 
   int? _selectedStream = 0;
@@ -82,7 +82,7 @@ class SeriesViewModel implements VideoHandler {
     _selectedStream = null;
   }
 
-  (SeasonDetails, Episode) _getCurrentSeasonEpisode() {
+  (Season, Episode) _getCurrentSeasonEpisode() {
     return (
       seasons[activeSeasonEpisode.value.$1],
       seasons[activeSeasonEpisode.value.$1].episodes[activeSeasonEpisode
