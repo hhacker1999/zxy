@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
+import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
 class LibraryListItem extends StatelessWidget {
@@ -14,11 +15,17 @@ class LibraryListItem extends StatelessWidget {
 
   final List<ZxyMedia> resource;
   final void Function(ZxyMedia) onTap;
+  static const _posterAspectRatio = (2 / 3);
 
   @override
   Widget build(BuildContext context) {
+    final ScreenData screenData = Screen.of(context);
+    final double width = screenData.shouldRenderMobile ? 120 : 160;
+    final double imageHeight = width / _posterAspectRatio;
+    final double itemHeight =
+        imageHeight + (screenData.shouldRenderMobile ? 42 : 50);
     return SizedBox(
-      height: 280,
+      height: itemHeight,
       child: ListView.separated(
         separatorBuilder: (_, _) {
           return SizedBox(width: AppTheme.spacingXL);
@@ -30,7 +37,9 @@ class LibraryListItem extends StatelessWidget {
             child: LibraryCard(
               resource: resource[index],
               onTap: onTap,
-              height: 240,
+              height: itemHeight,
+              imageHeight: imageHeight,
+              width: width,
             ),
           );
         },
@@ -42,12 +51,14 @@ class LibraryListItem extends StatelessWidget {
 
 class LibraryCard extends StatelessWidget {
   final double height;
+  final double imageHeight;
   final double width;
   const LibraryCard({
     super.key,
     required this.resource,
     required this.onTap,
-    this.height = 240,
+    this.height = 290,
+    this.imageHeight = 240,
     this.width = 160,
   });
 
@@ -66,14 +77,40 @@ class LibraryCard extends StatelessWidget {
       onTap: () {
         onTap(resource);
       },
-      child: ZxyImage(
-        enableShadow: true,
-        height: height,
+      child: SizedBox(
         width: width,
-        isPoster: true,
-        path: resource.posterPath,
-        radius: AppTheme.roundedMedium,
-        size: "w185",
+        height: height,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ZxyImage(
+              enableShadow: true,
+              height: imageHeight,
+              width: width,
+              isPoster: true,
+              path: resource.posterPath,
+              radius: AppTheme.roundedMedium,
+              size: "w185",
+            ),
+            Screen.of(context).shouldRenderMobile
+                ? AppTheme.boxHeightS
+                : AppTheme.boxHeightM,
+            Text(
+              resource.name ?? resource.title ?? "",
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: Screen.of(context).shouldRenderMobile
+                  ? Theme.of(context).textTheme.labelSmall!.copyWith(
+                      color: AppTheme.textSecondary,
+                    )
+                  : Theme.of(context).textTheme.labelMedium!.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -12,6 +12,7 @@ import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/shared/duration_extension.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
+import 'package:zxy_app/views/top_header.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class MovieView extends StatefulWidget {

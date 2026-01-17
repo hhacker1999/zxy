@@ -43,10 +43,14 @@ class AppTheme {
   static const double radiusSmall = 6.0; // Slightly softer than Plex
   static const double radiusMedium = 12.0;
   static const double radiusLarge = 16.0;
+  static const double radiusXLarge = 24.0;
+  static const double radiusXXLarge = 32.0;
 
   static BorderRadius get roundedSmall => BorderRadius.circular(radiusSmall);
   static BorderRadius get roundedMedium => BorderRadius.circular(radiusMedium);
   static BorderRadius get roundedLarge => BorderRadius.circular(radiusLarge);
+  static BorderRadius get roundedXLarge => BorderRadius.circular(radiusXLarge);
+  static BorderRadius get roundedXXLarge => BorderRadius.circular(radiusXXLarge);
 
   // Spacing
   static const double spacingXS = 4.0;

@@ -4,6 +4,7 @@ import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
+import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
 class ContinueWatchingCard extends StatelessWidget {
@@ -35,6 +36,13 @@ class ContinueWatchingCard extends StatelessWidget {
       backdropPath = movie.backdropPath;
       title = movie.title;
     }
+    final screenData = Screen.of(context);
+    final double width = screenData.shouldRenderMobile ? 280 : 380;
+    final double imageHeight = (width * 9) / 16;
+    final double height = (width * 9) / 16;
+    final double spacing = screenData.shouldRenderMobile
+        ? AppTheme.spacingM
+        : AppTheme.spacingL;
     return InkWell(
       onHover: (_) {
         context.read<ImageBloc>().setGradColorFromImage(backdropPath!);
@@ -44,7 +52,8 @@ class ContinueWatchingCard extends StatelessWidget {
       hoverColor: Colors.transparent,
       onTap: onTap,
       child: SizedBox(
-        width: 420, // Adjust width as needed for horizontal list
+        width: width,
+        height: height,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -54,17 +63,19 @@ class ContinueWatchingCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   ZxyImage(
+                    width: width,
+                    height: imageHeight,
                     enableShadow: true,
                     path: backdropPath,
-                    size: "w780", // Using a decent size for backdrop
+                    size: screenData.shouldRenderMobile ? "w300" : "w780",
                     isPoster: false,
                     fit: BoxFit.cover,
                     radius: BorderRadius.circular(AppTheme.radiusMedium),
                   ),
                   Positioned(
-                    bottom: AppTheme.spacingL,
-                    left: AppTheme.spacingL,
-                    right: AppTheme.spacingL,
+                    bottom: spacing,
+                    left: spacing,
+                    right: spacing,
                     child: LinearProgressIndicator(
                       borderRadius: BorderRadius.circular(
                         AppTheme.radiusMedium,
@@ -72,40 +83,50 @@ class ContinueWatchingCard extends StatelessWidget {
                       value: info.progress.progress / 100,
                       backgroundColor: AppTheme.surfaceLight,
                       color: AppTheme.textPrimary,
-                      minHeight: 6,
+                      minHeight: screenData.shouldRenderMobile ? 4 : 6,
                     ),
                   ),
                 ],
               ),
             ),
-            AppTheme.boxHeightS,
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(),
-                ),
-                if (isShow)
-                  Builder(
-                    builder: (context) {
-                      final splitted = info.progress.mediaId.split(":");
-                      return Text(
-                        " S${splitted[1].padLeft(2, '0')}:E${splitted[2].padLeft(2, '0')}",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.labelMedium?.copyWith(),
-                      );
-                    },
+            screenData.shouldRenderMobile
+                ? AppTheme.boxHeightXS
+                : AppTheme.boxHeightS,
+            SizedBox(
+              height: screenData.shouldRenderMobile ? 42 : 50,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: screenData.shouldRenderMobile
+                        ? Theme.of(context).textTheme.titleSmall?.copyWith()
+                        : Theme.of(context).textTheme.titleMedium?.copyWith(),
                   ),
-                if (!isShow) const SizedBox(height: 14),
-              ],
+                  if (isShow)
+                    Builder(
+                      builder: (context) {
+                        final splitted = info.progress.mediaId.split(":");
+                        return Text(
+                          " S${splitted[1].padLeft(2, '0')}:E${splitted[2].padLeft(2, '0')}",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: screenData.shouldRenderMobile
+                              ? Theme.of(
+                                  context,
+                                ).textTheme.labelSmall?.copyWith()
+                              : Theme.of(
+                                  context,
+                                ).textTheme.labelMedium?.copyWith(),
+                        );
+                      },
+                    ),
+                ],
+              ),
             ),
           ],
         ),

@@ -6,6 +6,7 @@ import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
+import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/drop_down.dart';
 import 'package:zxy_app/views/shared/library_card.dart';
 
@@ -35,6 +36,7 @@ class _FilterViewState extends State<FilterView> {
 
   @override
   Widget build(BuildContext context) {
+    final screenData = Screen.of(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Column(
@@ -105,7 +107,9 @@ class _FilterViewState extends State<FilterView> {
               );
             },
           ),
-          AppTheme.boxHeightM,
+          screenData.shouldRenderMobile
+              ? AppTheme.boxHeightS
+              : AppTheme.boxHeightM,
           Expanded(
             child: NotificationListener<ScrollMetricsNotification>(
               onNotification: (noti) {
@@ -122,7 +126,9 @@ class _FilterViewState extends State<FilterView> {
               },
               child: LayoutBuilder(
                 builder: (_, constr) {
-                  double width = 160;
+                  double width = screenData.shouldRenderMobile
+                      ? 120 + AppTheme.spacingS
+                      : 160 + AppTheme.spacingL;
                   double ct = constr.maxWidth / width;
                   ct = ct.floorToDouble();
                   final widthUtilised = ct * width;
@@ -130,6 +136,11 @@ class _FilterViewState extends State<FilterView> {
                     width = constr.maxWidth / (ct + 1);
                     ct += 1;
                   }
+                  final itemAspectRatio =
+                      2 / (screenData.shouldRenderMobile ? 4.0 : 4.0);
+                  final imageHeight =
+                      width / ((screenData.shouldRenderMobile ? 2 : 2) / 3);
+                  final height = width / itemAspectRatio;
                   return ValueListenableBuilder(
                     valueListenable: vm.mediaItems,
                     builder: (_, items, _) {
@@ -137,29 +148,37 @@ class _FilterViewState extends State<FilterView> {
                         return Center(child: CupertinoActivityIndicator());
                       }
                       return GridView.builder(
+                        padding: EdgeInsets.zero,
                         controller: _controller,
                         itemCount: items.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisSpacing: AppTheme.spacingL,
-                          mainAxisSpacing: AppTheme.spacingL,
-                          childAspectRatio: 2 / 3,
+                          crossAxisSpacing: screenData.shouldRenderMobile
+                              ? AppTheme.spacingS
+                              : AppTheme.spacingL,
+                          mainAxisSpacing: screenData.shouldRenderMobile
+                              ? AppTheme.spacingXS
+                              : AppTheme.spacingM,
+                          childAspectRatio: itemAspectRatio,
                           crossAxisCount: ct.toInt(),
                         ),
                         itemBuilder: (_, index) {
-                          return LibraryCard(
-                            key: ValueKey(index),
-                            resource: items[index],
-                            onTap: (_) {
-                              Navigator.pushNamed(
-                                context,
-                                vm.type == ZxyMediaType.shows
-                                    ? AppRoutes.showView
-                                    : AppRoutes.movieView,
-                                arguments: items[index].id,
-                              );
-                            },
-                            // width: width,
-                            // height: width / (2 / 3),
+                          return Center(
+                            child: LibraryCard(
+                              key: ValueKey(index),
+                              resource: items[index],
+                              onTap: (_) {
+                                Navigator.pushNamed(
+                                  context,
+                                  vm.type == ZxyMediaType.shows
+                                      ? AppRoutes.showView
+                                      : AppRoutes.movieView,
+                                  arguments: items[index].id,
+                                );
+                              },
+                              width: width,
+                              imageHeight: imageHeight,
+                              height: height,
+                            ),
                           );
                         },
                       );

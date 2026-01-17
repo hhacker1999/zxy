@@ -4,12 +4,19 @@ import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 
 class BaseScaffold extends StatelessWidget {
+  final Widget? bottomNavigationBar;
   final Widget Function(BuildContext, Color?) builder;
-  const BaseScaffold({super.key, required this.builder});
+  const BaseScaffold({
+    super.key,
+    required this.builder,
+    this.bottomNavigationBar,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
+      bottomNavigationBar: bottomNavigationBar,
       body: ValueListenableBuilder(
         valueListenable: context.read<ImageBloc>().bgGradColor,
         builder: (_, color, _) {

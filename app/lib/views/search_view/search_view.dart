@@ -9,6 +9,7 @@ import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/search_view/search_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/shared/library_card.dart';
+import 'package:zxy_app/views/top_header.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class SearchView extends StatefulWidget {
@@ -71,7 +72,7 @@ class _SearchViewState extends State<SearchView> {
                 },
                 child: LayoutBuilder(
                   builder: (_, constr) {
-                    double width = 160;
+                    double width = 160 + AppTheme.spacingL;
                     double ct = constr.maxWidth / width;
                     ct = ct.floorToDouble();
                     final widthUtilised = ct * width;
@@ -79,6 +80,9 @@ class _SearchViewState extends State<SearchView> {
                       width = constr.maxWidth / (ct + 1);
                       ct += 1;
                     }
+                    final itemAspectRatio = 2 / 3.8;
+                    final imageHeight = width / (2.2 / 3);
+                    final height = width / itemAspectRatio;
                     return ValueListenableBuilder(
                       valueListenable: vm.itemsState,
                       builder: (_, itemState, _) {
@@ -105,8 +109,8 @@ class _SearchViewState extends State<SearchView> {
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisSpacing: AppTheme.spacingL,
-                                mainAxisSpacing: AppTheme.spacingL,
-                                childAspectRatio: 2 / 3,
+                                mainAxisSpacing: AppTheme.spacingM,
+                                childAspectRatio: itemAspectRatio,
                                 crossAxisCount: ct.toInt(),
                               ),
                           itemBuilder: (_, index) {
@@ -131,8 +135,9 @@ class _SearchViewState extends State<SearchView> {
                                       arguments: items[index].id,
                                     );
                                   },
-                                  // width: width,
-                                  // height: width / (2 / 3),
+                                  width: width,
+                                  height: height,
+                                  imageHeight: imageHeight,
                                 ),
                               ),
                             );

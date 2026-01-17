@@ -8,6 +8,7 @@ import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/continue_watching_card.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
+import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/library_card.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
@@ -33,62 +34,12 @@ class _HomeViewState extends State<HomeView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
+        
         child: Padding(
           padding: const EdgeInsets.only(bottom: AppTheme.spacingXL),
           child: Column(
             children: [
-              ValueListenableBuilder<
-                ViewItemState<List<ContinueWatchingCardInfo>>
-              >(
-                valueListenable: homeViewModel.continueWatchingState,
-                builder: (_, state, _) {
-                  if (state is ItemLoaded<List<ContinueWatchingCardInfo>>) {
-                    final data = state.data;
-                    if (data.isEmpty) return const SizedBox.shrink();
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Continue Watching",
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        AppTheme.boxHeightM,
-                        SizedBox(
-                          height: 260,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: data.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(width: AppTheme.spacingM),
-                            itemBuilder: (_, index) {
-                              return ContinueWatchingCard(
-                                info: data[index],
-                                onTap: () {
-                                  if (data[index].isShow) {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.showView,
-                                      arguments: (data[index].media as SeriesDetails).id,
-                                    );
-                                  } else {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.movieView,
-                                      arguments: (data[index].media as MovieDetails).id,
-                                    );
-                                  }
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                        AppTheme.boxHeightXL,
-                      ],
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
+              ContinueWatchingHeader(homeViewModel: homeViewModel),
               ValueListenableBuilder(
                 valueListenable: homeViewModel.homeViewLists,
                 builder: (_, list, _) {
@@ -145,6 +96,75 @@ class _HomeViewState extends State<HomeView> {
   }
 }
 
+class ContinueWatchingHeader extends StatelessWidget {
+  const ContinueWatchingHeader({super.key, required this.homeViewModel});
+
+  final HomeViewModel homeViewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenData = Screen.of(context);
+    final double itemHeight = screenData.shouldRenderMobile ? 180 : 260;
+    return ValueListenableBuilder<
+      ViewItemState<List<ContinueWatchingCardInfo>>
+    >(
+      valueListenable: homeViewModel.continueWatchingState,
+      builder: (_, state, _) {
+        if (state is ItemLoading) {
+          return SizedBox(height: itemHeight);
+        }
+        if (state is ItemLoaded<List<ContinueWatchingCardInfo>>) {
+          final data = state.data;
+          if (data.isEmpty) return const SizedBox.shrink();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Continue Watching",
+                style: screenData.shouldRenderMobile
+                    ? Theme.of(context).textTheme.titleMedium
+                    : Theme.of(context).textTheme.titleLarge,
+              ),
+              AppTheme.boxHeightM,
+              SizedBox(
+                height: itemHeight,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: data.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(width: AppTheme.spacingM),
+                  itemBuilder: (_, index) {
+                    return ContinueWatchingCard(
+                      info: data[index],
+                      onTap: () {
+                        if (data[index].isShow) {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.showView,
+                            arguments: (data[index].media as SeriesDetails).id,
+                          );
+                        } else {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.movieView,
+                            arguments: (data[index].media as MovieDetails).id,
+                          );
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+              AppTheme.boxHeightXL,
+            ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+}
+
 class LibraryList extends StatelessWidget {
   final String title;
   final void Function(ZxyMedia) onTap;
@@ -159,11 +179,21 @@ class LibraryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenData = Screen.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-        SizedBox(height: AppTheme.spacingL),
+        Text(
+          title,
+          style: screenData.shouldRenderMobile
+              ? Theme.of(context).textTheme.titleMedium
+              : Theme.of(context).textTheme.titleLarge,
+        ),
+        SizedBox(
+          height: screenData.shouldRenderMobile
+              ? AppTheme.spacingM
+              : AppTheme.spacingL,
+        ),
         LibraryListItem(resource: resource, onTap: onTap),
       ],
     );

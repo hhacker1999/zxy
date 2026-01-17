@@ -12,7 +12,10 @@ import 'package:zxy_app/views/filter_view/filter_view.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
+import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
+import 'package:zxy_app/views/shared/glass_container.dart';
+import 'package:zxy_app/views/top_header.dart';
 
 class BaseHomeView extends StatefulWidget {
   final Dependencies deps;
@@ -31,6 +34,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
   @override
   void initState() {
     super.initState();
+
     vm = context.read<BaseHomeViewModel>();
     baseChildren = [
       HomeView(),
@@ -86,95 +90,62 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
+    final screenData = Screen.of(context);
     return BaseScaffold(
+      bottomNavigationBar: screenData.shouldRenderMobile
+          ? NavigationDrawerBar(
+              vm: vm,
+              leftCards: leftCards,
+              screenData: screenData,
+            )
+          : null,
       builder: (_, color) {
         return Column(
           children: [
-            TopHeader(
-              searchController: searchController,
-              onSearch: () {
-                if (searchController.value.text.isNotEmpty) {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.searchView,
-                    arguments: searchController.value.text,
-                  );
-                  searchController.clear();
-                }
-              },
-            ),
-            AppTheme.boxHeightM,
+            if (!screenData.shouldRenderMobile)
+              TopHeader(
+                searchController: searchController,
+                onSearch: () {
+                  if (searchController.value.text.isNotEmpty) {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.searchView,
+                      arguments: searchController.value.text,
+                    );
+                    searchController.clear();
+                  }
+                },
+              ),
+            if (!screenData.shouldRenderMobile) AppTheme.boxHeightM,
             Expanded(
               child: Row(
                 children: [
-                  Expanded(
-                    flex: 3,
-                    child: ValueListenableBuilder(
-                      valueListenable: vm.selectedIndex,
-                      builder: (_, value, _) {
-                        return ValueListenableBuilder(
-                          valueListenable: context
-                              .read<ImageBloc>()
-                              .bgGradColor,
-                          builder: (_, color, _) {
-                            return Container(
-                              width: double.maxFinite,
-                              height: double.maxFinite,
-                              padding: EdgeInsets.all(AppTheme.spacingM),
-                              decoration: BoxDecoration(
-                                borderRadius: AppTheme.roundedMedium,
-                                color: AppTheme.cardBgColor,
-                              ),
-                              child: Column(
-                                spacing: AppTheme.spacingM,
-                                children: List.generate(leftCards.length, (
-                                  index,
-                                ) {
-                                  return ColorAnimatedCard(
-                                    onTap: () {
-                                      vm.selectedIndex.value = index;
-                                    },
-                                    isSelected: value == index,
-                                    baseColor: AppTheme.lightGreyBg,
-                                    animationSelectedColor:
-                                        color ?? AppTheme.accentColor,
-                                    child: Row(
-                                      children: [
-                                        SvgPicture.asset(
-                                          leftCards[index].$2,
-                                          color: AppTheme.textPrimary,
-                                          height: 25,
-                                          width: 25,
-                                        ),
-                                        SizedBox(width: AppTheme.spacingS),
-                                        Text(
-                                          leftCards[index].$1,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleLarge,
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }),
-                              ),
-                            );
-                          },
-                        );
-                      },
+                  Visibility(
+                    visible: !screenData.shouldRenderMobile,
+                    child: NavigationDrawerBar(
+                      vm: vm,
+                      leftCards: leftCards,
+                      screenData: screenData,
                     ),
                   ),
                   SizedBox(width: AppTheme.spacingM),
                   Expanded(
-                    flex: 13,
                     child: ValueListenableBuilder(
                       valueListenable: vm.selectedIndex,
                       builder: (_, index, _) {
-                        return ZxyFadeIndexedStack(
-                          key: ValueKey("Switcher"),
-                          duration: const Duration(milliseconds: 500),
-                          index: index,
-                          children: baseChildren,
+                        return Column(
+                          children: [
+                            Expanded(
+                              child: ZxyFadeIndexedStack(
+                                key: ValueKey("Switcher"),
+                                duration: const Duration(milliseconds: 500),
+                                index: index,
+                                children: baseChildren,
+                              ),
+                            ),
+                            if (screenData.shouldRenderMobile)
+                              SizedBox(height: 80),
+                          ],
                         );
                       },
                     ),
@@ -189,248 +160,118 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
   }
 }
 
-class TopHeader extends StatelessWidget {
-  final TextEditingController searchController;
-  final VoidCallback onSearch;
-  final bool showBack;
-  const TopHeader({
+class NavigationDrawerBar extends StatelessWidget {
+  const NavigationDrawerBar({
     super.key,
-    required this.searchController,
-    required this.onSearch,
-    this.showBack = false,
+    required this.vm,
+    required this.leftCards,
+    required this.screenData,
   });
+
+  final BaseHomeViewModel vm;
+  final List<(String, String)> leftCards;
+  final ScreenData screenData;
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: context.read<ImageBloc>().bgGradColor,
-      builder: (_, color, _) {
-        return Container(
-          width: double.maxFinite,
-          height: 80,
-          padding: EdgeInsets.all(AppTheme.spacingM),
-          decoration: BoxDecoration(
-            borderRadius: AppTheme.roundedMedium,
-            color: AppTheme.cardBgColor,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (showBack)
-                InkWell(
-                  hoverColor: Colors.transparent,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: Row(
-                    children: [
-                      Icon(Icons.arrow_back_ios, size: 34),
-                      Text(
-                        "Back",
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      AppTheme.boxWidthXL,
-                    ],
-                  ),
+      valueListenable: vm.selectedIndex,
+      builder: (_, value, _) {
+        return ValueListenableBuilder(
+          valueListenable: context.read<ImageBloc>().bgGradColor,
+          builder: (_, color, _) {
+            return Visibility(
+              replacement: GlassContainer(
+                borderOpacity: 0.15,
+                containerOpacity: 0.0,
+                radius: AppTheme.roundedXXLarge,
+                width: screenData.width,
+                height: 80,
+                padding: EdgeInsets.all(AppTheme.spacingS),
+                margin: EdgeInsets.only(
+                  left: AppTheme.spacingL,
+                  right: AppTheme.spacingL,
+                  bottom: AppTheme.spacingL,
                 ),
-              Image.asset(AppIcons.logo),
-              AppTheme.boxWidthL,
-              SizedBox(
-                width: 400,
-                child: TextField(
-                  enabled: true,
-                  onSubmitted: (_) {
-                    onSearch();
-                  },
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: color ?? AppTheme.accentColor,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(leftCards.length, (index) {
+                    return ColorAnimatedCard(
+                      width: 80,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacingXS,
+                        vertical: AppTheme.spacingS,
                       ),
-                      borderRadius: AppTheme.roundedMedium,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: AppTheme.roundedMedium,
-                    ),
-                    fillColor: AppTheme.lightGreyBg,
-                    hintText: "Search Movies and Shows",
-                    hintStyle: Theme.of(context).textTheme.labelLarge,
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                  cursorColor: color ?? AppTheme.accentColor,
+                      radius: AppTheme.roundedXLarge,
+                      onTap: () {
+                        vm.selectedIndex.value = index;
+                      },
+                      isSelected: value == index,
+                      baseColor: AppTheme.lightGreyBg,
+                      animationSelectedColor: color ?? AppTheme.accentColor,
+                      child: Column(
+                        children: [
+                          SvgPicture.asset(
+                            leftCards[index].$2,
+                            color: AppTheme.textPrimary,
+                            height: 18,
+                            width: 18,
+                          ),
+                          SizedBox(height: AppTheme.spacingXS),
+                          Text(
+                            leftCards[index].$1,
+                            style: Theme.of(context).textTheme.labelSmall!
+                                .copyWith(color: AppTheme.textPrimary, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 ),
               ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class ColorAnimatedCard extends StatefulWidget {
-  final Color animationSelectedColor;
-  final Color baseColor;
-  final bool isSelected;
-  final Widget child;
-  final VoidCallback onTap;
-  const ColorAnimatedCard({
-    super.key,
-    required this.animationSelectedColor,
-    required this.baseColor,
-    this.isSelected = false,
-    required this.child,
-    required this.onTap,
-  });
-
-  @override
-  State<ColorAnimatedCard> createState() => _ColorAnimatedCardState();
-}
-
-class _ColorAnimatedCardState extends State<ColorAnimatedCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _colorAnimationController;
-  late final Animation<Color?> _colorAnim;
-  late final ColorTween _colorTween;
-
-  @override
-  void initState() {
-    super.initState();
-    _colorAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    );
-    _colorTween = ColorTween(
-      begin: widget.isSelected
-          ? widget.animationSelectedColor
-          : widget.baseColor,
-      end: widget.isSelected ? widget.baseColor : widget.animationSelectedColor,
-    );
-    _colorAnim = _colorTween.animate(_colorAnimationController);
-  }
-
-  @override
-  void didUpdateWidget(covariant ColorAnimatedCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isSelected != widget.isSelected) {
-      _colorTween.begin = widget.isSelected
-          ? widget.animationSelectedColor
-          : widget.baseColor;
-      _colorTween.end = widget.isSelected
-          ? widget.baseColor
-          : widget.animationSelectedColor;
-      _colorAnimationController.reset();
-    }
-    if (oldWidget.animationSelectedColor != widget.animationSelectedColor) {
-      _colorTween.begin = _colorAnim.value;
-      _colorTween.end = widget.animationSelectedColor;
-      _colorAnimationController.reset();
-      if (widget.isSelected) {
-        _colorAnimationController.forward();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _colorAnimationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _colorAnim,
-      child: widget.child,
-      builder: (_, child) {
-        return GestureDetector(
-          onTap: () {
-            widget.onTap();
+              visible: !screenData.shouldRenderMobile,
+              child: GlassContainer(
+                borderOpacity: 0.15,
+                containerOpacity: 0.15,
+                width: 280,
+                radius: AppTheme.roundedMedium,
+                height: double.maxFinite,
+                padding: EdgeInsets.all(AppTheme.spacingM),
+                child: Column(
+                  spacing: AppTheme.spacingM,
+                  children: List.generate(leftCards.length, (index) {
+                    return ColorAnimatedCard(
+                      onTap: () {
+                        vm.selectedIndex.value = index;
+                      },
+                      isSelected: value == index,
+                      baseColor: AppTheme.lightGreyBg,
+                      animationSelectedColor: color ?? AppTheme.accentColor,
+                      child: Row(
+                        children: [
+                          SvgPicture.asset(
+                            leftCards[index].$2,
+                            color: AppTheme.textPrimary,
+                            height: 25,
+                            width: 25,
+                          ),
+                          SizedBox(width: AppTheme.spacingS),
+                          Text(
+                            leftCards[index].$1,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            );
           },
-          child: Container(
-            width: double.maxFinite,
-            padding: EdgeInsets.all(AppTheme.spacingM),
-            decoration: BoxDecoration(
-              color: _colorAnim.value,
-              borderRadius: AppTheme.roundedMedium,
-            ),
-            child: child,
-          ),
         );
       },
-    );
-  }
-}
-
-class ZxyFadeIndexedStack extends StatefulWidget {
-  final int index;
-  final List<Widget> children;
-  final Duration duration;
-
-  const ZxyFadeIndexedStack({
-    super.key,
-    required this.index,
-    required this.children,
-    this.duration = const Duration(milliseconds: 500),
-  });
-
-  @override
-  State<ZxyFadeIndexedStack> createState() => _ZxyFadeIndexedStackState();
-}
-
-class _ZxyFadeIndexedStackState extends State<ZxyFadeIndexedStack>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _opacityAnim;
-  late List<bool> activated;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration);
-    _opacityAnim = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
-
-    // Start fully visible
-    _controller.value = 1.0;
-    intialiseActivateList();
-  }
-
-  void intialiseActivateList() {
-    activated = List.generate(widget.children.length, (index) {
-      return index == widget.index;
-    });
-  }
-
-  @override
-  void didUpdateWidget(covariant ZxyFadeIndexedStack oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.children.length != widget.children.length) {
-      intialiseActivateList();
-    }
-    if (oldWidget.index != widget.index) {
-      activated[widget.index] = true;
-      _controller.forward(from: 0.0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _opacityAnim,
-      child: IndexedStack(
-        index: widget.index,
-        children: List.generate(widget.children.length, (index) {
-          return activated[index] ? widget.children[index] : const SizedBox();
-        }),
-      ),
     );
   }
 }

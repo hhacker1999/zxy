@@ -4,13 +4,13 @@ import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
-import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/movie_view/movie_view.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
+import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/search_view/search_view.dart';
 import 'package:zxy_app/views/search_view/search_view_model.dart';
 import 'package:zxy_app/views/login_view/login_view.dart';
@@ -72,6 +72,9 @@ class _MyAppState extends State<MyApp> {
       ],
       builder: (context, _) {
         return MaterialApp(
+          builder: (_, child) {
+            return Screen(child: child ?? SizedBox.shrink());
+          },
           navigatorObservers: [routeObserver],
           title: 'Flutter Demo',
           themeMode: ThemeMode.dark,

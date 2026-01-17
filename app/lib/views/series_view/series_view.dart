@@ -10,6 +10,7 @@ import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/shared/drop_down.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
+import 'package:zxy_app/views/top_header.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zxy_app/app_constants.dart';
