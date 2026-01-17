@@ -102,21 +102,21 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
       builder: (_, color) {
         return Column(
           children: [
-            if (!screenData.shouldRenderMobile)
-              TopHeader(
-                searchController: searchController,
-                onSearch: () {
-                  if (searchController.value.text.isNotEmpty) {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.searchView,
-                      arguments: searchController.value.text,
-                    );
-                    searchController.clear();
-                  }
-                },
-              ),
-            if (!screenData.shouldRenderMobile) AppTheme.boxHeightM,
+            // if (!screenData.shouldRenderMobile)
+            //   TopHeader(
+            //     searchController: searchController,
+            //     onSearch: () {
+            //       if (searchController.value.text.isNotEmpty) {
+            //         Navigator.pushNamed(
+            //           context,
+            //           AppRoutes.searchView,
+            //           arguments: searchController.value.text,
+            //         );
+            //         searchController.clear();
+            //       }
+            //     },
+            //   ),
+            // if (!screenData.shouldRenderMobile) AppTheme.boxHeightM,
             Expanded(
               child: Row(
                 children: [
@@ -128,7 +128,8 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                       screenData: screenData,
                     ),
                   ),
-                  SizedBox(width: AppTheme.spacingM),
+                  if (!screenData.shouldRenderMobile)
+                    SizedBox(width: AppTheme.spacingM),
                   Expanded(
                     child: ValueListenableBuilder(
                       valueListenable: vm.selectedIndex,
@@ -223,7 +224,10 @@ class NavigationDrawerBar extends StatelessWidget {
                           Text(
                             leftCards[index].$1,
                             style: Theme.of(context).textTheme.labelSmall!
-                                .copyWith(color: AppTheme.textPrimary, fontSize: 10),
+                                .copyWith(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 10,
+                                ),
                           ),
                         ],
                       ),
