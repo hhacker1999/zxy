@@ -8,22 +8,24 @@ import 'package:zxy_app/bloc/image_bloc.dart';
 class ZxyImage extends StatefulWidget {
   final String path;
   final String size;
-  final bool isPoster;
   final void Function(ImageProvider)? onLoad;
   final double? height;
   final double? width;
   final BorderRadius? radius;
   final bool enableShadow;
   final BoxFit fit;
+  final bool animate;
+  final Widget? replacement;
   const ZxyImage({
     super.key,
     this.onLoad,
     required this.path,
-    required this.isPoster,
+    this.animate = true,
     required this.size,
     this.height,
     this.width,
     this.radius = BorderRadius.zero,
+    this.replacement,
     this.enableShadow = false,
     this.fit = BoxFit.fill,
   });
@@ -48,7 +50,8 @@ class _ZxyImageState extends State<ZxyImage> {
             isCalledLoad = true;
           }
         }
-        return Container(
+        return AnimatedContainer(
+          duration: widget.animate ? const Duration(seconds: 1) : Duration.zero,
           decoration: BoxDecoration(
             boxShadow: widget.enableShadow
                 ? [
@@ -70,12 +73,14 @@ class _ZxyImageState extends State<ZxyImage> {
           child: provider == null
               ? Align(
                   alignment: Alignment.center,
-                  child: SvgPicture.asset(
-                    AppIcons.image,
-                    color: AppTheme.textSecondary,
-                    height: 80,
-                    width: 80,
-                  ),
+                  child:
+                      widget.replacement ??
+                      SvgPicture.asset(
+                        AppIcons.image,
+                        color: AppTheme.textSecondary,
+                        height: 80,
+                        width: 80,
+                      ),
                 )
               : null,
         );

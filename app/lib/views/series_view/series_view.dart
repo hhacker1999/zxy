@@ -104,7 +104,6 @@ class _ShowViewState extends State<ShowView> {
                                             enableShadow: true,
                                             radius: AppTheme.roundedSmall,
                                             path: details.posterPath ?? "",
-                                            isPoster: true,
                                             size: "w342",
                                           ),
                                         ),
@@ -285,7 +284,6 @@ class _ShowViewState extends State<ShowView> {
                                           children: [
                                             ZxyImage(
                                               radius: BorderRadius.circular(70),
-                                              isPoster: true,
                                               fit: BoxFit.cover,
                                               size: "",
                                               height: 140,
@@ -388,7 +386,6 @@ class _ShowViewState extends State<ShowView> {
                                                               episode
                                                                   .stillPath ??
                                                               "",
-                                                          isPoster: true,
                                                           size: "w185",
                                                         ),
                                                       ),

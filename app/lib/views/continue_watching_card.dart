@@ -69,7 +69,6 @@ class ContinueWatchingCard extends StatelessWidget {
                     enableShadow: true,
                     path: backdropPath ?? "",
                     size: screenData.shouldRenderMobile ? "w300" : "w780",
-                    isPoster: false,
                     fit: BoxFit.cover,
                     radius: BorderRadius.circular(AppTheme.radiusMedium),
                   ),

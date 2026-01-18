@@ -11,9 +11,11 @@ class StreamRow extends StatelessWidget {
   final ValueChanged<int> onStreamSelect;
   final VoidCallback onTap;
   final Color? color;
+  final bool isMobile;
   const StreamRow({
     super.key,
     required this.streamState,
+    this.isMobile = false,
     required this.onStreamSelect,
     this.color,
     required this.onTap,
@@ -22,7 +24,9 @@ class StreamRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisAlignment: isMobile
+          ? MainAxisAlignment.center
+          : MainAxisAlignment.start,
       children: [
         InkWell(
           onTap:
