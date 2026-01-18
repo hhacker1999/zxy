@@ -32,7 +32,7 @@ class LibraryList extends StatelessWidget {
         ),
         SizedBox(
           height: screenData.shouldRenderMobile
-              ? AppTheme.spacingM
+              ? AppTheme.spacingS
               : AppTheme.spacingL,
         ),
         LibraryListItem(

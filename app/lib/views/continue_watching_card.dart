@@ -100,7 +100,7 @@ class ContinueWatchingCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    title ?? "",
+                    title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: screenData.shouldRenderMobile

@@ -12,6 +12,7 @@ import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
+import 'package:zxy_app/views/shared/cast_crew.dart';
 import 'package:zxy_app/views/shared/duration_extension.dart';
 import 'package:zxy_app/views/shared/library_list.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
@@ -126,10 +127,14 @@ class _MovieViewState extends State<MovieView> {
                           castList: castList,
                           renderMobile: screenInfo.shouldRenderMobile,
                         ),
-                        AppTheme.boxHeightL,
+                        screenInfo.shouldRenderMobile
+                            ? AppTheme.boxHeightS
+                            : AppTheme.boxHeightL,
                         if (details.collection != null &&
                             details.collection!.parts.isNotEmpty) ...[
-                          AppTheme.boxHeightL,
+                          screenInfo.shouldRenderMobile
+                              ? AppTheme.boxHeightM
+                              : AppTheme.boxHeightL,
                           LibraryList(
                             updateColorOnHover: false,
                             resource: details.collection!.parts.map((e) {
@@ -147,16 +152,26 @@ class _MovieViewState extends State<MovieView> {
                               );
                             }).toList(),
                             title: details.collection!.name,
-                            onTap: (media) {},
+                            onTap: (media) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.movieView,
+                                arguments: media.id,
+                              );
+                            },
                           ),
                         ],
 
-                        if (details.similar != null) ...[
-                          AppTheme.boxHeightL,
+                        if (details.similar != null &&
+                            details.similar!.results.isNotEmpty) ...[
+                          screenInfo.shouldRenderMobile
+                              ? AppTheme.boxHeightM
+                              : AppTheme.boxHeightL,
                           LibraryList(
                             updateColorOnHover: false,
                             resource: details.similar!.results.map((e) {
                               return ZxyMedia(
+                                name: e.title,
                                 adult: e.adult ?? false,
                                 genreIds: e.genreIds ?? [],
                                 type: ZxyMediaType.movie,
@@ -170,7 +185,13 @@ class _MovieViewState extends State<MovieView> {
                               );
                             }).toList(),
                             title: "Similar Movies",
-                            onTap: (media) {},
+                            onTap: (media) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.movieView,
+                                arguments: media.id,
+                              );
+                            },
                           ),
                         ],
                       ],
@@ -182,75 +203,6 @@ class _MovieViewState extends State<MovieView> {
           },
         );
       },
-    );
-  }
-}
-
-class CastAndCrew extends StatelessWidget {
-  const CastAndCrew({
-    super.key,
-    required this.castList,
-    required this.renderMobile,
-  });
-
-  final List<Cast> castList;
-  final bool renderMobile;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Cast and Crew",
-          style: renderMobile
-              ? Theme.of(context).textTheme.titleMedium
-              : Theme.of(context).textTheme.titleLarge,
-        ),
-        AppTheme.boxHeightM,
-        SizedBox(
-          height: renderMobile ? 140 : 200,
-          child: ListView.separated(
-            separatorBuilder: (_, _) {
-              return AppTheme.boxWidthL;
-            },
-            scrollDirection: Axis.horizontal,
-            itemBuilder: (_, index) {
-              return SizedBox(
-                width: 100,
-                child: Column(
-                  spacing: AppTheme.spacingS,
-                  children: [
-                    ZxyImage(
-                      radius: BorderRadius.circular(45),
-                      fit: BoxFit.cover,
-                      size: "",
-                      height: renderMobile ? 90 : 140,
-                      width: renderMobile ? 90 : 140,
-                      path:
-                          "https://image.tmdb.org/t/p/w185/${castList[index].profilePath}",
-                    ),
-                    Text(
-                      castList[index].name,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      style: renderMobile
-                          ? Theme.of(context).textTheme.bodySmall!.copyWith(
-                              color: AppTheme.textPrimary,
-                            )
-                          : Theme.of(context).textTheme.bodyMedium!.copyWith(
-                              color: AppTheme.textPrimary,
-                            ),
-                    ),
-                  ],
-                ),
-              );
-            },
-            itemCount: castList.length,
-          ),
-        ),
-      ],
     );
   }
 }
@@ -378,7 +330,7 @@ class PosterItem extends StatelessWidget {
               ),
               Positioned(
                 left: AppTheme.spacingL,
-                top: AppTheme.spacingL,
+                top: MediaQuery.of(context).viewPadding.top + AppTheme.spacingL,
                 child: IconButton(
                   onPressed: () {
                     Navigator.pop(context);

@@ -30,7 +30,11 @@ class LibraryListItem extends StatelessWidget {
       height: itemHeight,
       child: ListView.separated(
         separatorBuilder: (_, _) {
-          return SizedBox(width: AppTheme.spacingXL);
+          return SizedBox(
+            width: screenData.shouldRenderMobile
+                ? AppTheme.spacingM
+                : AppTheme.spacingXL,
+          );
         },
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, index) {

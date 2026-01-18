@@ -100,9 +100,7 @@ class SeriesDetails {
     languages: json["languages"] == null
         ? []
         : List<String>.from(json["languages"]!.map((x) => x)),
-    lastAirDate: json["last_air_date"] == null
-        ? null
-        : DateTime.parse(json["last_air_date"]),
+    lastAirDate: DateTime.tryParse(json["last_air_date"]),
     lastEpisodeToAir: json["last_episode_to_air"] == null
         ? null
         : Episode.fromJson(json["last_episode_to_air"]),
@@ -361,7 +359,7 @@ class Season {
 
   factory Season.fromJson(Map<String, dynamic> json) => Season(
     id: json["_id"],
-    airDate: json["air_date"] == null ? null : DateTime.parse(json["air_date"]),
+    airDate: DateTime.tryParse(json["air_date"]),
     episodes: json["episodes"] == null
         ? []
         : List<Episode>.from(json["episodes"]!.map((x) => Episode.fromJson(x))),
@@ -468,8 +466,7 @@ class Result {
     overview: json["overview"],
     popularity: json["popularity"]?.toDouble(),
     posterPath: json["poster_path"],
-    firstAirDate:
-         DateTime.tryParse(json["first_air_date"]),
+    firstAirDate: DateTime.tryParse(json["first_air_date"]),
     name: json["name"],
     voteAverage: json["vote_average"]?.toDouble(),
     voteCount: json["vote_count"],
