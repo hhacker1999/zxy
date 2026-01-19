@@ -102,7 +102,7 @@ class _ShowViewState extends State<ShowView> {
                       series: details,
                       height: height,
                       width: width,
-                      size: "w342",
+                      size: "w500",
                       color: color,
                     ),
                     child: SizedBox(

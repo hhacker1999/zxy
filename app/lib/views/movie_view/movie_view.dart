@@ -99,7 +99,7 @@ class _MovieViewState extends State<MovieView> {
                       movie: details,
                       height: height,
                       width: width,
-                      size: "w342",
+                      size: "w500",
                       color: color,
                     ),
                     child: SizedBox(
@@ -330,7 +330,7 @@ class PosterItem extends StatelessWidget {
                 ),
               ),
               Positioned(
-                left: AppTheme.spacingL,
+                left: AppTheme.spacingS,
                 top: MediaQuery.of(context).viewPadding.top + AppTheme.spacingL,
                 child: IconButton(
                   onPressed: () {

@@ -59,6 +59,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
           return FilterView();
         },
       ),
+      SizedBox.shrink(),
     ];
     leftCards = [
       ("Home", AppIcons.home),
@@ -92,10 +93,10 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
     final screenData = Screen.of(context);
     return BaseScaffold(
       bottomNavigationBar: screenData.shouldRenderMobile
-          ? NavigationDrawerBar(
+          ? ZxyNavBar(
               vm: vm,
-              leftCards: leftCards,
-              screenData: screenData,
+              cards: leftCards,
+              // screenData: screenData,
             )
           : null,
       builder: (_, color) {
@@ -135,6 +136,9 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                       builder: (_, index, _) {
                         return Column(
                           children: [
+                            SizedBox(
+                              height: MediaQuery.of(context).viewPadding.top,
+                            ),
                             Expanded(
                               child: ZxyFadeIndexedStack(
                                 key: ValueKey("Switcher"),
@@ -144,7 +148,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                               ),
                             ),
                             if (screenData.shouldRenderMobile)
-                              SizedBox(height: 80),
+                              SizedBox(height: 20),
                           ],
                         );
                       },
@@ -270,6 +274,89 @@ class NavigationDrawerBar extends StatelessWidget {
                     );
                   }),
                 ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class ZxyNavBar extends StatelessWidget {
+  final List<(String, String)> cards;
+  final BaseHomeViewModel vm;
+  const ZxyNavBar({super.key, required this.cards, required this.vm});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: vm.selectedIndex,
+      builder: (_, selectedIndex, _) {
+        return ValueListenableBuilder(
+          valueListenable: context.read<ImageBloc>().bgGradColor,
+          builder: (_, color, _) {
+            return Container(
+              height: 70,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spacingL,
+                vertical: AppTheme.spacingS,
+              ),
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3), // Subtle dark color
+                    blurRadius: 6, // Keeps the shadow close
+                    spreadRadius: 1, // Small spread for definition
+                    offset: const Offset(0, -3), // Moves shadow slightly down
+                  ),
+                ],
+
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.2),
+                    Colors.black.withOpacity(0.9),
+                  ],
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(cards.length, (index) {
+                  final card = cards[index];
+                  return InkWell(
+                    splashColor: Colors.transparent,
+                    focusColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    onTap: () {
+                      vm.selectedIndex.value = index;
+                    },
+                    child: Column(
+                      spacing: AppTheme.spacingXS,
+                      children: [
+                        SvgPicture.asset(
+                          card.$2,
+                          color: selectedIndex == index
+                              ? color ?? AppTheme.accentColor
+                              : AppTheme.textPrimary,
+                          height: 25,
+                          width: 25,
+                        ),
+                        Text(
+                          card.$1,
+                          style: Theme.of(context).textTheme.labelSmall!
+                              .copyWith(
+                                fontSize: 10,
+                                color: selectedIndex == index
+                                    ? color ?? AppTheme.accentColor
+                                    : AppTheme.textPrimary,
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
               ),
             );
           },

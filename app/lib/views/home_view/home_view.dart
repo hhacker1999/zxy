@@ -220,7 +220,7 @@ class ContinueWatchingHeader extends StatelessWidget {
                 ),
               ),
               screenData.shouldRenderMobile
-                  ? AppTheme.boxHeightM
+                  ? AppTheme.boxHeightXS
                   : AppTheme.boxHeightXL,
             ],
           );

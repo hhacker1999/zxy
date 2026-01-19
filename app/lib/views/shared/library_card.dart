@@ -90,7 +90,7 @@ class LibraryCard extends StatelessWidget {
         width: width,
         height: height,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             ZxyImage(
@@ -99,7 +99,7 @@ class LibraryCard extends StatelessWidget {
               width: width,
               path: resource.posterPath,
               radius: AppTheme.roundedMedium,
-              size: "w185",
+              size: "w300",
             ),
             Screen.of(context).shouldRenderMobile
                 ? AppTheme.boxHeightS
@@ -107,7 +107,7 @@ class LibraryCard extends StatelessWidget {
             Text(
               resource.name ?? resource.title ?? "",
               maxLines: 2,
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.left,
               overflow: TextOverflow.ellipsis,
               style: Screen.of(context).shouldRenderMobile
                   ? Theme.of(context).textTheme.labelSmall!.copyWith(

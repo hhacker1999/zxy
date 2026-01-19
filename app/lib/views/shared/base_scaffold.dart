@@ -19,6 +19,7 @@ class BaseScaffold extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       bottomNavigationBar: bottomNavigationBar,
+      backgroundColor: Colors.transparent,
       body: ValueListenableBuilder(
         valueListenable: context.read<ImageBloc>().bgGradColor,
         builder: (_, color, _) {
