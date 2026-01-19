@@ -266,9 +266,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     });
 
     _bufferingSub = _player.stream.buffering.listen((buffering) {
-      print("--------------------------------------------------");
-      print("buffering received from server");
-      print("--------------------------------------------------");
       _state.buffering.value = buffering;
     });
     _playingSub = _player.stream.playing.listen((playing) {

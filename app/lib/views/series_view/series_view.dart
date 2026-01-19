@@ -175,6 +175,7 @@ class _ShowViewState extends State<ShowView> {
                                         ? AppTheme.boxHeightM
                                         : AppTheme.boxHeightL,
                                     EpisodesList(
+                                      color: color,
                                       renderMobile:
                                           screenInfo.shouldRenderMobile,
                                       season: season,
@@ -245,6 +246,7 @@ class EpisodesList extends StatelessWidget {
     required this.episodeWidth,
     required this.episodeHeight,
     required this.renderMobile,
+    required this.color,
   });
 
   final Season season;
@@ -252,6 +254,7 @@ class EpisodesList extends StatelessWidget {
   final double episodeWidth;
   final double episodeHeight;
   final bool renderMobile;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -263,6 +266,13 @@ class EpisodesList extends StatelessWidget {
           final episode = season.episodes[index];
           return InkWell(
             onTap: () {
+              showStreamSelectionDialog(
+                context,
+                color,
+                vm.episodeStreamsState,
+                vm.onStreamSelect,
+                vm.selectedStream.value ?? 0,
+              );
               vm.onEpisodeSelect(index);
             },
             child: SizedBox(
@@ -318,6 +328,13 @@ class EpisodesList extends StatelessWidget {
           final episode = season.episodes[index];
           return InkWell(
             onTap: () {
+              showStreamSelectionDialog(
+                context,
+                color,
+                vm.episodeStreamsState,
+                vm.onStreamSelect,
+                vm.selectedStream.value,
+              );
               vm.onEpisodeSelect(index);
             },
             child: SizedBox(
@@ -443,9 +460,7 @@ class PosterItemSeries extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       spacing: AppTheme.spacingS,
-                      children: List.generate(series.genres.length ?? 0, (
-                        index,
-                      ) {
+                      children: List.generate(series.genres.length, (index) {
                         var genre = series.genres[index];
                         return Text(
                           "${genre.name}${index != series.genres.length - 1 ? ',' : ''}",
@@ -455,23 +470,19 @@ class PosterItemSeries extends StatelessWidget {
                       }).toList(),
                     ),
                     AppTheme.boxHeightM,
-                    ValueListenableBuilder(
-                      valueListenable: vm.episodeStreamsState,
-                      builder: (_, streamState, _) {
-                        return StreamRow(
-                          onTap: () async {
-                            await Navigator.pushNamed(
-                              context,
-                              AppRoutes.videoPlayerView,
-                              arguments: vm,
-                            );
-                            vm.onPause();
-                          },
-                          color: color,
-                          streamState: streamState,
-                          onStreamSelect: vm.onStreamSelect,
+                    StreamRow(
+                      onTap: () async {
+                        await Navigator.pushNamed(
+                          context,
+                          AppRoutes.videoPlayerView,
+                          arguments: vm,
                         );
+                        vm.onPause();
                       },
+                      color: color,
+                      selectedStream: vm.selectedStream,
+                      streamState: vm.episodeStreamsState,
+                      onStreamSelect: vm.onStreamSelect,
                     ),
                   ],
                 ),
@@ -582,7 +593,7 @@ class BannerItemSeries extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         ZxyImage(
-          onLoad: (_) {
+          onLoad: (_) async {
             context.read<ImageBloc>().setGradColorFromImage(
               series.backdropPath!,
             );
@@ -680,23 +691,19 @@ class BannerItemSeries extends StatelessWidget {
                 ],
               ),
               AppTheme.boxHeightL,
-              ValueListenableBuilder(
-                valueListenable: vm.episodeStreamsState,
-                builder: (_, streamState, _) {
-                  return StreamRow(
-                    onTap: () async {
-                      await Navigator.pushNamed(
-                        context,
-                        AppRoutes.videoPlayerView,
-                        arguments: vm,
-                      );
-                      vm.onPause();
-                    },
-                    color: color,
-                    streamState: streamState,
-                    onStreamSelect: vm.onStreamSelect,
+              StreamRow(
+                color: color,
+                onTap: () async {
+                  await Navigator.pushNamed(
+                    context,
+                    AppRoutes.videoPlayerView,
+                    arguments: vm,
                   );
+                  vm.onPause();
                 },
+                selectedStream: vm.selectedStream,
+                streamState: vm.episodeStreamsState,
+                onStreamSelect: vm.onStreamSelect,
               ),
               AppTheme.boxHeightM,
               SizedBox(

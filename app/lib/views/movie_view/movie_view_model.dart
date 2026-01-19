@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
-import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/usecase/stream/stream.dart';
 import 'package:zxy_app/views/video_handler.dart';
@@ -14,10 +13,9 @@ class MovieViewModel implements VideoHandler {
   final MediaUsecase mediaUc;
   final StreamUsecase streamUc;
   final ProgressUsecase progressUc;
-  int? _selectedStream;
   String? imdbId;
 
-  int? get selectedStream => _selectedStream;
+  ValueNotifier<int> selectedStream = ValueNotifier(0);
 
   MovieViewModel({
     required this.mediaUc,
@@ -72,7 +70,7 @@ class MovieViewModel implements VideoHandler {
   }
 
   void onStreamSelect(int index) {
-    _selectedStream = index;
+    selectedStream.value = index;
   }
 
   void dispose() {
@@ -99,7 +97,7 @@ class MovieViewModel implements VideoHandler {
   }
 
   @override
-  int getSelectedStreamIndex() => _selectedStream ?? 0;
+  int getSelectedStreamIndex() => selectedStream.value;
 
   @override
   bool isMovie() => true;

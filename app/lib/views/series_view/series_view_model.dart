@@ -18,10 +18,9 @@ class SeriesViewModel implements VideoHandler {
   late final List<Season> seasons;
   final Map<String, List<StreamItem>> _streams = {};
 
-  int? _selectedStream = 0;
   String? imdbId;
 
-  int? get selectedStream => _selectedStream;
+  ValueNotifier<int> selectedStream = ValueNotifier(0);
 
   SeriesViewModel({
     required this.mediaUc,
@@ -45,8 +44,8 @@ class SeriesViewModel implements VideoHandler {
   ValueListenable<ViewItemState<List<StreamItem>>> get episodeStreamsState =>
       _episodeStreamsState;
 
-  final ValueNotifier<(int, int?)> activeSeasonEpisode =
-      ValueNotifier<(int, int?)>((0, null));
+  final ValueNotifier<(int, int)> activeSeasonEpisode =
+      ValueNotifier<(int, int)>((0, -1));
 
   Future<void> initialise(int id) async {
     try {
@@ -60,6 +59,7 @@ class SeriesViewModel implements VideoHandler {
       for (var element in progressRes) {
         _progressNotifier.value[element.mediaId] = element;
       }
+      onEpisodeSelect(0);
       _seriesDetailsState.value = ItemLoaded(data: details);
     } catch (e) {
       if (kDebugMode) {
@@ -71,15 +71,16 @@ class SeriesViewModel implements VideoHandler {
   }
 
   void onStreamSelect(int index) {
-    _selectedStream = index;
+    selectedStream.value = index;
   }
 
   void onSeasonSelect(int index) {
     if (activeSeasonEpisode.value.$1 == index) {
       return;
     }
-    activeSeasonEpisode.value = (index, null);
-    _selectedStream = null;
+    activeSeasonEpisode.value = (index, -1);
+    selectedStream.value = 0;
+    onEpisodeSelect(0);
   }
 
   (Season, Episode) _getCurrentSeasonEpisode() {
@@ -87,7 +88,7 @@ class SeriesViewModel implements VideoHandler {
       seasons[activeSeasonEpisode.value.$1],
       seasons[activeSeasonEpisode.value.$1].episodes[activeSeasonEpisode
           .value
-          .$2!],
+          .$2],
     );
   }
 
@@ -95,6 +96,7 @@ class SeriesViewModel implements VideoHandler {
     if (activeSeasonEpisode.value.$2 == episodeIndex) {
       return;
     }
+    selectedStream.value = 0;
     _resetVideoHandler();
     activeSeasonEpisode.value = (activeSeasonEpisode.value.$1, episodeIndex);
 
@@ -110,7 +112,7 @@ class SeriesViewModel implements VideoHandler {
         imdbId!,
         seasons[activeSeasonEpisode.value.$1].seasonNumber,
         seasons[activeSeasonEpisode.value.$1]
-            .episodes[activeSeasonEpisode.value.$2!]
+            .episodes[activeSeasonEpisode.value.$2]
             .episodeNumber,
       );
       _streams["${activeSeasonEpisode.value.$1}:${activeSeasonEpisode.value.$2}"] =
@@ -156,7 +158,7 @@ class SeriesViewModel implements VideoHandler {
   }
 
   @override
-  int getSelectedStreamIndex() => _selectedStream ?? 0;
+  int getSelectedStreamIndex() => selectedStream.value;
 
   @override
   double getStartingPercentage() {
