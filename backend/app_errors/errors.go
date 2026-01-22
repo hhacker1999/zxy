@@ -21,3 +21,10 @@ type InvalidInput struct {
 func (e InvalidInput) Error() string {
 	return e.Err
 }
+
+type NoResourcesFound struct {
+}
+
+func (e NoResourcesFound) Error() string {
+	return "No resources found"
+}

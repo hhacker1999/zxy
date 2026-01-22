@@ -64,6 +64,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Get("/show/{id}/progress", i.SessionHandler(i.HandleGetShowProgress, true))
 	router.Post("/movie/update_progress", i.SessionHandler(i.HandleMovieProgressUpdate, true))
 	router.Post("/show/update_progress", i.SessionHandler(i.HandleShowProgressUpdate, true))
+	router.Post("/user/debrid/api", i.SessionHandler(i.HandleAddDebridKey, true))
 	return router
 }
 

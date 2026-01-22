@@ -7,11 +7,13 @@ import (
 )
 
 type Config struct {
-	TmdbApiKey     string
-	TmdbUrl        string
-	TraktUrl       string
-	PosgresUrl     string
-	MigrationsPath string
+	TmdbAT      string
+	TmdbUrl         string
+	TraktUrl        string
+	PosgresUrl      string
+	MigrationsPath  string
+	AIOTemplatePath string
+	AIOInstances    string
 }
 
 func GetConfig(filePath string) (Config, error) {
@@ -23,9 +25,12 @@ func GetConfig(filePath string) (Config, error) {
 	var config Config
 	config.TmdbUrl = configMap["TMDB_URL"]
 	config.TraktUrl = configMap["TRAKT_URL"]
-	config.TmdbApiKey = configMap["TMDB_API_KEY"]
+	config.TmdbAT = configMap["TMDB_API_KEY"]
 	config.PosgresUrl = configMap["POSTGRES_URL"]
 	config.MigrationsPath = configMap["MIGRATIONS_PATH"]
+	config.AIOTemplatePath = configMap["AIO_TEMPLATE_PATH"]
+	config.AIOInstances = configMap["AIO_INSTANCES"]
+	config.TmdbAT = configMap["TMDB_AT"]
 
 	return config, nil
 }

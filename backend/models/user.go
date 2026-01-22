@@ -22,4 +22,6 @@ type UserProfile struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 	PinHash        string    `json:"-"`
 	IsPinProtected bool      `json:"is_pin_protected,omitempty"`
+	DebridType     string    `json:"debrid_type"`
+	DebridKey      string    `json:"-"`
 }

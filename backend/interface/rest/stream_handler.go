@@ -1,6 +1,9 @@
 package rest
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"zxy/models"
@@ -9,6 +12,8 @@ import (
 func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) {
 	response := &ApiResponse{}
 	defer response.SendResponse(w)
+
+	profileId := r.Context().Value("profile_id").(int)
 
 	params := r.URL.Query()
 	streamType := params.Get("type")
@@ -24,7 +29,7 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var data []models.StreamResult
-  var err error
+	var err error
 
 	if streamType == "series" {
 		season := params.Get("season")
@@ -33,8 +38,8 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 			response.StatusCode = http.StatusBadRequest
 			return
 		}
-		seasonInt, err := strconv.Atoi(season)
-		if err != nil {
+		seasonInt, errr := strconv.Atoi(season)
+		if errr != nil {
 			response.Error = "Invalid season"
 			response.StatusCode = http.StatusBadRequest
 			return
@@ -46,18 +51,19 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 			response.StatusCode = http.StatusBadRequest
 			return
 		}
-		episodeInt, err := strconv.Atoi(episode)
-		if err != nil {
+		episodeInt, errr := strconv.Atoi(episode)
+		if errr != nil {
 			response.Error = "Invalid episode"
 			response.StatusCode = http.StatusBadRequest
 			return
 		}
-		data, err = i.addonuc.GetSeriesStream(id, seasonInt, episodeInt)
+		data, err = i.addonuc.GetSeriesStreamProfile(id, seasonInt, episodeInt, profileId)
 	} else {
-		data, err = i.addonuc.GetMovieStream(id)
+		data, err = i.addonuc.GetMovieStreamProfile(id, profileId)
 	}
 
 	if err != nil {
+		fmt.Println("Error in getting streams")
 		response.Error = err.Error()
 		response.StatusCode = http.StatusInternalServerError
 		return
@@ -67,3 +73,57 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 	response.Data = data
 }
 
+func (i *RestInterface) HandleAddDebridKey(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	profileId := r.Context().Value("profile_id").(int)
+	userId := r.Context().Value("user_id").(int)
+
+	type Input struct {
+		ApiKey     string `json:"api_key"`
+		DebridType string `json:"debrid_type"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		response.StatusCode = http.StatusInternalServerError
+		response.Error = "Something went wrong"
+		return
+	}
+
+	defer r.Body.Close()
+	var input Input
+	err = json.Unmarshal(bodyBytes, &input)
+	if err != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Error = "Invalid Input"
+		return
+	}
+
+	if input.ApiKey == "" {
+		response.StatusCode = http.StatusBadRequest
+		response.Error = "Invalid type"
+		return
+	}
+
+	if input.DebridType != "rd" && input.DebridType != "tb" {
+		response.StatusCode = http.StatusBadRequest
+		response.Error = "Invalid type"
+		return
+	}
+
+	err = i.addonuc.StoreAddonFromApiKey(
+		userId,
+		profileId,
+		input.ApiKey,
+		input.DebridType,
+	)
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+}

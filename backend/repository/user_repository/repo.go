@@ -31,7 +31,7 @@ func (r *Repository) GetUserFromEmail(email string) (models.User, error) {
       u.updated_at,
       pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type)
       )
     from
       users u
@@ -83,7 +83,7 @@ func (r *Repository) GetUserFromUserId(userId string) (models.User, error) {
       updated_at,
       pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type)
       )
     from
       users u
@@ -134,7 +134,7 @@ func (r *Repository) GetUserFromId(userId int) (models.User, error) {
       u.updated_at,
       u.pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type)
       )
     from
       users u
@@ -236,4 +236,68 @@ func (r *Repository) StoreTraktAuthToken(data models.TraktAuthRes) (*time.Time, 
 	}
 
 	return createdAt, err
+}
+
+func (r *Repository) StoreDebridInfo(
+	ctx context.Context,
+	userId int,
+	profileId int,
+	typ string,
+	key string,
+) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			`update user_profiles set debrid_type = $1 ,debrid_key = $2 where user_id = $3 and id = $4`,
+			typ,
+			key,
+			userId,
+			profileId,
+		)
+	} else {
+
+		_, err = r.db.Exec(
+			`update user_profiles set debrid_type = $1 ,debrid_key = $2 where user_id = $3 and id = $4`,
+			typ,
+			key,
+			userId,
+			profileId,
+		)
+	}
+	if err != nil {
+		fmt.Println("Error storing debrid info", err)
+	}
+
+	return err
+}
+
+func (r *Repository) GetUserProfile(
+	ctx context.Context,
+	userId int,
+	profileId int,
+) (models.UserProfile, error) {
+	var res models.UserProfile
+	row := r.db.QueryRow(
+		`select id, user_id, debrid_type, debrid_key, name from user_profiles where user_id = $1, and id = $2`,
+		userId,
+		profileId,
+	)
+
+	var typSql sql.NullString
+	var keySql sql.NullString
+
+	err := row.Scan(&res.Id, &res.UserId, &typSql, &keySql, &res.Name)
+	if err != nil {
+		fmt.Println("Error getting user profile", err)
+	}
+	if typSql.Valid {
+		res.DebridType = typSql.String
+	}
+
+	if keySql.Valid {
+		res.DebridKey = keySql.String
+	}
+
+	return res, err
 }
