@@ -10,6 +10,7 @@ import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/movie_view/movie_view.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
+import 'package:zxy_app/views/profile_selection_view/profile_selection_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/search_view/search_view.dart';
 import 'package:zxy_app/views/search_view/search_view_model.dart';
@@ -21,6 +22,7 @@ import 'package:zxy_app/views/shared/fade_page_route.dart';
 import 'package:zxy_app/views/splash_view/splash_view.dart';
 import 'package:zxy_app/views/splash_view/splash_view_model.dart';
 import 'package:zxy_app/views/video_handler.dart';
+import 'package:zxy_app/views/profile_selection_view/profile_selection_view.dart';
 import 'package:zxy_app/views/video_player_view/video_player_view.dart';
 
 void main() {
@@ -135,6 +137,17 @@ class _MyAppState extends State<MyApp> {
                       create: (_) => LoginViewModel(authUC: deps.authUc),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) => const LoginView(),
+                    );
+                  },
+                );
+              case AppRoutes.profileSelectionView:
+                return FadePageRoute(
+                  builder: (_) {
+                    return ChangeNotifierProvider<ProfileSelectionViewModel>(
+                      create: (_) => ProfileSelectionViewModel(deps.authUc),
+                      builder: (_, _) {
+                        return ProfileSelectionView();
+                      },
                     );
                   },
                 );

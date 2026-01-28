@@ -12,6 +12,8 @@ import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
+import 'package:zxy_app/views/settings_view/settings_view.dart';
+import 'package:zxy_app/views/settings_view/settings_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/shared/glass_container.dart';
 import 'package:zxy_app/views/top_header.dart';
@@ -33,8 +35,8 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
   @override
   void initState() {
     super.initState();
-
     vm = context.read<BaseHomeViewModel>();
+    vm.initialise();
     baseChildren = [
       HomeView(),
       Provider<FilterViewModel>(
@@ -59,7 +61,12 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
           return FilterView();
         },
       ),
-      SizedBox.shrink(),
+      ChangeNotifierProvider<SettingsViewModel>(
+        create: (_) => SettingsViewModel(widget.deps.authUc),
+        builder: (_, _) {
+          return SettingsView();
+        },
+      ),
     ];
     leftCards = [
       ("Home", AppIcons.home),

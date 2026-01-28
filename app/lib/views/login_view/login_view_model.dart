@@ -38,11 +38,12 @@ class LoginViewModel {
       error.value = null;
       final user = await authUC.login(email, password);
       debugPrint("Login success: ${user.name}");
-      await authUC.loginProfile(user.profiles.first.id);
-      debugPrint("Profile Login success");
+      // Navigate to profile selection instead of auto-login
       isLoading.value = false;
       context.read<UserBloc>().user = user;
-      Navigator.of(context).pushReplacementNamed(AppRoutes.baseHomeView);
+      Navigator.of(
+        context,
+      ).pushReplacementNamed(AppRoutes.profileSelectionView);
       isLoading.value = false;
     } catch (e) {
       isLoading.value = false;

@@ -15,19 +15,19 @@ class SplashViewModel {
 
   Future<void> initialise(BuildContext context) async {
     try {
-        await context.read<HomeViewModel>().initialiseGenre();
-        await context.read<HomeViewModel>().initialiseConfig();
-      // await Future.wait([
-      //   context.read<HomeViewModel>().initialiseGenre(),
-      //   context.read<HomeViewModel>().initialiseConfig(),
-      // ]);
+      await Future.wait([
+        context.read<HomeViewModel>().initialiseGenre(),
+        context.read<HomeViewModel>().initialiseConfig(),
+      ]);
       var res = await authUc.initialise();
       if (!res) {
         Navigator.pushReplacementNamed(context, AppRoutes.loginView);
         return;
       }
       var userRes = await authUc.getUser();
+      var userProfile = await authUc.getUserProfile();
       context.read<UserBloc>().user = userRes;
+      context.read<UserBloc>().profile = userProfile;
       Navigator.pushReplacementNamed(context, AppRoutes.baseHomeView);
     } catch (e) {
       if (e is HttpUnAuthorised) {

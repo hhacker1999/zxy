@@ -60,10 +60,11 @@ class AuthUsecase {
     return user;
   }
 
-  Future<void> loginProfile(int profileId) async {
+  Future<void> loginProfile(int profileId, {String? pin}) async {
+    final body = {"profile_id": profileId, if (pin != null) "pin": pin};
     final res = await _httpService.post(
       Uri.parse("${AppConstants.baseUrl}/profile/login"),
-      body: {"profile_id": profileId},
+      body: body,
       auth: RequestAuth.session,
     );
     final cookieHeader = res.headers["set-cookie"];
@@ -90,5 +91,30 @@ class AuthUsecase {
     final body = jsonDecode(res.body);
     final user = User.fromJson(body);
     return user;
+  }
+
+  Future<Profile> getUserProfile() async {
+    final res = await _httpService.get(
+      Uri.parse("${AppConstants.baseUrl}/user/profile"),
+      auth: RequestAuth.profile,
+    );
+    final body = jsonDecode(res.body);
+    final profile = Profile.fromJson(body);
+    return profile;
+  }
+
+  Future<void> storeUserDebridKey(String tp, String key) async {
+    await _httpService.post(
+      Uri.parse("${AppConstants.baseUrl}/user/debrid/api"),
+      auth: RequestAuth.profile,
+      body: {"debrid_type": tp, "api_key": key},
+    );
+  }
+
+  Future<void> deleteUserDebridKey() async {
+    await _httpService.delete(
+      Uri.parse("${AppConstants.baseUrl}/user/debrid/api"),
+      auth: RequestAuth.profile,
+    );
   }
 }

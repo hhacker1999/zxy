@@ -123,7 +123,7 @@ func (u *Usecase) LogInUser(email string, pwd string) (models.User, string, erro
 		if len(v.PinHash) != 0 {
 			fmt.Println("found pin")
 			v.IsPinProtected = true
-      v.PinHash = ""
+			v.PinHash = ""
 			user.Profiles[i] = v
 		}
 	}
@@ -209,6 +209,16 @@ func (u *Usecase) GetUser(userId int) (models.User, error) {
 		}
 		return user, apperrors.SomethingWentWrongError{}
 	}
+
+	for i := range len(user.Profiles) {
+		v := user.Profiles[i]
+		if len(v.PinHash) != 0 {
+			fmt.Println("found pin")
+			v.IsPinProtected = true
+			v.PinHash = ""
+			user.Profiles[i] = v
+		}
+	}
 	return user, nil
 }
 
@@ -222,7 +232,7 @@ func (u *Usecase) GetUserProfile(userId int, profileId int) (models.UserProfile,
 	}
 	if len(profile.PinHash) != 0 {
 		profile.IsPinProtected = true
-    profile.PinHash = ""
+		profile.PinHash = ""
 	}
 	return profile, nil
 }

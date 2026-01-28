@@ -6,7 +6,12 @@ class UserBloc {
 
   ValueListenable<User?> get userNotifier => _userNotifier;
 
+  final ValueNotifier<Profile?> _profileNotifier = ValueNotifier(null);
+
+  ValueListenable<Profile?> get profileNotifier => _profileNotifier;
+
   set user(User user) => _userNotifier.value = user;
+  set profile(Profile f) => _profileNotifier.value = f;
 
   void dispose() {
     _userNotifier.dispose();

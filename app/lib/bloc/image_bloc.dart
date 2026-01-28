@@ -27,26 +27,26 @@ class ImageBloc {
   ValueListenable<ColorScheme?> get colorScheme => _colorScheme;
 
   Future<void> setGradColorFromImage(String path) async {
-    if (_images.containsKey(path)) {
-      Color? imgColor = _images[path]!.color;
-      if (imgColor == null) {
-        var img = _images[path]!.images.values.firstWhere(
-          (e) => e.value != null,
-          orElse: () {
-            return ValueNotifier(null);
-          },
-        );
-        if (img.value == null) {
-          return;
-        }
-        final color = await _getColorFromImage(img.value!);
-        _images[path]!.color = color.primary;
-        _images[path]!.scheme = color;
-        imgColor = color.primary;
-      }
-      _bgGradColor.value = imgColor;
-      // _colorScheme.value = _images[path]!.scheme;
-    }
+    // if (_images.containsKey(path)) {
+    //   Color? imgColor = _images[path]!.color;
+    //   if (imgColor == null) {
+    //     var img = _images[path]!.images.values.firstWhere(
+    //       (e) => e.value != null,
+    //       orElse: () {
+    //         return ValueNotifier(null);
+    //       },
+    //     );
+    //     if (img.value == null) {
+    //       return;
+    //     }
+    //     final color = await _getColorFromImage(img.value!);
+    //     _images[path]!.color = color.primary;
+    //     _images[path]!.scheme = color;
+    //     imgColor = color.primary;
+    //   }
+    //   _bgGradColor.value = imgColor;
+    //   // _colorScheme.value = _images[path]!.scheme;
+    // }
   }
 
   ValueListenable<MemoryImage?> getImage(String size, String path) {

@@ -18,10 +18,6 @@ class _SplashViewState extends State<SplashView> {
     super.initState();
     MediaKit.ensureInitialized();
     context.read<SplashViewModel>().initialise(context);
-    // if (context.mounted) {
-    //   Navigator.pushReplacementNamed(context, AppRoutes.baseHomeView);
-    // }
-    // });
   }
 
   @override

@@ -10,4 +10,5 @@ class AppRoutes {
   static const String filterView = "/filter";
   static const String searchView = "/search";
   static const String loginView = "/login";
+  static const String profileSelectionView = "/profile_selection";
 }

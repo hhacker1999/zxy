@@ -39,18 +39,26 @@ class User {
 class Profile {
   final int id;
   final String name;
+  final String debridType;
+  final bool isPinProtected;
   // final DateTime createdAt;
   // final DateTime updatedAt;
 
   Profile({
     required this.id,
     required this.name,
+    required this.debridType,
+    required this.isPinProtected
     // required this.createdAt,
     // required this.updatedAt,
   });
 
-  factory Profile.fromJson(Map<String, dynamic> json) =>
-      Profile(id: json["id"], name: json["name"]);
+  factory Profile.fromJson(Map<String, dynamic> json) => Profile(
+    id: json["id"],
+    name: json["name"],
+    debridType: json["debrid_type"] ?? "",
+    isPinProtected:  json["is_pin_protected"] ?? false,
+  );
 
   Map<String, dynamic> toJson() => {
     "id": id,
