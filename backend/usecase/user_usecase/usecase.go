@@ -9,6 +9,8 @@ import (
 	"time"
 	apperrors "zxy/app_errors"
 	"zxy/models"
+	addonsrepository "zxy/repository/addons_repository"
+	playbackrepository "zxy/repository/playback_repository"
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
 
@@ -22,17 +24,23 @@ type Usecase struct {
 	db          *sql.DB
 	userRepo    *userrepository.Repository
 	sessionRepo *sessionrepository.Repository
+	pbRepo      *playbackrepository.Repository
+	addonRepo   *addonsrepository.Repository
 }
 
 func New(
 	db *sql.DB,
 	userRepo *userrepository.Repository,
 	sessionRepo *sessionrepository.Repository,
+	pbRepo *playbackrepository.Repository,
+	addonRepo *addonsrepository.Repository,
 ) *Usecase {
 	return &Usecase{
 		db:          db,
 		userRepo:    userRepo,
 		sessionRepo: sessionRepo,
+		pbRepo:      pbRepo,
+		addonRepo:   addonRepo,
 	}
 }
 
@@ -121,7 +129,6 @@ func (u *Usecase) LogInUser(email string, pwd string) (models.User, string, erro
 	for i := range len(user.Profiles) {
 		v := user.Profiles[i]
 		if len(v.PinHash) != 0 {
-			fmt.Println("found pin")
 			v.IsPinProtected = true
 			v.PinHash = ""
 			user.Profiles[i] = v
@@ -213,7 +220,6 @@ func (u *Usecase) GetUser(userId int) (models.User, error) {
 	for i := range len(user.Profiles) {
 		v := user.Profiles[i]
 		if len(v.PinHash) != 0 {
-			fmt.Println("found pin")
 			v.IsPinProtected = true
 			v.PinHash = ""
 			user.Profiles[i] = v
@@ -238,8 +244,8 @@ func (u *Usecase) GetUserProfile(userId int, profileId int) (models.UserProfile,
 }
 
 func (u *Usecase) CreateUserProfile(profileInput CreateProfileInput) error {
-	if len(profileInput.Name) < 1 || len(profileInput.Name) > 10 {
-		return apperrors.InvalidInput{Err: "Invalid Name"}
+	if len(profileInput.Name) < 1 || len(profileInput.Name) > 15 {
+		return apperrors.InvalidInput{Err: "Name should be between 1 and 15 characters"}
 	}
 
 	if len(profileInput.Pin) > 0 && len(profileInput.Pin) != 6 {
@@ -318,4 +324,106 @@ func GetRandomString(length int) string {
 	}
 
 	return res
+}
+
+func (u *Usecase) UpdateUserProfile(profileInput CreateProfileInput) error {
+	if len(profileInput.Name) < 1 || len(profileInput.Name) > 10 {
+		return apperrors.InvalidInput{Err: "Invalid Name"}
+	}
+
+	if len(profileInput.Pin) > 0 && len(profileInput.Pin) != 6 {
+		return apperrors.InvalidInput{Err: "Pin can only be 6 digits long"}
+	}
+
+	profile, err := u.userRepo.GetUserProfile(
+		context.Background(),
+		profileInput.UserId,
+		profileInput.CreaterProfileId,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return apperrors.InvalidInput{Err: "User is not registered"}
+		}
+		return apperrors.SomethingWentWrongError{}
+	}
+	// NOTE: This means user is trying other than his own profile
+	if profileInput.CreaterProfileId != profileInput.ProfileId {
+		if !profile.IsAdmin {
+			return apperrors.InvalidInput{Err: "Not authorised to update profile"}
+		}
+	}
+
+	pinHash := profile.PinHash
+	if len(profileInput.Pin) > 0 {
+		hsh, err := bcrypt.GenerateFromPassword([]byte(profileInput.Pin), hashCost)
+		if err != nil {
+			fmt.Println("Error creating pin hash", err)
+			return apperrors.SomethingWentWrongError{}
+		}
+		pinHash = string(hsh)
+	}
+	err = u.userRepo.UpdateUserProfile(
+		context.Background(),
+		profileInput.UserId,
+		profileInput.CreaterProfileId,
+		profileInput.Name,
+		pinHash,
+	)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	return nil
+}
+
+func (u *Usecase) DeleteUserProfile(userId int, profileIdToDelete int, profileId int) error {
+	profile, err := u.userRepo.GetUserProfile(
+		context.Background(),
+		userId, profileId,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return apperrors.InvalidInput{Err: "User is not registered"}
+		}
+		return apperrors.SomethingWentWrongError{}
+	}
+	if !profile.IsAdmin {
+		return apperrors.InvalidInput{Err: "Not authorised to delete profile"}
+	}
+
+	txn, err := u.db.BeginTx(context.Background(), nil)
+	if err != nil {
+		fmt.Println("Erorr creating transaction", err)
+		return apperrors.SomethingWentWrongError{}
+	}
+	defer txn.Rollback()
+
+	ctx := context.WithValue(context.Background(), "txn", txn)
+
+	err = u.sessionRepo.RemoveProfileSessions(ctx, profileIdToDelete)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	err = u.addonRepo.RemoveProfileAddons(ctx, profileIdToDelete)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	err = u.pbRepo.DeleteProfileProgress(ctx, userId, profileIdToDelete)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	err = u.userRepo.DeleteUserProfile(ctx, userId, profileIdToDelete)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+	err = txn.Commit()
+	if err != nil {
+		fmt.Println("Error comitting transaction", err)
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	return nil
 }

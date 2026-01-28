@@ -117,4 +117,31 @@ class AuthUsecase {
       auth: RequestAuth.profile,
     );
   }
+
+  Future<void> createProfile(String name, String? pin, bool copyKey) async {
+    await _httpService.post(
+      Uri.parse("${AppConstants.baseUrl}/user/profile"),
+      auth: RequestAuth.profile,
+      body: {
+        "name": name,
+        "use_default_profile_key": copyKey,
+        "pin": pin ?? "",
+      },
+    );
+  }
+
+  Future<void> updateProfile(String name, String? pin, int profileId) async {
+    await _httpService.put(
+      Uri.parse("${AppConstants.baseUrl}/user/profile"),
+      auth: RequestAuth.profile,
+      body: {"name": name, "profile_id": profileId, "pin": pin ?? ""},
+    );
+  }
+
+  Future<void> deleteProfile(int profileId) async {
+    await _httpService.delete(
+      Uri.parse("${AppConstants.baseUrl}/user/profile?profile_id=$profileId"),
+      auth: RequestAuth.profile,
+    );
+  }
 }

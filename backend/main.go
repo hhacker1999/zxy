@@ -90,7 +90,7 @@ func main() {
 		return
 	}
 
-	userUc := userusecase.New(db, userRepo, sessionRepo)
+	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo)
 	progressUc := progressusecase.New(db, tmdbUc, playbackRepo)
 	restInterface := rest.New(addonuc, tmdbUc, userUc, userRepo, sessionRepo, progressUc)
 	router := restInterface.SetupRoutes()

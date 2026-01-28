@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	userusecase "zxy/usecase/user_usecase"
 )
 
@@ -187,6 +188,65 @@ func (i *RestInterface) handleCreateUserProfile(w http.ResponseWriter, r *http.R
 	}
 
 	err = i.userUC.CreateUserProfile(input)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = err.Error()
+		return
+	}
+	res.StatusCode = http.StatusOK
+}
+
+func (i *RestInterface) handleUpdateUserProfile(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("Error reading request body", err)
+		res.Error = "Something went wrong"
+		res.StatusCode = http.StatusInternalServerError
+		return
+	}
+	defer r.Body.Close()
+
+	input := userusecase.CreateProfileInput{
+		UserId:           userId,
+		CreaterProfileId: profileId,
+	}
+	err = json.Unmarshal(body, &input)
+	if err != nil {
+		fmt.Println("Error unmarshalling req body", err)
+		res.Error = "Invalid body"
+		res.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	err = i.userUC.UpdateUserProfile(input)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = err.Error()
+		return
+	}
+	res.StatusCode = http.StatusOK
+}
+
+func (i *RestInterface) handleDeleteUserProfile(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+	profileToDeleteStr := r.URL.Query().Get("profile_id")
+	profileToDelete, err := strconv.Atoi(profileToDeleteStr)
+	if len(profileToDeleteStr) == 0 || err != nil {
+		res.Error = "Invalid profile id "
+		res.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	err = i.userUC.DeleteUserProfile(userId, profileToDelete, profileId)
 	if err != nil {
 		res.StatusCode = http.StatusBadRequest
 		res.Error = err.Error()

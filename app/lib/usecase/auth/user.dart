@@ -41,6 +41,7 @@ class Profile {
   final String name;
   final String debridType;
   final bool isPinProtected;
+  final bool isAdmin;
   // final DateTime createdAt;
   // final DateTime updatedAt;
 
@@ -48,7 +49,8 @@ class Profile {
     required this.id,
     required this.name,
     required this.debridType,
-    required this.isPinProtected
+    required this.isPinProtected,
+    this.isAdmin = false,
     // required this.createdAt,
     // required this.updatedAt,
   });
@@ -57,7 +59,8 @@ class Profile {
     id: json["id"],
     name: json["name"],
     debridType: json["debrid_type"] ?? "",
-    isPinProtected:  json["is_pin_protected"] ?? false,
+    isPinProtected: json["is_pin_protected"] ?? false,
+    isAdmin: json["is_admin"] ?? false,
   );
 
   Map<String, dynamic> toJson() => {

@@ -215,3 +215,26 @@ func (r *Repository) GetProgressMultiple(
 
 	return res, err
 }
+
+func (r *Repository) DeleteProfileProgress(ctx context.Context, userId int, profileId int) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			`delete from watch_progress where profile_id = $1 and user_id = $2`,
+			profileId,
+			userId,
+		)
+	} else {
+		_, err = r.db.Exec(
+			`delete from watch_progress where profile_id = $1 and user_id = $2`,
+			profileId,
+			userId,
+		)
+	}
+	if err != nil {
+		fmt.Println("Error deleting profile watch progress", err)
+	}
+
+	return err
+}

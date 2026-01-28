@@ -334,3 +334,63 @@ func (r *Repository) RemoveDebridKeyFromDB(
 
 	return err
 }
+
+func (r *Repository) UpdateUserProfile(
+	ctx context.Context,
+	userId int,
+	profileId int,
+	name string,
+	pinHash string,
+) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			`update user_profiles set name = $1, pin_hash = $2 where user_id = $3 and id = $4`,
+			name,
+			pinHash,
+			userId,
+			profileId,
+		)
+	} else {
+		_, err = r.db.Exec(
+			`update user_profiles set name = $1, pin_hash = $2 where user_id = $3 and id = $4`,
+			name,
+			pinHash,
+			userId,
+			profileId,
+		)
+	}
+	if err != nil {
+		fmt.Println("Error updating profile info", err)
+	}
+
+	return err
+}
+
+func (r *Repository) DeleteUserProfile(
+	ctx context.Context,
+	userId int,
+	profileId int,
+) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			`delete from user_profiles where user_id = $1 and id = $2`,
+			userId,
+			profileId,
+		)
+	} else {
+		_, err = r.db.Exec(
+			`delete from user_profiles where user_id = $1 and id = $2`,
+			userId,
+			profileId,
+		)
+	}
+	if err != nil {
+		fmt.Println("Error deleting profile info", err)
+	}
+
+	return err
+}

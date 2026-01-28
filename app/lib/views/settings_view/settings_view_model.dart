@@ -74,6 +74,74 @@ class SettingsViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> createProfile(
+    BuildContext context,
+    String name,
+    String? pin,
+    bool copyDebrid,
+  ) async {
+    try {
+      if (name.isEmpty) {
+        showToast(context, true, "Name cannot be empty", "");
+        return;
+      }
+      _isLoading = true;
+      notifyListeners();
+      await _authUc.createProfile(name, pin, copyDebrid);
+      final user = await _authUc.getUser();
+      showToast(context, false, "Profile Created", "");
+      context.read<UserBloc>().user = user;
+    } catch (e) {
+      showToast(context, true, e.toString(), "");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateProfile(
+    BuildContext context,
+    String name,
+    int id, {
+    String? pin,
+  }) async {
+    try {
+      if (name.isEmpty) {
+        showToast(context, true, "Name cannot be empty", "");
+        return;
+      }
+      _isLoading = true;
+      notifyListeners();
+      await _authUc.updateProfile(name, pin, id);
+      final user = await _authUc.getUser();
+      final profile = await _authUc.getUserProfile();
+      showToast(context, false, "Profile Updated", "");
+      context.read<UserBloc>().user = user;
+      context.read<UserBloc>().profile = profile;
+    } catch (e) {
+      showToast(context, true, e.toString(), "");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteProfile(BuildContext context, int id) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      await _authUc.deleteProfile(id);
+      final user = await _authUc.getUser();
+      showToast(context, false, "Profile Deleted", "");
+      context.read<UserBloc>().user = user;
+    } catch (e) {
+      showToast(context, true, e.toString(), "");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   @override
   void dispose() {
     apiKeyController.dispose();

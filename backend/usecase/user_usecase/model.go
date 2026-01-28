@@ -1,6 +1,7 @@
 package userusecase
 
 type CreateProfileInput struct {
+	ProfileId            int    `json:"profile_id"`
 	CreaterProfileId     int    `json:"-"`
 	UserId               int    `json:"user_id"`
 	Name                 string `json:"name"`

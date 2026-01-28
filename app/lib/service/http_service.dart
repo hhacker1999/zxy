@@ -127,6 +127,52 @@ class HttpService {
     }
   }
 
+  Future<HttpResponse> put(
+    Uri uri, {
+    Map<String, dynamic>? body,
+    RequestAuth auth = RequestAuth.none,
+  }) async {
+    try {
+      print("Sending HTTP put request to $uri with body $body");
+      final res = await _client.put(
+        uri,
+        body: body != null ? jsonEncode(body) : null,
+        headers: _getHeaders(auth, body != null),
+      );
+      print("Response received with body${res.body}");
+      _checkError(res);
+      return HttpResponse(body: res.body, hdrs: res.headers);
+    } catch (e) {
+      if (e is HttpError) {
+        rethrow;
+      }
+      throw HttpSomethingWentWrong(error: e.toString());
+    }
+  }
+
+  Future<HttpResponse> delete(
+    Uri uri, {
+    Map<String, dynamic>? body,
+    RequestAuth auth = RequestAuth.none,
+  }) async {
+    try {
+      print("Sending HTTP delete request to $uri with body $body");
+      final res = await _client.delete(
+        uri,
+        body: body != null ? jsonEncode(body) : null,
+        headers: _getHeaders(auth, body != null),
+      );
+      print("Response received with body${res.body}");
+      _checkError(res);
+      return HttpResponse(body: res.body, hdrs: res.headers);
+    } catch (e) {
+      if (e is HttpError) {
+        rethrow;
+      }
+      throw HttpSomethingWentWrong(error: e.toString());
+    }
+  }
+
   void _checkError(http.Response res) {
     if (res.statusCode == 401) {
       var body = res.body.isNotEmpty ? jsonDecode(res.body) : {};
@@ -147,24 +193,6 @@ class HttpService {
       var body = res.body.isNotEmpty ? jsonDecode(res.body) : {};
       final err = HttpSomethingWentWrong(error: body["error"]);
       throw err;
-    }
-  }
-
-  Future<HttpResponse> delete(
-    Uri uri, {
-    RequestAuth auth = RequestAuth.none,
-  }) async {
-    try {
-      print("Sending HTTP delete request to $uri");
-      final res = await _client.delete(uri, headers: _getHeaders(auth, false));
-      print("Response received with body${res.body}");
-      _checkError(res);
-      return HttpResponse(body: res.body, hdrs: res.headers);
-    } catch (e) {
-      if (e is HttpError) {
-        rethrow;
-      }
-      throw HttpSomethingWentWrong(error: e.toString());
     }
   }
 

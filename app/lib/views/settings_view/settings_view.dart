@@ -27,35 +27,50 @@ class SettingsView extends StatelessWidget {
                   valueListenable: userBloc.profileNotifier,
                   builder: (_, profile, _) {
                     if (profile == null) return const SizedBox();
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    // We also need the full User object to list all profiles
+                    return ValueListenableBuilder<User?>(
+                      valueListenable: userBloc.userNotifier,
+                      builder: (_, user, __) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "Account",
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                                TextButton.icon(
+                                  onPressed: () {
+                                    Navigator.of(
+                                      context,
+                                    ).pushNamed(AppRoutes.profileSelectionView);
+                                  },
+                                  icon: const Icon(Icons.people_outline),
+                                  label: const Text("Switch Profile"),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppTheme.spacingL),
+                            // Profile Management Section (Admin Only)
+                            if (profile.isAdmin && user != null) ...[
+                              _buildProfileManagementSection(
+                                context,
+                                user,
+                                profile,
+                              ),
+                              const SizedBox(height: AppTheme.spacingL),
+                            ],
                             Text(
-                              "Account",
+                              "Debrid Integration",
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
-                            TextButton.icon(
-                              onPressed: () {
-                                Navigator.of(
-                                  context,
-                                ).pushNamed(AppRoutes.profileSelectionView);
-                              },
-                              icon: const Icon(Icons.people_outline),
-                              label: const Text("Switch Profile"),
-                            ),
+                            const SizedBox(height: AppTheme.spacingM),
+                            _buildDebridSection(context, profile),
                           ],
-                        ),
-                        const SizedBox(height: AppTheme.spacingL),
-                        Text(
-                          "Debrid Integration",
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: AppTheme.spacingM),
-                        _buildDebridSection(context, profile),
-                      ],
+                        );
+                      },
                     );
                   },
                 ),
@@ -192,6 +207,254 @@ class SettingsView extends StatelessWidget {
             ),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildProfileManagementSection(
+    BuildContext context,
+    User user,
+    Profile currentProfile,
+  ) {
+    final viewModel = context.read<SettingsViewModel>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("Profiles", style: Theme.of(context).textTheme.titleLarge),
+            IconButton(
+              onPressed: () =>
+                  _showProfileDialog(context, currentProfile: currentProfile),
+              icon: const Icon(Icons.add),
+              tooltip: "Create Profile",
+            ),
+          ],
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        Wrap(
+          spacing: AppTheme.spacingM,
+          runSpacing: AppTheme.spacingM,
+          children:
+              [
+                _ProfileChip(
+                  profile: currentProfile,
+                  onEdit: () => _showProfileDialog(
+                    context,
+                    profileToEdit: currentProfile,
+                    currentProfile: currentProfile,
+                  ),
+                  onDelete: () =>
+                      viewModel.deleteProfile(context, currentProfile.id),
+                  isCurrent: true,
+                ),
+              ]..addAll(
+                user.profiles.where((e) => e.id != currentProfile.id).map((p) {
+                  return _ProfileChip(
+                    profile: p,
+                    onEdit: () => _showProfileDialog(
+                      context,
+                      profileToEdit: p,
+                      currentProfile: currentProfile,
+                    ),
+                    onDelete: () => viewModel.deleteProfile(context, p.id),
+                    isCurrent: p.id == currentProfile.id,
+                  );
+                }).toList(),
+              ),
+        ),
+      ],
+    );
+  }
+
+  void _showProfileDialog(
+    BuildContext context, {
+    Profile? profileToEdit,
+    required Profile currentProfile,
+  }) {
+    showDialog(
+      context: context,
+      builder: (_) => ChangeNotifierProvider.value(
+        value: context.read<SettingsViewModel>(),
+        child: _ProfileDialog(
+          profileToEdit: profileToEdit,
+          currentProfile: currentProfile,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileChip extends StatelessWidget {
+  final Profile profile;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final bool isCurrent;
+
+  const _ProfileChip({
+    required this.profile,
+    required this.onEdit,
+    required this.onDelete,
+    required this.isCurrent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 150,
+      height: 150,
+      padding: const EdgeInsets.all(AppTheme.spacingS),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceLight,
+        borderRadius: AppTheme.roundedMedium,
+        border: isCurrent ? Border.all(color: AppTheme.accentColor) : null,
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (profile.isAdmin)
+                Icon(
+                  Icons.admin_panel_settings,
+                  size: 16,
+                  color: AppTheme.accentColor,
+                )
+              else
+                const SizedBox(width: 16),
+
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.edit, size: 16),
+                onPressed: onEdit,
+              ),
+            ],
+          ),
+          CircleAvatar(
+            backgroundColor: AppTheme.surfaceColor,
+            child: Text(profile.name.substring(0, 1)),
+          ),
+          const SizedBox(height: AppTheme.spacingS),
+          Text(
+            profile.name,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (!isCurrent)
+            IconButton(
+              icon: const Icon(
+                Icons.delete,
+                color: AppTheme.errorColor,
+                size: 18,
+              ),
+              onPressed: onDelete,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileDialog extends StatefulWidget {
+  final Profile? profileToEdit;
+  final Profile currentProfile;
+
+  const _ProfileDialog({this.profileToEdit, required this.currentProfile});
+
+  @override
+  State<_ProfileDialog> createState() => _ProfileDialogState();
+}
+
+class _ProfileDialogState extends State<_ProfileDialog> {
+  late TextEditingController _nameController;
+  late TextEditingController _pinController;
+  bool _copyDebrid = false;
+
+  bool get isEditing => widget.profileToEdit != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(
+      text: widget.profileToEdit?.name ?? "",
+    );
+    _pinController =
+        TextEditingController(); // Don't pre-fill PIN for security/edit logic simplicity
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.read<SettingsViewModel>();
+    final hasDebrid = widget.currentProfile.debridType.isNotEmpty;
+
+    return AlertDialog(
+      backgroundColor: AppTheme.surfaceColor,
+      title: Text(isEditing ? "Edit Profile" : "Create Profile"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(labelText: "Profile Name"),
+          ),
+          const SizedBox(height: AppTheme.spacingM),
+          TextField(
+            controller: _pinController,
+            decoration: const InputDecoration(labelText: "PIN (Optional)"),
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            obscureText: true,
+          ),
+          if (!isEditing && hasDebrid) ...[
+            const SizedBox(height: AppTheme.spacingM),
+            CheckboxListTile(
+              title: const Text("Include Debrid Key"),
+              subtitle: const Text("Copy from current profile"),
+              value: _copyDebrid,
+              onChanged: (val) => setState(() => _copyDebrid = val ?? false),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (isEditing) {
+              viewModel.updateProfile(
+                context,
+                _nameController.text.isEmpty ? "" : _nameController.text,
+                widget.profileToEdit!.id,
+                pin: _pinController.text.isNotEmpty
+                    ? _pinController.text
+                    : null,
+              );
+            } else {
+              viewModel.createProfile(
+                context,
+                _nameController.text,
+                _pinController.text.isNotEmpty ? _pinController.text : null,
+                _copyDebrid,
+              );
+            }
+            Navigator.pop(context);
+          },
+          child: Text(isEditing ? "Save" : "Create"),
+        ),
       ],
     );
   }
