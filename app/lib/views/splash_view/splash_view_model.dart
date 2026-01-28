@@ -15,10 +15,12 @@ class SplashViewModel {
 
   Future<void> initialise(BuildContext context) async {
     try {
-      await Future.wait([
-        context.read<HomeViewModel>().initialiseGenre(),
-        context.read<HomeViewModel>().initialiseConfig(),
-      ]);
+        await context.read<HomeViewModel>().initialiseGenre();
+        await context.read<HomeViewModel>().initialiseConfig();
+      // await Future.wait([
+      //   context.read<HomeViewModel>().initialiseGenre(),
+      //   context.read<HomeViewModel>().initialiseConfig(),
+      // ]);
       var res = await authUc.initialise();
       if (!res) {
         Navigator.pushReplacementNamed(context, AppRoutes.loginView);

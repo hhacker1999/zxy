@@ -43,6 +43,34 @@ class SeekValueNotifier extends ChangeNotifier
   String toString() => '${describeIdentity(this)}($value)';
 }
 
+class SubtitleFontStyle {
+  SubtitleFontStyle copyWith({
+    double? fontSize,
+    Color? color,
+    double? fontPadding,
+    Color? bgColor,
+  }) {
+    return SubtitleFontStyle(
+      fontSize: fontSize ?? this.fontSize,
+      color: color ?? this.color,
+      fontPadding: fontPadding ?? this.fontPadding,
+      bgColor: bgColor ?? this.bgColor,
+    );
+  }
+
+  final double fontSize;
+  final double fontPadding;
+  final Color color;
+  final Color bgColor;
+
+  const SubtitleFontStyle({
+    required this.fontSize,
+    required this.fontPadding,
+    required this.color,
+    required this.bgColor,
+  });
+}
+
 class ZxyPlayerState {
   final ValueListenable? a = null;
   final ValueNotifier<bool> isPlaying = ValueNotifier(false);
@@ -57,6 +85,16 @@ class ZxyPlayerState {
   final ValueNotifier<bool> isOverlayVisible = ValueNotifier(false);
   final ValueNotifier<bool> buffering = ValueNotifier(true);
   final ValueNotifier<bool> settingsVisible = ValueNotifier(false);
+  final ValueNotifier<int> audioDelay = ValueNotifier(0);
+  final ValueNotifier<int> subtitleDelay = ValueNotifier(0);
+  final ValueNotifier<SubtitleFontStyle> subtitleFontStyle = ValueNotifier(
+    SubtitleFontStyle(
+      fontSize: 24,
+      fontPadding: 20,
+      color: AppTheme.textPrimary,
+      bgColor: Colors.transparent,
+    ),
+  );
 
   void dispose() {
     isPlaying.dispose();
@@ -365,19 +403,37 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                           controls: NoVideoControls,
                           width: constr.maxWidth,
                           subtitleViewConfiguration: SubtitleViewConfiguration(
-                            style: TextStyle(
-                              height: 1.4,
-                              fontSize: 24.0,
-                              letterSpacing: 0.0,
-                              wordSpacing: 0.0,
-                              color: Color(0xffffffff),
-                              fontWeight: FontWeight.normal,
-                              backgroundColor: Color(0xaa000000),
-                            ),
-                            textAlign: TextAlign.center,
-                            padding: EdgeInsets.all(24.0),
+                            visible: false,
                           ),
                         ),
+                      ),
+                      ValueListenableBuilder(
+                        valueListenable: _state.subtitleFontStyle,
+                        builder: (_, style, _) {
+                          return Positioned(
+                            bottom: style.fontPadding,
+                            left: 0,
+                            right: 0,
+                            child: SubtitleView(
+                              controller: _controller,
+                              configuration: SubtitleViewConfiguration(
+                                style: TextStyle(
+                                  height: 1.4,
+                                  fontSize: style.fontSize,
+                                  letterSpacing: 0.0,
+                                  wordSpacing: 0.0,
+                                  color: style.color,
+                                  fontWeight: FontWeight.normal,
+                                  backgroundColor: style.bgColor,
+                                ),
+                                textAlign: TextAlign.center,
+                                padding: EdgeInsets.only(
+                                  bottom: style.fontPadding,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       Align(
                         alignment: Alignment.center,
@@ -468,6 +524,9 @@ class VideoSettingsSidebar extends StatelessWidget {
             _state.audioDetails,
             _state.videoDetails,
             _state.subtitleDetails,
+            _state.subtitleDelay,
+            _state.audioDelay,
+            _state.subtitleFontStyle,
           ],
           builder: (_) {
             return SingleChildScrollView(
@@ -602,6 +661,149 @@ class VideoSettingsSidebar extends StatelessWidget {
                         );
                       },
                     ),
+                  AppTheme.boxHeightM,
+                  Text("Audio delay"),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          _state.audioDelay.value -= 10;
+                        },
+                        icon: Icon(
+                          Icons.remove,
+
+                          color: AppTheme.textSecondary,
+                          size: 16,
+                        ),
+                      ),
+                      Text("${_state.audioDelay.value}ms"),
+                      IconButton(
+                        onPressed: () {
+                          _state.audioDelay.value += 10;
+                        },
+                        icon: Icon(
+                          Icons.add,
+                          color: AppTheme.textSecondary,
+                          size: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  AppTheme.boxHeightM,
+                  Text("Subtitle delay"),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          _state.subtitleDelay.value -= 10;
+                        },
+                        icon: Icon(
+                          Icons.remove,
+                          color: AppTheme.textSecondary,
+                          size: 16,
+                        ),
+                      ),
+                      Text("${_state.subtitleDelay.value}ms"),
+                      IconButton(
+                        onPressed: () {
+                          _state.subtitleDelay.value += 10;
+                        },
+                        icon: Icon(
+                          Icons.add,
+                          color: AppTheme.textSecondary,
+                          size: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  AppTheme.boxHeightM,
+                  Text("Subtitle font size"),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          _state.subtitleFontStyle.value = _state
+                              .subtitleFontStyle
+                              .value
+                              .copyWith(
+                                fontSize: max(
+                                  _state.subtitleFontStyle.value.fontSize - 6,
+                                  0,
+                                ),
+                              );
+                        },
+                        icon: Icon(
+                          Icons.remove,
+                          color: AppTheme.textSecondary,
+                          size: 16,
+                        ),
+                      ),
+                      Text("${_state.subtitleFontStyle.value.fontSize}"),
+                      IconButton(
+                        onPressed: () {
+                          _state.subtitleFontStyle.value = _state
+                              .subtitleFontStyle
+                              .value
+                              .copyWith(
+                                fontSize: min(
+                                  _state.subtitleFontStyle.value.fontSize + 6,
+                                  150,
+                                ),
+                              );
+                        },
+                        icon: Icon(
+                          Icons.add,
+                          color: AppTheme.textSecondary,
+                          size: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text("Subtitle padding"),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          _state.subtitleFontStyle.value = _state
+                              .subtitleFontStyle
+                              .value
+                              .copyWith(
+                                fontPadding: max(
+                                  _state.subtitleFontStyle.value.fontPadding -
+                                      6,
+                                  0,
+                                ),
+                              );
+                        },
+                        icon: Icon(
+                          Icons.remove,
+                          color: AppTheme.textSecondary,
+                          size: 16,
+                        ),
+                      ),
+                      Text("${_state.subtitleFontStyle.value.fontPadding}"),
+                      IconButton(
+                        onPressed: () {
+                          _state.subtitleFontStyle.value = _state
+                              .subtitleFontStyle
+                              .value
+                              .copyWith(
+                                fontPadding: min(
+                                  _state.subtitleFontStyle.value.fontPadding +
+                                      6,
+                                  150,
+                                ),
+                              );
+                        },
+                        icon: Icon(
+                          Icons.add,
+                          color: AppTheme.textSecondary,
+                          size: 16,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             );

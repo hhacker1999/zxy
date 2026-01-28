@@ -20,8 +20,9 @@ type UserProfile struct {
 	Name           string    `json:"name,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
-	PinHash        string    `json:"-"`
-	IsPinProtected bool      `json:"is_pin_protected,omitempty"`
+	PinHash        string    `json:"pin_hash,omitempty"`
+	IsPinProtected bool      `json:"is_pin_protected"`
 	DebridType     string    `json:"debrid_type"`
 	DebridKey      string    `json:"-"`
+	IsAdmin        bool      `json:"is_admin"`
 }

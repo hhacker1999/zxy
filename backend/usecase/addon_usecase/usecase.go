@@ -166,6 +166,39 @@ func (u *Usecase) StoreAddonFromApiKey(
 	return nil
 }
 
+func (u *Usecase) RemoveDebridKey(
+	userId int,
+	profileId int,
+) error {
+	txn, err := u.db.BeginTx(context.Background(), nil)
+	if err != nil {
+		fmt.Println("Error getting transaction object", err)
+		return apperrors.SomethingWentWrongError{}
+	}
+  defer txn.Rollback()
+
+	ctx := context.WithValue(context.Background(), "txn", txn)
+	err = u.addonRepo.RemoveProfileAddons(ctx,
+		profileId,
+	)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	err = u.userRepo.RemoveDebridKeyFromDB(ctx, userId, profileId)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+  err = txn.Commit()
+  if err != nil{
+    fmt.Println("Error committing transaction", err)
+    return apperrors.SomethingWentWrongError{}
+  }
+
+	return nil
+}
+
 func (u *Usecase) GetMovieStream(id string) ([]models.StreamResult, error) {
 	fmt.Println("Getting movie streams for id ", id)
 	var res models.AddonStreamResponse
@@ -303,6 +336,7 @@ func (u *Usecase) GetMovieStreamProfile(id string, profileId int) ([]models.Stre
 		fmt.Println("Error sending movie stream request ", err)
 		return nil, apperrors.SomethingWentWrongError{}
 	}
+	defer addonResponse.Body.Close()
 
 	bodyBytes, err := io.ReadAll(addonResponse.Body)
 	if err != nil {
@@ -373,6 +407,7 @@ func (u *Usecase) GetSeriesStreamProfile(
 		fmt.Println("Error sending series stream request ", err)
 		return nil, apperrors.SomethingWentWrongError{}
 	}
+	defer addonResponse.Body.Close()
 
 	bodyBytes, err := io.ReadAll(addonResponse.Body)
 	if err != nil {
@@ -425,13 +460,16 @@ func (u *Usecase) getUserAddonUrl(profileId int) (string, error) {
 	addons, err := u.addonRepo.GetProfileAddons(profileId)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			fmt.Println("No addons found")
 			return res, apperrors.NoResourcesFound{}
 		}
 		return res, apperrors.SomethingWentWrongError{}
 	}
 	if len(addons) == 0 {
+		fmt.Println("No addons found")
 		return res, apperrors.NoResourcesFound{}
 	}
+
 	res = addons[0].ManifestUrl
 	return res, nil
 }

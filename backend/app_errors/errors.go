@@ -28,3 +28,11 @@ type NoResourcesFound struct {
 func (e NoResourcesFound) Error() string {
 	return "No resources found"
 }
+
+
+type MaxProfileReachedErorr struct {
+}
+
+func (e MaxProfileReachedErorr) Error() string {
+	return "Maximum no of profile for a user reached"
+}

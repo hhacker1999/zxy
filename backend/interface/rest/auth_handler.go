@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	userusecase "zxy/usecase/user_usecase"
 )
 
 func (i *RestInterface) handleSignup(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +59,6 @@ func (i *RestInterface) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-	fmt.Println(string(data))
 	var input Input
 	err = json.Unmarshal(data, &input)
 	if err != nil {
@@ -96,7 +96,8 @@ func (i *RestInterface) handleProfileLogin(w http.ResponseWriter, r *http.Reques
 	}
 	defer r.Body.Close()
 	type Input struct {
-		ProfileId int `json:"profile_id"`
+		ProfileId int    `json:"profile_id"`
+		Pin       string `json:"pin"`
 	}
 	var input Input
 	err = json.Unmarshal(data, &input)
@@ -107,7 +108,7 @@ func (i *RestInterface) handleProfileLogin(w http.ResponseWriter, r *http.Reques
 	}
 	sessionId := r.Context().Value("session_id").(int)
 	userId := r.Context().Value("user_id").(int)
-	token, err := i.userUC.LogInProfile(input.ProfileId, userId, sessionId, "")
+	token, err := i.userUC.LogInProfile(input.ProfileId, userId, sessionId, input.Pin)
 	if err != nil {
 		res.StatusCode = http.StatusBadRequest
 		res.Error = err.Error()
@@ -140,4 +141,56 @@ func (i *RestInterface) handleGetUser(w http.ResponseWriter, r *http.Request) {
 	}
 	res.StatusCode = http.StatusOK
 	res.Data = user
+}
+
+func (i *RestInterface) handleGetUserProfile(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+	profile, err := i.userUC.GetUserProfile(userId, profileId)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = err.Error()
+		return
+	}
+	res.StatusCode = http.StatusOK
+	res.Data = profile
+}
+
+func (i *RestInterface) handleCreateUserProfile(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("Error reading request body", err)
+		res.Error = "Something went wrong"
+		res.StatusCode = http.StatusInternalServerError
+		return
+	}
+	defer r.Body.Close()
+
+	input := userusecase.CreateProfileInput{
+		UserId:           userId,
+		CreaterProfileId: profileId,
+	}
+	err = json.Unmarshal(body, &input)
+	if err != nil {
+		fmt.Println("Error unmarshalling req body", err)
+		res.Error = "Invalid body"
+		res.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	err = i.userUC.CreateUserProfile(input)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = err.Error()
+		return
+	}
+	res.StatusCode = http.StatusOK
 }

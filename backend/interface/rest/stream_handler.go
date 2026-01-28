@@ -2,7 +2,6 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -63,7 +62,6 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err != nil {
-		fmt.Println("Error in getting streams")
 		response.Error = err.Error()
 		response.StatusCode = http.StatusInternalServerError
 		return
@@ -118,6 +116,26 @@ func (i *RestInterface) HandleAddDebridKey(w http.ResponseWriter, r *http.Reques
 		profileId,
 		input.ApiKey,
 		input.DebridType,
+	)
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+}
+
+func (i *RestInterface) HandleRemoveDebridKey(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	profileId := r.Context().Value("profile_id").(int)
+	userId := r.Context().Value("user_id").(int)
+
+	err := i.addonuc.RemoveDebridKey(
+		userId,
+		profileId,
 	)
 	if err != nil {
 		response.Error = err.Error()

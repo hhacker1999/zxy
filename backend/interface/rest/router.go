@@ -48,6 +48,8 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/login", i.handleLogin)
 	router.Post("/profile/login", i.SessionHandler(i.handleProfileLogin, false))
 	router.Get("/user", i.SessionHandler(i.handleGetUser, false))
+	router.Get("/user/profile", i.SessionHandler(i.handleGetUserProfile, true))
+	router.Post("/user/profile", i.SessionHandler(i.handleCreateUserProfile, true))
 	router.Get("/streams", i.SessionHandler(i.HandleGetStream, true))
 	router.Get("/discover/movies", i.SessionHandler(i.HandleDiscoverMovies, true))
 	router.Get("/discover/shows", i.SessionHandler(i.HandleDiscoverShows, true))
@@ -65,6 +67,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/movie/update_progress", i.SessionHandler(i.HandleMovieProgressUpdate, true))
 	router.Post("/show/update_progress", i.SessionHandler(i.HandleShowProgressUpdate, true))
 	router.Post("/user/debrid/api", i.SessionHandler(i.HandleAddDebridKey, true))
+	router.Delete("/user/debrid/api", i.SessionHandler(i.HandleRemoveDebridKey, true))
 	return router
 }
 

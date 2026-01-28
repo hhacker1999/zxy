@@ -1,6 +1,7 @@
 package sessionrepository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"zxy/models"
@@ -58,15 +59,31 @@ func (r *Repository) GetUserSessionFromId(sessionId int) (models.Session, error)
 	return res, err
 }
 
-func (r *Repository) CreateProfileSession(session models.ProfileSession) error {
-	_, err := r.db.Exec(
-		`insert into profile_sessions (session_id, token, expiry, refresh_token, profile_id) values($1, $2, $3, $4, $5)`,
-		session.SessionId,
-		session.Token,
-		session.Expiry,
-		session.RefreshToken,
-		session.ProfileId,
-	)
+func (r *Repository) CreateProfileSession(
+	ctx context.Context,
+	session models.ProfileSession,
+) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			`insert into profile_sessions (session_id, token, expiry, refresh_token, profile_id) values($1, $2, $3, $4, $5)`,
+			session.SessionId,
+			session.Token,
+			session.Expiry,
+			session.RefreshToken,
+			session.ProfileId,
+		)
+	} else {
+		_, err = r.db.Exec(
+			`insert into profile_sessions (session_id, token, expiry, refresh_token, profile_id) values($1, $2, $3, $4, $5)`,
+			session.SessionId,
+			session.Token,
+			session.Expiry,
+			session.RefreshToken,
+			session.ProfileId,
+		)
+	}
 	if err != nil {
 		fmt.Println("Error storing profile session", err)
 	}
@@ -93,4 +110,26 @@ func (r *Repository) GetProfileSession(token string) (models.ProfileSession, err
 	}
 
 	return res, err
+}
+
+func (r *Repository) RemoveProfileSessions(ctx context.Context, profileId int) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			`delete from profile_sessions where profile_id = $1`,
+			profileId,
+		)
+	} else {
+		_, err = r.db.Exec(
+			`delete from profile_sessions where profile_id = $1`,
+			profileId,
+		)
+	}
+
+	if err != nil {
+		fmt.Println("Error storing profile session", err)
+	}
+
+	return err
 }

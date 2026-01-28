@@ -31,7 +31,7 @@ func (r *Repository) GetUserFromEmail(email string) (models.User, error) {
       u.updated_at,
       pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type, 'is_admin', up.is_admin)
       )
     from
       users u
@@ -83,7 +83,7 @@ func (r *Repository) GetUserFromUserId(userId string) (models.User, error) {
       updated_at,
       pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type, 'is_admin', up.is_admin)
       )
     from
       users u
@@ -134,7 +134,7 @@ func (r *Repository) GetUserFromId(userId int) (models.User, error) {
       u.updated_at,
       u.pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type, 'is_admin', up.is_admin)
       )
     from
       users u
@@ -193,21 +193,26 @@ func (r *Repository) CreateUser(ctx context.Context, user models.User) (int, err
 	return res, err
 }
 
-func (r *Repository) CreateUserProfile(ctx context.Context, profile models.UserProfile) error {
+func (r *Repository) CreateUserProfile(
+	ctx context.Context,
+	profile models.UserProfile,
+) (int, error) {
 	query :=
-		`insert into user_profiles (user_id, name, pin_hash) values($1, $2, $3)`
+		`insert into user_profiles (user_id, name, pin_hash, is_admin) values($1, $2, $3, $4) returning id`
 	txn, ok := ctx.Value("txn").(*sql.Tx)
 	var err error
+	var row *sql.Row
 	if ok {
-		_, err = txn.Exec(query, profile.UserId, profile.Name, profile.PinHash)
+		row = txn.QueryRow(query, profile.UserId, profile.Name, profile.PinHash, profile.IsAdmin)
 	} else {
-		_, err = r.db.Exec(query, profile.UserId, profile.Name, profile.PinHash)
+		row = r.db.QueryRow(query, profile.UserId, profile.Name, profile.PinHash, profile.IsAdmin)
 	}
+	var id int
+	err = row.Scan(&id)
 	if err != nil {
 		fmt.Println("Error inserting into user profiles ", err)
 	}
-
-	return err
+	return id, err
 }
 
 func (r *Repository) StoreTraktAuthToken(data models.TraktAuthRes) (*time.Time, error) {
@@ -279,7 +284,7 @@ func (r *Repository) GetUserProfile(
 ) (models.UserProfile, error) {
 	var res models.UserProfile
 	row := r.db.QueryRow(
-		`select id, user_id, debrid_type, debrid_key, name from user_profiles where user_id = $1, and id = $2`,
+		`select id, user_id, debrid_type, debrid_key, name, is_admin,pin_hash from user_profiles where user_id = $1 and id = $2`,
 		userId,
 		profileId,
 	)
@@ -287,7 +292,7 @@ func (r *Repository) GetUserProfile(
 	var typSql sql.NullString
 	var keySql sql.NullString
 
-	err := row.Scan(&res.Id, &res.UserId, &typSql, &keySql, &res.Name)
+	err := row.Scan(&res.Id, &res.UserId, &typSql, &keySql, &res.Name, &res.IsAdmin, &res.PinHash)
 	if err != nil {
 		fmt.Println("Error getting user profile", err)
 	}
@@ -300,4 +305,32 @@ func (r *Repository) GetUserProfile(
 	}
 
 	return res, err
+}
+
+func (r *Repository) RemoveDebridKeyFromDB(
+	ctx context.Context,
+	userId int,
+	profileId int,
+) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			`update user_profiles set debrid_type = null ,debrid_key = null where user_id = $1 and id = $2`,
+			userId,
+			profileId,
+		)
+	} else {
+
+		_, err = r.db.Exec(
+			`update user_profiles set debrid_type = null ,debrid_key = null where user_id = $1 and id = $2`,
+			userId,
+			profileId,
+		)
+	}
+	if err != nil {
+		fmt.Println("Error removing debrid info", err)
+	}
+
+	return err
 }

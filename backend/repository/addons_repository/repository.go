@@ -85,6 +85,7 @@ func (r *Repository) GetProfileAddons(profileId int) ([]models.Addon, error) {
 			fmt.Println("Error scanning get profile addons", err)
 			return res, err
 		}
+    res = append(res, temp)
 	}
 
 	return res, nil
