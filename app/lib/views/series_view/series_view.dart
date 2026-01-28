@@ -271,48 +271,89 @@ class EpisodesList extends StatelessWidget {
                 color,
                 vm.episodeStreamsState,
                 vm.onStreamSelect,
-                vm.selectedStream.value ?? 0,
+                vm.selectedStream.value,
               );
               vm.onEpisodeSelect(index);
             },
             child: SizedBox(
               height: episodeHeight,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+              child: Stack(
                 children: [
-                  ZxyImage(
-                    radius: AppTheme.roundedSmall,
-                    enableShadow: true,
-                    animate: false,
-                    width: episodeWidth,
-                    height: episodeHeight,
-                    path: episode.stillPath ?? "",
-                    size: "w185",
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ZxyImage(
+                        radius: AppTheme.roundedSmall,
+                        enableShadow: true,
+                        animate: false,
+                        width: episodeWidth,
+                        height: episodeHeight,
+                        path: episode.stillPath ?? "",
+                        size: "w185",
+                      ),
+                      AppTheme.boxWidthS,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${episode.episodeNumber}. ${episode.name}",
+                              maxLines: 2,
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: AppTheme.textPrimary),
+                            ),
+                            Expanded(
+                              child: Text(
+                                episode.overview,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.labelSmall!.copyWith(fontSize: 10),
+                              ),
+                            ),
+                            if (episode.runtime != null)
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.av_timer_outlined,
+                                    color: AppTheme.textSecondary,
+                                    size: 16,
+                                  ),
+                                  Text(
+                                    "${episode.runtime} min",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall!
+                                        .copyWith(fontSize: 10),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  AppTheme.boxWidthS,
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "${episode.episodeNumber}. ${episode.name}",
-                          maxLines: 2,
-                          style: Theme.of(context).textTheme.bodyMedium!
-                              .copyWith(color: AppTheme.textPrimary),
+                  if (episode.airDate == null ||
+                      episode.airDate!.isAfter(DateTime.now()))
+                    Positioned(
+                      right: 15,
+                      top: 15,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: AppTheme.roundedSmall,
                         ),
-                        Expanded(
-                          child: Text(
-                            episode.overview,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.labelSmall!.copyWith(fontSize: 10),
-                          ),
+                        padding: const EdgeInsets.all(AppTheme.spacingS),
+                        child: Text(
+                          "Upcoming",
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleLarge!.copyWith(fontSize: 8),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -342,14 +383,43 @@ class EpisodesList extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ZxyImage(
-                    radius: AppTheme.roundedSmall,
-                    enableShadow: true,
-                    animate: false,
+                  SizedBox(
                     width: episodeWidth,
                     height: episodeHeight,
-                    path: episode.stillPath ?? "",
-                    size: "w300",
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: ZxyImage(
+                            radius: AppTheme.roundedSmall,
+                            enableShadow: true,
+                            animate: false,
+                            width: episodeWidth,
+                            height: episodeHeight,
+                            path: episode.stillPath ?? "",
+                            size: "w300",
+                          ),
+                        ),
+                        if (episode.airDate == null ||
+                            episode.airDate!.isAfter(DateTime.now()))
+                          Positioned(
+                            right: 20,
+                            top: 20,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                borderRadius: AppTheme.roundedSmall,
+                              ),
+                              padding: const EdgeInsets.all(AppTheme.spacingS),
+                              child: Text(
+                                "Upcoming",
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleLarge!.copyWith(fontSize: 10),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                   AppTheme.boxHeightS,
                   Text(
@@ -358,10 +428,24 @@ class EpisodesList extends StatelessWidget {
                   ),
                   Text(
                     episode.overview,
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelSmall,
                   ),
+                  if (episode.runtime != null)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.av_timer_outlined,
+                          color: AppTheme.textSecondary,
+                          size: 18,
+                        ),
+                        Text(
+                          " ${episode.runtime} min",
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
