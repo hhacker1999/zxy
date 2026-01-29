@@ -17,7 +17,8 @@ class SettingsView extends StatelessWidget {
     return Builder(
       builder: (context) {
         final userBloc = context.read<UserBloc>();
-        final settingsVm = context.watch<SettingsViewModel>();
+        final settingsVm = context.watch<SettingsViewModel>()
+          ..context = context;
         return Stack(
           children: [
             Positioned.fill(
@@ -30,7 +31,7 @@ class SettingsView extends StatelessWidget {
                     // We also need the full User object to list all profiles
                     return ValueListenableBuilder<User?>(
                       valueListenable: userBloc.userNotifier,
-                      builder: (_, user, __) {
+                      builder: (_, user, _) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -128,7 +129,7 @@ class SettingsView extends StatelessWidget {
                 style: TextStyle(color: AppTheme.errorColor),
               ),
               onTap: () {
-                viewModel.removeDebridKey(context);
+                viewModel.removeDebridKey();
               },
             ),
           ],
@@ -201,7 +202,7 @@ class SettingsView extends StatelessWidget {
             child: ZxyButton(
               color: AppTheme.accentColor,
               onTap: () {
-                viewModel.storeDebridKey(context);
+                viewModel.storeDebridKey();
               },
               child: const Text("Add API Key"),
             ),
@@ -245,8 +246,7 @@ class SettingsView extends StatelessWidget {
                     profileToEdit: currentProfile,
                     currentProfile: currentProfile,
                   ),
-                  onDelete: () =>
-                      viewModel.deleteProfile(context, currentProfile.id),
+                  onDelete: () => viewModel.deleteProfile(currentProfile.id),
                   isCurrent: true,
                 ),
               ]..addAll(
@@ -258,7 +258,7 @@ class SettingsView extends StatelessWidget {
                       profileToEdit: p,
                       currentProfile: currentProfile,
                     ),
-                    onDelete: () => viewModel.deleteProfile(context, p.id),
+                    onDelete: () => viewModel.deleteProfile(p.id),
                     isCurrent: p.id == currentProfile.id,
                   );
                 }).toList(),
@@ -436,7 +436,6 @@ class _ProfileDialogState extends State<_ProfileDialog> {
           onPressed: () {
             if (isEditing) {
               viewModel.updateProfile(
-                context,
                 _nameController.text.isEmpty ? "" : _nameController.text,
                 widget.profileToEdit!.id,
                 pin: _pinController.text.isNotEmpty
@@ -445,7 +444,6 @@ class _ProfileDialogState extends State<_ProfileDialog> {
               );
             } else {
               viewModel.createProfile(
-                context,
                 _nameController.text,
                 _pinController.text.isNotEmpty ? _pinController.text : null,
                 _copyDebrid,

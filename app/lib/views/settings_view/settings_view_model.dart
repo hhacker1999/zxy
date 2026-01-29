@@ -9,6 +9,7 @@ import 'package:zxy_app/views/shared/toast.dart';
 
 class SettingsViewModel extends ChangeNotifier {
   final AuthUsecase _authUc;
+  late BuildContext _context;
   String _selectedDebridType = "";
   String get selectedDebridType => _selectedDebridType;
 
@@ -25,16 +26,18 @@ class SettingsViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> storeDebridKey(BuildContext context) async {
+  set context(BuildContext context) => _context = context;
+
+  Future<void> storeDebridKey() async {
     try {
       _isLoading = true;
       notifyListeners();
       if (_selectedDebridType != "tb" && _selectedDebridType != "rd") {
-        showToast(context, true, "Invalid debrid provider", "");
+        showToast(_context, true, "Invalid debrid provider", "");
         return;
       }
       if (apiKeyController.text.isEmpty) {
-        showToast(context, true, "Invalid api key", "");
+        showToast(_context, true, "Invalid api key", "");
         return;
       }
       await _authUc.storeUserDebridKey(
@@ -42,25 +45,25 @@ class SettingsViewModel extends ChangeNotifier {
         apiKeyController.text,
       );
       final newProfile = await _authUc.getUserProfile();
-      context.read<UserBloc>().profile = newProfile;
+      _context.read<UserBloc>().profile = newProfile;
     } catch (e) {
-      showToast(context, true, e.toString(), "");
+      showToast(_context, true, e.toString(), "");
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> removeDebridKey(BuildContext context) async {
+  Future<void> removeDebridKey() async {
     try {
       _isLoading = true;
       notifyListeners();
       await _authUc.deleteUserDebridKey();
       _selectedDebridType = "";
       final newProfile = await _authUc.getUserProfile();
-      context.read<UserBloc>().profile = newProfile;
+      _context.read<UserBloc>().profile = newProfile;
     } catch (e) {
-      showToast(context, true, e.toString(), "");
+      showToast(_context, true, e.toString(), "");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -74,40 +77,30 @@ class SettingsViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> createProfile(
-    BuildContext context,
-    String name,
-    String? pin,
-    bool copyDebrid,
-  ) async {
+  Future<void> createProfile(String name, String? pin, bool copyDebrid) async {
     try {
       if (name.isEmpty) {
-        showToast(context, true, "Name cannot be empty", "");
+        showToast(_context, true, "Name cannot be empty", "");
         return;
       }
       _isLoading = true;
       notifyListeners();
       await _authUc.createProfile(name, pin, copyDebrid);
       final user = await _authUc.getUser();
-      showToast(context, false, "Profile Created", "");
-      context.read<UserBloc>().user = user;
+      showToast(_context, false, "Profile Created", "");
+      _context.read<UserBloc>().user = user;
     } catch (e) {
-      showToast(context, true, e.toString(), "");
+      showToast(_context, true, e.toString(), "");
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> updateProfile(
-    BuildContext context,
-    String name,
-    int id, {
-    String? pin,
-  }) async {
+  Future<void> updateProfile(String name, int id, {String? pin}) async {
     try {
       if (name.isEmpty) {
-        showToast(context, true, "Name cannot be empty", "");
+        showToast(_context, true, "Name cannot be empty", "");
         return;
       }
       _isLoading = true;
@@ -115,27 +108,27 @@ class SettingsViewModel extends ChangeNotifier {
       await _authUc.updateProfile(name, pin, id);
       final user = await _authUc.getUser();
       final profile = await _authUc.getUserProfile();
-      showToast(context, false, "Profile Updated", "");
-      context.read<UserBloc>().user = user;
-      context.read<UserBloc>().profile = profile;
+      showToast(_context, false, "Profile Updated", "");
+      _context.read<UserBloc>().user = user;
+      _context.read<UserBloc>().profile = profile;
     } catch (e) {
-      showToast(context, true, e.toString(), "");
+      showToast(_context, true, e.toString(), "");
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> deleteProfile(BuildContext context, int id) async {
+  Future<void> deleteProfile(int id) async {
     try {
       _isLoading = true;
       notifyListeners();
       await _authUc.deleteProfile(id);
       final user = await _authUc.getUser();
-      showToast(context, false, "Profile Deleted", "");
-      context.read<UserBloc>().user = user;
+      showToast(_context, false, "Profile Deleted", "");
+      _context.read<UserBloc>().user = user;
     } catch (e) {
-      showToast(context, true, e.toString(), "");
+      showToast(_context, true, e.toString(), "");
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -13,6 +13,7 @@ import (
 	playbackrepository "zxy/repository/playback_repository"
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
+	addonusecase "zxy/usecase/addon_usecase"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -26,6 +27,7 @@ type Usecase struct {
 	sessionRepo *sessionrepository.Repository
 	pbRepo      *playbackrepository.Repository
 	addonRepo   *addonsrepository.Repository
+	addonUc     *addonusecase.Usecase
 }
 
 func New(
@@ -34,6 +36,7 @@ func New(
 	sessionRepo *sessionrepository.Repository,
 	pbRepo *playbackrepository.Repository,
 	addonRepo *addonsrepository.Repository,
+	addonUc *addonusecase.Usecase,
 ) *Usecase {
 	return &Usecase{
 		db:          db,
@@ -41,6 +44,7 @@ func New(
 		sessionRepo: sessionRepo,
 		pbRepo:      pbRepo,
 		addonRepo:   addonRepo,
+		addonUc:     addonUc,
 	}
 }
 
@@ -292,13 +296,23 @@ func (u *Usecase) CreateUserProfile(profileInput CreateProfileInput) error {
 			}
 		}
 		if profile != nil {
-			err = u.userRepo.StoreDebridInfo(
+			fullProfile, err := u.userRepo.GetUserProfile(context.Background(), user.Id, profile.Id)
+			fmt.Println(profile.Name)
+			fmt.Println(profile.DebridKey)
+			err = u.addonUc.StoreAddonFromApiKeyContext(
 				ctx,
 				user.Id,
 				profileId,
-				profile.DebridType,
-				profile.DebridKey,
+				fullProfile.DebridKey,
+				fullProfile.DebridType,
 			)
+			// err = u.userRepo.StoreDebridInfo(
+			// 	ctx,
+			// 	user.Id,
+			// 	profileId,
+			// 	profile.DebridType,
+			// 	profile.DebridKey,
+			// )
 			if err != nil {
 				return apperrors.SomethingWentWrongError{}
 			}

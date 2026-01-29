@@ -473,3 +473,93 @@ func (u *Usecase) getUserAddonUrl(profileId int) (string, error) {
 	res = addons[0].ManifestUrl
 	return res, nil
 }
+
+func (u *Usecase) StoreAddonFromApiKeyContext(
+  ctx context.Context,
+	userId int,
+	profileId int,
+	apiKey string,
+	debridType string,
+) error {
+	var config string
+	config = u.template
+	if debridType == "rd" {
+		config = strings.Replace(config, "{rd-enabled}", "true", 1)
+		config = strings.Replace(config, "{rd-apiKey}", apiKey, 1)
+		config = strings.Replace(config, "{tb-enabled}", "false", 1)
+	} else {
+		config = strings.Replace(config, "{rd-enabled}", "false", 1)
+		config = strings.Replace(config, "{tb-apiKey}", apiKey, 1)
+		config = strings.Replace(config, "{tb-enabled}", "true", 1)
+
+	}
+	config = strings.Replace(config, "{tmdb-at}", u.tmdbAt, 1)
+	config = strings.Replace(config, "{password}", "zxy-app", 1)
+
+	instance := u.instances[0]
+	url := fmt.Sprintf("%s/%s", instance, userPath)
+	req, err := http.NewRequest(
+		http.MethodPost,
+		url,
+		strings.NewReader(config),
+	)
+	req.Header.Add("content-type", "application/json")
+	if err != nil {
+		fmt.Println("Error creating request ", err)
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error sending request ", err)
+		return apperrors.SomethingWentWrongError{}
+	}
+	defer res.Body.Close()
+	bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading body", err)
+		return apperrors.SomethingWentWrongError{}
+	}
+	if res.StatusCode != http.StatusCreated {
+		fmt.Println("Invalid status code and body", res.StatusCode, string(bodyBytes))
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	var temp models.AIOResponse
+	err = json.Unmarshal(bodyBytes, &temp)
+	if err != nil {
+		fmt.Println("Error unmarshallig json response", err)
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	// Remove old addons
+	err = u.addonRepo.RemoveProfileAddons(ctx,
+		profileId,
+	)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	// Remove new addon
+	err = u.addonRepo.AddAddon(ctx, models.Addon{
+		ManifestUrl: fmt.Sprintf(
+			"%s/stremio/%s/%s/manifest.json",
+			instance,
+			temp.Data.UUID,
+			temp.Data.EncryptedPassword,
+		),
+		ProfileId: profileId,
+		Enabled:   true,
+	})
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	// Store debrid info in db
+	err = u.userRepo.StoreDebridInfo(ctx, userId, profileId, debridType, apiKey)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	return nil
+}
