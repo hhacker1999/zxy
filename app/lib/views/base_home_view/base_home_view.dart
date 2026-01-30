@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
@@ -109,21 +110,21 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
       builder: (_, color) {
         return Column(
           children: [
-            // if (!screenData.shouldRenderMobile)
-            //   TopHeader(
-            //     searchController: searchController,
-            //     onSearch: () {
-            //       if (searchController.value.text.isNotEmpty) {
-            //         Navigator.pushNamed(
-            //           context,
-            //           AppRoutes.searchView,
-            //           arguments: searchController.value.text,
-            //         );
-            //         searchController.clear();
-            //       }
-            //     },
-            //   ),
-            // if (!screenData.shouldRenderMobile) AppTheme.boxHeightM,
+            if (!screenData.shouldRenderMobile)
+              TopHeader(
+                searchController: searchController,
+                onSearch: () {
+                  if (searchController.value.text.isNotEmpty) {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.searchView,
+                      arguments: searchController.value.text,
+                    );
+                    searchController.clear();
+                  }
+                },
+              ),
+            if (!screenData.shouldRenderMobile) AppTheme.boxHeightM,
             Expanded(
               child: Row(
                 children: [

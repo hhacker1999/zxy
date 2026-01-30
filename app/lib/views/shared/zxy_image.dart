@@ -64,15 +64,23 @@ class _ZxyImageState extends State<ZxyImage> {
                   ]
                 : null,
             borderRadius: widget.radius,
-            image: provider != null
+            image:
+                provider != null &&
+                    widget.height != null &&
+                    widget.width != null
                 ? DecorationImage(image: provider, fit: widget.fit)
                 : null,
           ),
           height: widget.height,
           width: widget.width,
+          clipBehavior: widget.height == null && widget.width == null
+              ? Clip.antiAlias
+              : Clip.none,
           child: provider == null
               ? Align(
-                  alignment: Alignment.center,
+                  alignment: widget.replacement != null
+                      ? Alignment.bottomLeft
+                      : Alignment.center,
                   child:
                       widget.replacement ??
                       SvgPicture.asset(
@@ -82,6 +90,8 @@ class _ZxyImageState extends State<ZxyImage> {
                         width: 80,
                       ),
                 )
+              : widget.height == null && widget.width == null
+              ? Image(image: provider, fit: widget.fit)
               : null,
         );
       },

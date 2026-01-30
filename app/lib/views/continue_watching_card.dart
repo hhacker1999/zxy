@@ -41,9 +41,9 @@ class ContinueWatchingCard extends StatelessWidget {
     final double width = screenData.shouldRenderMobile ? 280 : 380;
     final double imageHeight = (width * 9) / 16;
     final double height = (width * 9) / 16;
-    final double spacing = screenData.shouldRenderMobile
-        ? AppTheme.spacingM
-        : AppTheme.spacingL;
+    // final double spacing = screenData.shouldRenderMobile
+    //     ? AppTheme.spacingM
+    //     : AppTheme.spacingL;
     return InkWell(
       onHover: (_) {
         context.read<ImageBloc>().setGradColorFromImage(backdropPath!);
@@ -60,33 +60,49 @@ class ContinueWatchingCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ZxyImage(
-                    width: width,
-                    height: imageHeight,
-                    enableShadow: true,
-                    path: backdropPath ?? "",
-                    size: screenData.shouldRenderMobile ? "w300" : "w780",
-                    fit: BoxFit.cover,
-                    radius: BorderRadius.circular(AppTheme.radiusMedium),
-                  ),
-                  Positioned(
-                    bottom: spacing,
-                    left: spacing,
-                    right: spacing,
-                    child: LinearProgressIndicator(
-                      borderRadius: BorderRadius.circular(
-                        AppTheme.radiusMedium,
-                      ),
-                      value: info.progress.progress / 100,
-                      backgroundColor: AppTheme.surfaceLight,
-                      color: AppTheme.textPrimary,
-                      minHeight: screenData.shouldRenderMobile ? 4 : 6,
+              child: Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ZxyImage(
+                      width: width,
+                      height: imageHeight,
+                      enableShadow: true,
+                      path: backdropPath ?? "",
+                      size: screenData.shouldRenderMobile ? "w300" : "w780",
+                      fit: BoxFit.cover,
                     ),
-                  ),
-                ],
+                    Positioned(
+                      // bottom: spacing,
+                      // left: spacing,
+                      // right: spacing,
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: LinearProgressIndicator(
+                        value: info.progress.progress / 100,
+                        backgroundColor: AppTheme.surfaceLight,
+                        color: AppTheme.textPrimary,
+                        minHeight: screenData.shouldRenderMobile ? 2 : 4,
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withOpacity(0.3),
+                        child: Center(
+                          child: Icon(
+                            Icons.play_circle_outline,
+                            size: screenData.shouldRenderMobile ? 30 : 42,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             screenData.shouldRenderMobile

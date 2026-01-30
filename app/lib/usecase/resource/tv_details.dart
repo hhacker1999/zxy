@@ -37,6 +37,8 @@ class SeriesDetails {
   final Credits? credits;
   final Images? images;
   final SimilarShows? similar;
+  final SimilarShows? recommendations;
+  final double imdbRatings;
 
   SeriesDetails({
     this.adult,
@@ -75,6 +77,8 @@ class SeriesDetails {
     this.credits,
     this.images,
     this.similar,
+    this.recommendations,
+    required this.imdbRatings,
   });
 
   factory SeriesDetails.fromJson(Map<String, dynamic> json) => SeriesDetails(
@@ -150,6 +154,10 @@ class SeriesDetails {
     similar: json["similar"] == null
         ? null
         : SimilarShows.fromJson(json["similar"]),
+    recommendations: json["recommendations"] == null
+        ? null
+        : SimilarShows.fromJson(json["recommendations"]),
+    imdbRatings: json["imdb_rating"]?.toDouble() ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -163,9 +171,7 @@ class SeriesDetails {
         : List<dynamic>.from(episodeRunTime!.map((x) => x)),
     "first_air_date":
         "${firstAirDate!.year.toString().padLeft(4, '0')}-${firstAirDate!.month.toString().padLeft(2, '0')}-${firstAirDate!.day.toString().padLeft(2, '0')}",
-    "genres": genres == null
-        ? []
-        : List<dynamic>.from(genres.map((x) => x.toJson())),
+    "genres": List<dynamic>.from(genres.map((x) => x.toJson())),
     "homepage": homepage,
     "id": id,
     "in_production": inProduction,
@@ -433,6 +439,7 @@ class Result {
   final String name;
   final double? voteAverage;
   final int? voteCount;
+  final double imdbRatings;
 
   Result({
     this.adult,
@@ -449,6 +456,7 @@ class Result {
     required this.name,
     this.voteAverage,
     this.voteCount,
+    required this.imdbRatings,
   });
 
   factory Result.fromJson(Map<String, dynamic> json) => Result(
@@ -470,6 +478,7 @@ class Result {
     name: json["name"],
     voteAverage: json["vote_average"]?.toDouble(),
     voteCount: json["vote_count"],
+    imdbRatings: json["imdb_rating"]?.toDouble() ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -517,11 +526,16 @@ class SpokenLanguage {
 
 class SimilarShows {
   final int? page;
-  final List<Result>? results;
+  final List<Result> results;
   final int? totalPages;
   final int? totalResults;
 
-  SimilarShows({this.page, this.results, this.totalPages, this.totalResults});
+  SimilarShows({
+    this.page,
+    required this.results,
+    this.totalPages,
+    this.totalResults,
+  });
 
   factory SimilarShows.fromJson(Map<String, dynamic> json) => SimilarShows(
     page: json["page"],
@@ -534,9 +548,7 @@ class SimilarShows {
 
   Map<String, dynamic> toJson() => {
     "page": page,
-    "results": results == null
-        ? []
-        : List<dynamic>.from(results!.map((x) => x.toJson())),
+    "results": List<dynamic>.from(results!.map((x) => x.toJson())),
     "total_pages": totalPages,
     "total_results": totalResults,
   };

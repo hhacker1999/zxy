@@ -15,8 +15,12 @@ class StreamUsecase {
       Uri.parse("${AppConstants.baseUrl}$_streamPath?type=movie&id=$id"),
       auth: RequestAuth.profile,
     );
+    final decoded = json.decode(response.body);
+    if (decoded == null) {
+      return [];
+    }
     return List<Map<String, dynamic>>.from(
-      json.decode(response.body),
+      decoded,
     ).map((e) => StreamItem.fromJson(e)).toList();
   }
 

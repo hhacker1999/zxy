@@ -32,8 +32,6 @@ class FilterValue {
 
 class AppConstants {
   static const String baseUrl = "http://127.0.0.1:6969";
-  static const String tmdbSmallLogo =
-      "https://upload.wikimedia.org/wikipedia/commons/8/89/Tmdb.new.logo.svg";
   static late final Map<int, Genre> movieGenre;
   static late final Map<int, Genre> showGenre;
 
@@ -177,4 +175,6 @@ class AppIcons {
   static const String play = "icons/play.svg";
   static const String image = "icons/image.svg";
   static const String logo = "icons/logo.png";
+  static const String imdb = "icons/imdb.svg";
+  static const String tmdb = "icons/tmdb.svg";
 }

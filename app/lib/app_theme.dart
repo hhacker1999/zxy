@@ -40,12 +40,14 @@ class AppTheme {
   // 2. Dimensions & Border Radius
   // -----------------------------------------------------------------------------
 
+  static const double radiusXSmall = 4.0; // Slightly softer than Plex
   static const double radiusSmall = 6.0; // Slightly softer than Plex
   static const double radiusMedium = 12.0;
   static const double radiusLarge = 16.0;
   static const double radiusXLarge = 24.0;
   static const double radiusXXLarge = 32.0;
 
+  static BorderRadius get roundedXSmall => BorderRadius.circular(radiusXSmall);
   static BorderRadius get roundedSmall => BorderRadius.circular(radiusSmall);
   static BorderRadius get roundedMedium => BorderRadius.circular(radiusMedium);
   static BorderRadius get roundedLarge => BorderRadius.circular(radiusLarge);

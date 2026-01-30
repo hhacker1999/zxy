@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
@@ -61,6 +63,7 @@ class LibraryCard extends StatelessWidget {
   final double imageHeight;
   final double width;
   final bool updateColorOnHover;
+  final bool showRatings;
   const LibraryCard({
     super.key,
     required this.resource,
@@ -68,6 +71,7 @@ class LibraryCard extends StatelessWidget {
     this.height = 290,
     this.imageHeight = 240,
     this.width = 160,
+    this.showRatings = true,
     required this.updateColorOnHover,
   });
 
@@ -93,13 +97,24 @@ class LibraryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            ZxyImage(
-              enableShadow: true,
+            SizedBox(
               height: imageHeight,
               width: width,
-              path: resource.posterPath,
-              radius: AppTheme.roundedMedium,
-              size: "w300",
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: ZxyImage(
+                      enableShadow: true,
+                      height: imageHeight,
+                      width: width,
+                      path: resource.posterPath,
+                      radius: AppTheme.roundedMedium,
+                      size: "w300",
+                    ),
+                  ),
+                  if (showRatings) RatingPosterCard(resource: resource),
+                ],
+              ),
             ),
             Screen.of(context).shouldRenderMobile
                 ? AppTheme.boxHeightS
@@ -116,6 +131,46 @@ class LibraryCard extends StatelessWidget {
                   : Theme.of(context).textTheme.labelMedium!.copyWith(
                       color: AppTheme.textSecondary,
                     ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class RatingPosterCard extends StatelessWidget {
+  const RatingPosterCard({super.key, required this.resource});
+
+  final ZxyMedia resource;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 3,
+      bottom: 3,
+      child: Container(
+        padding: EdgeInsets.all(AppTheme.spacingXS),
+        decoration: BoxDecoration(
+          color: AppTheme.backgroundDark,
+          borderRadius: AppTheme.roundedSmall,
+          border: Border.all(color: AppTheme.textSecondary),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: AppTheme.spacingXS,
+          children: [
+            Text(
+              resource.imdbRatings != 0
+                  ? resource.imdbRatings.toString()
+                  : resource.voteAverage?.toString() ?? "0",
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall!.copyWith(fontSize: 10),
+            ),
+            SvgPicture.asset(
+              resource.imdbRatings != 0 ? AppIcons.imdb : AppIcons.tmdb,
+              height: 10,
             ),
           ],
         ),

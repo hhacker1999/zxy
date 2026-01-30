@@ -9,6 +9,7 @@ import (
 	"zxy/config"
 	"zxy/interface/rest"
 	addonsrepository "zxy/repository/addons_repository"
+	localtmdbrepository "zxy/repository/local_tmdb_repository"
 	playbackrepository "zxy/repository/playback_repository"
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
@@ -45,6 +46,7 @@ func main() {
 		fmt.Println("Error connecting to postgres db ", err)
 		return
 	}
+  defer db.Close()
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		fmt.Println("Error getting postgres driver ", err)
@@ -71,12 +73,20 @@ func main() {
 
 	fmt.Println("Successfully ran migrations")
 
+	localTmdb, err := sql.Open("postgres", cfg.LocalTmdbUrl)
+	if err != nil {
+		fmt.Println("Error connecting to local tmdb ", err)
+		return
+	}
+  defer localTmdb.Close()
+
 	userRepo := userrepository.New(db)
 	sessionRepo := sessionrepository.New(db)
 	playbackRepo := playbackrepository.New(db)
 	addonRepo := addonsrepository.New(db)
+  localTmdbRepo:= localtmdbrepository.New(localTmdb)
 
-	tmdbUc := tmdbusecase.New(cfg.TmdbUrl)
+	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo)
 	addonuc, err := addonusecase.New(
 		"http://192.168.1.50:3000/stremio/8f0eb1de-911b-4e0d-92c8-ece4348a7556/eyJpIjoiTUNMN0d4UnFhZjNUVW1ucjlSU2w3UT09IiwiZSI6InVDREt3Y3pEZU5FVW1CR0VLWFNqeFRuTFVkdEV0THNOaDhQbkM0a3Jud289IiwidCI6ImEifQ",
 		addonRepo,

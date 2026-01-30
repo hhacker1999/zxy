@@ -32,6 +32,8 @@ class MovieDetails {
   final int? voteCount;
   final Images? images;
   final SimilarMovies? similar;
+  final SimilarMovies? recommendations;
+  final double imdbRatings;
 
   MovieDetails({
     this.adult,
@@ -65,6 +67,8 @@ class MovieDetails {
     this.voteCount,
     this.images,
     this.similar,
+    this.recommendations,
+    required this.imdbRatings,
   });
 
   factory MovieDetails.fromJson(Map<String, dynamic> json) => MovieDetails(
@@ -106,7 +110,7 @@ class MovieDetails {
               (x) => ProductionCountry.fromJson(x),
             ),
           ),
-    releaseDate: DateTime.parse(json["release_date"]),
+    releaseDate: DateTime.tryParse(json["release_date"])?? DateTime.now(),
     revenue: json["revenue"],
     runtime: json["runtime"],
     spokenLanguages: json["spoken_languages"] == null
@@ -125,6 +129,10 @@ class MovieDetails {
     similar: json["similar"] == null
         ? null
         : SimilarMovies.fromJson(json["similar"]),
+    recommendations: json["recommendations"] == null
+        ? null
+        : SimilarMovies.fromJson(json["recommendations"]),
+    imdbRatings: json["imdb_rating"]?.toDouble() ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -259,6 +267,7 @@ class Part {
   final int? voteCount;
   final String? originalTitle;
   final String? title;
+  final double imdbRatings;
 
   Part({
     this.adult,
@@ -278,6 +287,7 @@ class Part {
     this.voteCount,
     this.originalTitle,
     this.title,
+    required this.imdbRatings,
   });
 
   factory Part.fromJson(Map<String, dynamic> json) => Part(
@@ -300,6 +310,7 @@ class Part {
     voteCount: json["vote_count"],
     originalTitle: json["original_title"],
     title: json["title"],
+    imdbRatings: json["imdb_rating"]?.toDouble() ?? 0,
   );
 
   Map<String, dynamic> toJson() => {

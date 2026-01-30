@@ -6,18 +6,21 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 	apperrors "zxy/app_errors"
 	"zxy/models"
+	localtmdbrepository "zxy/repository/local_tmdb_repository"
 )
 
 type Usecase struct {
 	tmdbApiBaseUrl string
 	client         *http.Client
+	localTmdbRepo  *localtmdbrepository.Repository
 }
 
-func New(tmdbApiBaseUrl string) *Usecase {
+func New(tmdbApiBaseUrl string, localTmdbRepo *localtmdbrepository.Repository) *Usecase {
 	var tmdbClient = &http.Client{
 		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
@@ -31,10 +34,16 @@ func New(tmdbApiBaseUrl string) *Usecase {
 	return &Usecase{
 		tmdbApiBaseUrl: tmdbApiBaseUrl,
 		client:         tmdbClient,
+		localTmdbRepo:  localTmdbRepo,
 	}
 }
 
-func (u *Usecase) GetTrendingMovies(timeline string, page int, at string) ([]byte, error) {
+func (u *Usecase) GetTrendingMovies(
+	timeline string,
+	page int,
+	at string,
+) (models.MediaPaginatedResponse, error) {
+	var resp models.MediaPaginatedResponse
 
 	req, _ := http.NewRequest(
 		"GET",
@@ -51,27 +60,55 @@ func (u *Usecase) GetTrendingMovies(timeline string, page int, at string) ([]byt
 	res, err := u.client.Do(req)
 	if err != nil {
 		fmt.Println("Error sending trending movies request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Println("Invalid status code from trending movies request to TMDB", res.StatusCode)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("Error reading response of trending movies request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
-	fmt.Println(string(body))
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		fmt.Println("Error unmarshalling trending movies", err)
+		return resp, apperrors.SomethingWentWrongError{}
+	}
 
-	return body, nil
+	ids := []int{}
+	for _, v := range resp.Results {
+		ids = append(ids, int(v.ID))
+	}
+
+	ratings, err := u.localTmdbRepo.GetImdbRatingsFromTmdb(ids, "movie")
+	if err != nil {
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+
+	for i := range len(resp.Results) {
+		v := resp.Results[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+			resp.Results[i] = v
+		}
+	}
+
+	return resp, nil
 }
 
-func (u *Usecase) GetTrendingShows(timeline string, page int, at string) ([]byte, error) {
+func (u *Usecase) GetTrendingShows(
+	timeline string,
+	page int,
+	at string,
+) (models.MediaPaginatedResponse, error) {
+	var resp models.MediaPaginatedResponse
 
 	req, _ := http.NewRequest(
 		"GET",
@@ -88,25 +125,53 @@ func (u *Usecase) GetTrendingShows(timeline string, page int, at string) ([]byte
 	res, err := u.client.Do(req)
 	if err != nil {
 		fmt.Println("Error sending trending shows request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Println("Invalid status code from trending shows request to TMDB", res.StatusCode)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("Error reading response of trending shows request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		fmt.Println("Error unmarshalling trending movies", err)
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
-	return body, nil
+	ids := []int{}
+	for _, v := range resp.Results {
+		ids = append(ids, int(v.ID))
+	}
+
+	ratings, err := u.localTmdbRepo.GetImdbRatingsFromTmdb(ids, "show")
+	if err != nil {
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+
+	for i := range len(resp.Results) {
+		v := resp.Results[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+			resp.Results[i] = v
+		}
+	}
+
+	return resp, nil
 }
 
-func (u *Usecase) GetMovieLibrary(params map[string]string, at string) ([]byte, error) {
+func (u *Usecase) GetMovieLibrary(
+	params map[string]string,
+	at string,
+) (models.MediaPaginatedResponse, error) {
+	var resp models.MediaPaginatedResponse
 	url := fmt.Sprintf(
 		"%s/discover/movie?include_video=false&language=en-US",
 		u.tmdbApiBaseUrl,
@@ -126,25 +191,53 @@ func (u *Usecase) GetMovieLibrary(params map[string]string, at string) ([]byte, 
 	res, err := u.client.Do(req)
 	if err != nil {
 		fmt.Println("Error sending discover movies request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Println("Invalid status code from discover movies request to TMDB", res.StatusCode)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("Error reading response of discover movies request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		fmt.Println("Error unmarshalling trending movies", err)
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
-	return body, nil
+	ids := []int{}
+	for _, v := range resp.Results {
+		ids = append(ids, int(v.ID))
+	}
+
+	ratings, err := u.localTmdbRepo.GetImdbRatingsFromTmdb(ids, "movie")
+	if err != nil {
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+
+	for i := range len(resp.Results) {
+		v := resp.Results[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+			resp.Results[i] = v
+		}
+	}
+
+	return resp, nil
 }
 
-func (u *Usecase) GetShowsLibrary(params map[string]string, at string) ([]byte, error) {
+func (u *Usecase) GetShowsLibrary(
+	params map[string]string,
+	at string,
+) (models.MediaPaginatedResponse, error) {
+	var resp models.MediaPaginatedResponse
 	url := fmt.Sprintf(
 		"%s/discover/tv?include_video=false&language=en-US",
 		u.tmdbApiBaseUrl,
@@ -164,180 +257,220 @@ func (u *Usecase) GetShowsLibrary(params map[string]string, at string) ([]byte, 
 	res, err := u.client.Do(req)
 	if err != nil {
 		fmt.Println("Error sending discover movies request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Println("Invalid status code from discover movies request to TMDB", res.StatusCode)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("Error reading response of discover movies request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
-	return body, nil
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		fmt.Println("Error unmarshalling trending movies", err)
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+
+	ids := []int{}
+	for _, v := range resp.Results {
+		ids = append(ids, int(v.ID))
+	}
+
+	ratings, err := u.localTmdbRepo.GetImdbRatingsFromTmdb(ids, "show")
+	if err != nil {
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+
+	for i := range len(resp.Results) {
+		v := resp.Results[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+			resp.Results[i] = v
+		}
+	}
+
+	return resp, nil
 }
 func (u *Usecase) GetMovieDetails(id string, at string) (models.TMDBMovie, error) {
 	var response models.TMDBMovie
-	url := fmt.Sprintf(
-		"%s/movie/%s?append_to_response=credits,images,external_ids,similar,belongs_to_collection",
-		u.tmdbApiBaseUrl, id,
-	)
+	var err error
 
-	req, _ := http.NewRequest("GET", url, nil)
-
-	req.Header.Add("accept", "application/json")
-	req.Header.Add(
-		"Authorization",
-		fmt.Sprintf("Bearer %s", at),
-	)
-
-	res, err := u.client.Do(req)
+	// NOTE: check local db first
+	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		fmt.Println("Error sending get movie request to TMDB", err)
-		return response, apperrors.SomethingWentWrongError{}
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		fmt.Println("Invalid status code from get movie request to TMDB", res.StatusCode)
-		return response, apperrors.SomethingWentWrongError{}
+		return response, apperrors.InvalidInput{Err: "Invalid id"}
 	}
 
-	body, err := io.ReadAll(res.Body)
+	response, err = u.localTmdbRepo.GetMovie(idInt)
 	if err != nil {
-		fmt.Println("Error reading response of get movie request to TMDB", err)
-		return response, apperrors.SomethingWentWrongError{}
-	}
-
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		fmt.Println("Error unmarshalling get movie response", err)
-		return response, apperrors.SomethingWentWrongError{}
-	}
-
-	if response.BelongsToCollection.ID != 0 {
-
-		url = fmt.Sprintf(
-			"%s/collection/%d",
+		fmt.Println("Movie not found in local db")
+		url := fmt.Sprintf(
+			"%s/movie/%s?append_to_response=credits,images,external_ids,similar,belongs_to_collection,videos,watch/providers,recommendations",
 			u.tmdbApiBaseUrl,
-			response.BelongsToCollection.ID,
+			id,
 		)
 
-		req, _ = http.NewRequest("GET", url, nil)
-
+		req, _ := http.NewRequest("GET", url, nil)
 		req.Header.Add("accept", "application/json")
 		req.Header.Add(
 			"Authorization",
 			fmt.Sprintf("Bearer %s", at),
 		)
 
-		res, err = u.client.Do(req)
+		res, err := u.client.Do(req)
 		if err != nil {
-			fmt.Println("Error sending get collection request to TMDB", err)
+			fmt.Println("Error sending get movie request to TMDB", err)
 			return response, apperrors.SomethingWentWrongError{}
 		}
 		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusOK {
-			fmt.Println("Invalid status code from get collection request to TMDB", res.StatusCode)
+			fmt.Println("Invalid status code from get movie request to TMDB", res.StatusCode)
 			return response, apperrors.SomethingWentWrongError{}
 		}
 
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
-			fmt.Println("Error reading response of get collection request to TMDB", err)
+			fmt.Println("Error reading response of get movie request to TMDB", err)
 			return response, apperrors.SomethingWentWrongError{}
 		}
 
-		var collection models.Collection
-		err = json.Unmarshal(body, &collection)
+		err = json.Unmarshal(body, &response)
 		if err != nil {
-			fmt.Println("Error unmarshalling get collection response", err)
+			fmt.Println("Error unmarshalling get movie response", err)
 			return response, apperrors.SomethingWentWrongError{}
 		}
-		response.Collection = collection
+
+		if response.BelongsToCollection.ID != 0 {
+
+			url = fmt.Sprintf(
+				"%s/collection/%d",
+				u.tmdbApiBaseUrl,
+				response.BelongsToCollection.ID,
+			)
+
+			req, _ = http.NewRequest("GET", url, nil)
+
+			req.Header.Add("accept", "application/json")
+			req.Header.Add(
+				"Authorization",
+				fmt.Sprintf("Bearer %s", at),
+			)
+
+			res, err = u.client.Do(req)
+			if err != nil {
+				fmt.Println("Error sending get collection request to TMDB", err)
+				return response, apperrors.SomethingWentWrongError{}
+			}
+			defer res.Body.Close()
+
+			if res.StatusCode != http.StatusOK {
+				fmt.Println(
+					"Invalid status code from get collection request to TMDB",
+					res.StatusCode,
+				)
+				return response, apperrors.SomethingWentWrongError{}
+			}
+
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				fmt.Println("Error reading response of get collection request to TMDB", err)
+				return response, apperrors.SomethingWentWrongError{}
+			}
+
+			var collection models.Collection
+			err = json.Unmarshal(body, &collection)
+			if err != nil {
+				fmt.Println("Error unmarshalling get collection response", err)
+				return response, apperrors.SomethingWentWrongError{}
+			}
+			response.Collection = collection
+		}
+		go u.localTmdbRepo.InsertDetails(int(response.ID), "movie", response)
+	} else {
+		fmt.Println("Movie found in local db")
+	}
+
+	ids := []int{}
+	if response.ImdbRating == 0 {
+		ids = append(ids, int(response.ID))
+	}
+	for _, v := range response.Similar.Results {
+		ids = append(ids, int(v.ID))
+	}
+	for _, v := range response.Recommendations.Results {
+		ids = append(ids, int(v.ID))
+	}
+	for _, v := range response.Collection.Parts {
+		ids = append(ids, int(v.ID))
+	}
+
+	ratings, err := u.localTmdbRepo.GetImdbRatingsFromTmdb(ids, "movie")
+	if err != nil {
+		return response, nil
+	}
+
+	if response.ImdbRating == 0 {
+		rating, ok := ratings[int(response.ID)]
+		if ok {
+			response.ImdbRating = rating
+		}
+	}
+
+	for i := range len(response.Similar.Results) {
+		v := response.Similar.Results[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+		}
+		response.Similar.Results[i] = v
+	}
+
+	for i := range len(response.Recommendations.Results) {
+		v := response.Recommendations.Results[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+		}
+		response.Recommendations.Results[i] = v
+	}
+
+	for i := range len(response.Collection.Parts) {
+		v := response.Collection.Parts[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+		}
+		response.Collection.Parts[i] = v
 	}
 
 	return response, nil
 }
 
 func (u *Usecase) GetShowDetails(id string, at string) (models.TMDBShow, error) {
-	var details models.TMDBShow
-	url := fmt.Sprintf(
-		"%s/tv/%s?append_to_response=credits,external_ids,images,similar",
-		u.tmdbApiBaseUrl, id,
-	)
-
-	req, _ := http.NewRequest("GET", url, nil)
-
-	req.Header.Add("accept", "application/json")
-	req.Header.Add(
-		"Authorization",
-		fmt.Sprintf("Bearer %s", at),
-	)
-
-	res, err := u.client.Do(req)
+	var response models.TMDBShow
+	var err error
+	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		fmt.Println("Error sending get series request to TMDB", err)
-		return details, apperrors.SomethingWentWrongError{}
+		return response, apperrors.InvalidInput{Err: "Invalid id"}
 	}
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
+	response, err = u.localTmdbRepo.GetShow(idInt)
 	if err != nil {
-		fmt.Println("Error reading response of get series request to TMDB", err)
-		return details, apperrors.SomethingWentWrongError{}
-	}
-
-	if res.StatusCode != http.StatusOK {
-		fmt.Println(
-			"Invalid status code from get series request to TMDB",
-			res.StatusCode,
-			string(body),
+		url := fmt.Sprintf(
+			"%s/tv/%s?append_to_response=credits,external_ids,images,similar,videos,watch/providers,recommendations",
+			u.tmdbApiBaseUrl,
+			id,
 		)
-		return details, apperrors.SomethingWentWrongError{}
-	}
 
-	err = json.Unmarshal(body, &details)
-	if err != nil {
-		fmt.Println("Error unmarshalling show response", err)
-		return details, apperrors.SomethingWentWrongError{}
-	}
-
-	var seasons []models.Season
-
-	seasonInOneIteration := 10
-	iterations := int(math.Ceil((float64(len(details.Seasons)) / float64(seasonInOneIteration))))
-	for iteration := range iterations {
-		keys := []string{}
-		url = fmt.Sprintf(
-			"%s/tv/%s?append_to_response=",
-			u.tmdbApiBaseUrl, id,
-		)
-	inner:
-		for i := range seasonInOneIteration {
-			index := i + (seasonInOneIteration * iteration)
-			maxIndex := (seasonInOneIteration - 1) + (seasonInOneIteration * iteration)
-			if index >= len(details.Seasons) {
-				break inner
-			}
-			currSeason := details.Seasons[index]
-			if currSeason.SeasonNumber == 0 {
-				continue inner
-			}
-			seasonKey := fmt.Sprintf("season/%d", currSeason.SeasonNumber)
-			url += seasonKey
-			keys = append(keys, seasonKey)
-			if index < len(details.Seasons)-1 && index < maxIndex {
-				url += ","
-			}
-		}
-		req, _ = http.NewRequest("GET", url, nil)
+		req, _ := http.NewRequest("GET", url, nil)
 
 		req.Header.Add("accept", "application/json")
 		req.Header.Add(
@@ -345,17 +478,17 @@ func (u *Usecase) GetShowDetails(id string, at string) (models.TMDBShow, error) 
 			fmt.Sprintf("Bearer %s", at),
 		)
 
-		res, err = u.client.Do(req)
+		res, err := u.client.Do(req)
 		if err != nil {
 			fmt.Println("Error sending get series request to TMDB", err)
-			return details, apperrors.SomethingWentWrongError{}
+			return response, apperrors.SomethingWentWrongError{}
 		}
-
 		defer res.Body.Close()
-		body, err = io.ReadAll(res.Body)
+
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			fmt.Println("Error reading response of get series request to TMDB", err)
-			return details, apperrors.SomethingWentWrongError{}
+			return response, apperrors.SomethingWentWrongError{}
 		}
 
 		if res.StatusCode != http.StatusOK {
@@ -364,34 +497,144 @@ func (u *Usecase) GetShowDetails(id string, at string) (models.TMDBShow, error) 
 				res.StatusCode,
 				string(body),
 			)
-			return details, apperrors.SomethingWentWrongError{}
+			return response, apperrors.SomethingWentWrongError{}
 		}
 
-		rawMap := make(map[string]json.RawMessage, 0)
-		err = json.Unmarshal(body, &rawMap)
+		err = json.Unmarshal(body, &response)
 		if err != nil {
 			fmt.Println("Error unmarshalling show response", err)
-			return details, apperrors.SomethingWentWrongError{}
+			return response, apperrors.SomethingWentWrongError{}
 		}
-		for _, k := range keys {
-			var temp models.Season
-			data, ok := rawMap[k]
-			if !ok {
-				fmt.Println("could not find data for season ", k)
-				continue
+
+		var seasons []models.Season
+
+		seasonInOneIteration := 10
+		iterations := int(
+			math.Ceil((float64(len(response.Seasons)) / float64(seasonInOneIteration))),
+		)
+		for iteration := range iterations {
+			keys := []string{}
+			url = fmt.Sprintf(
+				"%s/tv/%s?append_to_response=",
+				u.tmdbApiBaseUrl, id,
+			)
+		inner:
+			for i := range seasonInOneIteration {
+				index := i + (seasonInOneIteration * iteration)
+				maxIndex := (seasonInOneIteration - 1) + (seasonInOneIteration * iteration)
+				if index >= len(response.Seasons) {
+					break inner
+				}
+				currSeason := response.Seasons[index]
+				if currSeason.SeasonNumber == 0 {
+					continue inner
+				}
+				seasonKey := fmt.Sprintf("season/%d", currSeason.SeasonNumber)
+				url += seasonKey
+				keys = append(keys, seasonKey)
+				if index < len(response.Seasons)-1 && index < maxIndex {
+					url += ","
+				}
 			}
-			err = json.Unmarshal(data, &temp)
+			req, _ = http.NewRequest("GET", url, nil)
+
+			req.Header.Add("accept", "application/json")
+			req.Header.Add(
+				"Authorization",
+				fmt.Sprintf("Bearer %s", at),
+			)
+
+			res, err = u.client.Do(req)
 			if err != nil {
-				fmt.Println("Error unmarshalling show season response", err)
-				return details, apperrors.SomethingWentWrongError{}
+				fmt.Println("Error sending get series request to TMDB", err)
+				return response, apperrors.SomethingWentWrongError{}
 			}
-			seasons = append(seasons, temp)
+
+			defer res.Body.Close()
+			body, err = io.ReadAll(res.Body)
+			if err != nil {
+				fmt.Println("Error reading response of get series request to TMDB", err)
+				return response, apperrors.SomethingWentWrongError{}
+			}
+
+			if res.StatusCode != http.StatusOK {
+				fmt.Println(
+					"Invalid status code from get series request to TMDB",
+					res.StatusCode,
+					string(body),
+				)
+				return response, apperrors.SomethingWentWrongError{}
+			}
+
+			rawMap := make(map[string]json.RawMessage, 0)
+			err = json.Unmarshal(body, &rawMap)
+			if err != nil {
+				fmt.Println("Error unmarshalling show response", err)
+				return response, apperrors.SomethingWentWrongError{}
+			}
+			for _, k := range keys {
+				var temp models.Season
+				data, ok := rawMap[k]
+				if !ok {
+					fmt.Println("could not find data for season ", k)
+					continue
+				}
+				err = json.Unmarshal(data, &temp)
+				if err != nil {
+					fmt.Println("Error unmarshalling show season response", err)
+					return response, apperrors.SomethingWentWrongError{}
+				}
+				seasons = append(seasons, temp)
+			}
+		}
+		response.Seasons = seasons
+		go u.localTmdbRepo.InsertDetails(int(response.ID), "show", response)
+	} else {
+		fmt.Println("Found show in db")
+	}
+
+	ids := []int{}
+	if response.ImdbRating == 0 {
+		ids = append(ids, int(response.ID))
+	}
+	for _, v := range response.Similar.Results {
+		ids = append(ids, int(v.ID))
+	}
+	for _, v := range response.Recommendations.Results {
+		ids = append(ids, int(v.ID))
+	}
+
+	ratings, err := u.localTmdbRepo.GetImdbRatingsFromTmdb(ids, "show")
+	if err != nil {
+		return response, nil
+	}
+
+	if response.ImdbRating == 0 {
+		rating, ok := ratings[int(response.ID)]
+		if ok {
+			response.ImdbRating = rating
 		}
 	}
 
-	details.Seasons = seasons
+	for i := range len(response.Similar.Results) {
+		v := response.Similar.Results[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+		}
+		response.Similar.Results[i] = v
+	}
 
-	return details, nil
+	for i := range len(response.Recommendations.Results) {
+		v := response.Recommendations.Results[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+		}
+		response.Recommendations.Results[i] = v
+	}
+
+	return response, nil
 }
 
 func (u *Usecase) GetSeasonDetails(id string, season string, at string) ([]byte, error) {
@@ -592,7 +835,13 @@ func (u *Usecase) getTMDBShowGenre(at string) ([]models.Genre, error) {
 	return tmdbRes.Genres, nil
 }
 
-func (u *Usecase) SearchMovie(at string, page int, keyword string) ([]byte, error) {
+func (u *Usecase) SearchMovie(
+	at string,
+	page int,
+	keyword string,
+) (models.MediaPaginatedResponse, error) {
+	var resp models.MediaPaginatedResponse
+
 	url := fmt.Sprintf(
 		"%s/search/movie?include_adult=false&language=en-US&page=%d&query=%s",
 		u.tmdbApiBaseUrl, page, keyword,
@@ -609,25 +858,55 @@ func (u *Usecase) SearchMovie(at string, page int, keyword string) ([]byte, erro
 	res, err := u.client.Do(req)
 	if err != nil {
 		fmt.Println("Error sending search movies request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Println("Invalid status code from search movies request to TMDB", res.StatusCode)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("Error reading response of search movies request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
-	return body, nil
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		fmt.Println("Error unmarshalling trending movies", err)
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+
+	ids := []int{}
+	for _, v := range resp.Results {
+		ids = append(ids, int(v.ID))
+	}
+
+	ratings, err := u.localTmdbRepo.GetImdbRatingsFromTmdb(ids, "movie")
+	if err != nil {
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+
+	for i := range len(resp.Results) {
+		v := resp.Results[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+			resp.Results[i] = v
+		}
+	}
+	return resp, nil
 }
 
-func (u *Usecase) SearchShows(at string, page int, keyword string) ([]byte, error) {
+func (u *Usecase) SearchShows(
+	at string,
+	page int,
+	keyword string,
+) (models.MediaPaginatedResponse, error) {
+	var resp models.MediaPaginatedResponse
+
 	url := fmt.Sprintf(
 		"%s/search/tv?include_adult=false&language=en-US&page=%d&query=%s",
 		u.tmdbApiBaseUrl, page, keyword,
@@ -644,22 +923,46 @@ func (u *Usecase) SearchShows(at string, page int, keyword string) ([]byte, erro
 	res, err := u.client.Do(req)
 	if err != nil {
 		fmt.Println("Error sending search shows request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Println("Invalid status code from search shows request to TMDB", res.StatusCode)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("Error reading response of search shows request to TMDB", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		fmt.Println("Error unmarshalling trending movies", err)
+		return resp, apperrors.SomethingWentWrongError{}
 	}
 
-	return body, nil
+	ids := []int{}
+	for _, v := range resp.Results {
+		ids = append(ids, int(v.ID))
+	}
+
+	ratings, err := u.localTmdbRepo.GetImdbRatingsFromTmdb(ids, "show")
+	if err != nil {
+		return resp, apperrors.SomethingWentWrongError{}
+	}
+
+	for i := range len(resp.Results) {
+		v := resp.Results[i]
+		rating, ok := ratings[int(v.ID)]
+		if ok {
+			v.ImdbRating = rating
+			resp.Results[i] = v
+		}
+	}
+
+	return resp, nil
 }
 
 func (u *Usecase) GetConfiguration(at string) ([]byte, error) {

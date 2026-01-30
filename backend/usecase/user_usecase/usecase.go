@@ -306,13 +306,6 @@ func (u *Usecase) CreateUserProfile(profileInput CreateProfileInput) error {
 				fullProfile.DebridKey,
 				fullProfile.DebridType,
 			)
-			// err = u.userRepo.StoreDebridInfo(
-			// 	ctx,
-			// 	user.Id,
-			// 	profileId,
-			// 	profile.DebridType,
-			// 	profile.DebridKey,
-			// )
 			if err != nil {
 				return apperrors.SomethingWentWrongError{}
 			}

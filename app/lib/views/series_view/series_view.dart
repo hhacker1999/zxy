@@ -12,9 +12,9 @@ import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/shared/cast_crew.dart';
 import 'package:zxy_app/views/shared/drop_down.dart';
 import 'package:zxy_app/views/shared/library_list.dart';
+import 'package:zxy_app/views/shared/ratings_tag.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
 import 'package:zxy_app/views/view_item_state.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
@@ -189,19 +189,17 @@ class _ShowViewState extends State<ShowView> {
                             );
                           },
                         ),
-                        screenInfo.shouldRenderMobile
-                            ? AppTheme.boxHeightS
-                            : AppTheme.boxHeightL,
-                        if (details.similar != null &&
-                            details.similar!.results != null &&
-                            details.similar!.results!.isNotEmpty) ...[
+
+                        if (details.recommendations != null &&
+                            details.recommendations!.results.isNotEmpty) ...[
                           screenInfo.shouldRenderMobile
-                              ? AppTheme.boxHeightM
-                              : AppTheme.boxHeightL,
+                              ? AppTheme.boxHeightL
+                              : AppTheme.boxHeightXXL,
                           LibraryList(
                             updateColorOnHover: false,
-                            resource: details.similar!.results!.map((e) {
+                            resource: details.recommendations!.results.map((e) {
                               return ZxyMedia(
+                                imdbRatings: e.imdbRatings,
                                 name: e.name,
                                 adult: e.adult ?? false,
                                 genreIds: e.genreIds ?? [],
@@ -211,7 +209,44 @@ class _ShowViewState extends State<ShowView> {
                                 overview: "",
                                 popularity: e.popularity,
                                 posterPath: e.posterPath ?? "",
-                                voteAverage: null,
+                                voteAverage: e.voteAverage,
+                                voteCount: null,
+                              );
+                            }).toList(),
+                            title: "You may also like",
+                            onTap: (media) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.showView,
+                                arguments: media.id,
+                              );
+                            },
+                          ),
+                        ],
+
+                        screenInfo.shouldRenderMobile
+                            ? AppTheme.boxHeightS
+                            : AppTheme.boxHeightL,
+                        if (details.similar != null &&
+                            details.similar!.results.isNotEmpty) ...[
+                          screenInfo.shouldRenderMobile
+                              ? AppTheme.boxHeightM
+                              : AppTheme.boxHeightL,
+                          LibraryList(
+                            updateColorOnHover: false,
+                            resource: details.similar!.results.map((e) {
+                              return ZxyMedia(
+                                imdbRatings: e.imdbRatings,
+                                name: e.name,
+                                adult: e.adult ?? false,
+                                genreIds: e.genreIds ?? [],
+                                type: ZxyMediaType.movie,
+                                id: e.id,
+                                originalLanguage: "",
+                                overview: "",
+                                popularity: e.popularity,
+                                posterPath: e.posterPath ?? "",
+                                voteAverage:e.voteAverage,
                                 voteCount: null,
                               );
                             }).toList(),
@@ -610,19 +645,15 @@ class PosterItemSeries extends StatelessWidget {
               Row(
                 spacing: AppTheme.spacingS,
                 children: [
-                  SvgPicture.network(
-                    AppConstants.tmdbSmallLogo,
-                    height: 16,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xFF01B4E4),
-                      BlendMode.srcIn,
-                    ),
+                  RatingTag(
+                    shouldRenderMobile: true,
+                    rating: series.imdbRatings.toString(),
+                    icon: AppIcons.imdb,
                   ),
-                  Text(
-                    series.voteAverage.toStringAsFixed(2),
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
+                  RatingTag(
+                    shouldRenderMobile: true,
+                    rating: series.voteAverage.toStringAsFixed(2),
+                    icon: AppIcons.tmdb,
                   ),
                 ],
               ),
@@ -710,8 +741,6 @@ class BannerItemSeries extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ZxyImage(
-                width: width * 0.3,
-                height: height * 0.3,
                 path: logoPath ?? "",
                 size: "w500",
                 fit: BoxFit.contain,
@@ -733,21 +762,15 @@ class BannerItemSeries extends StatelessWidget {
                       color: AppTheme.textSecondary,
                     ),
                   ),
-                  // Text(
-                  //   Duration(minutes: series.runtime).toHourMinutes(),
-                  //   style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                  //     color: AppTheme.textSecondary,
-                  //   ),
-                  // ),
                 ],
               ),
               AppTheme.boxHeightM,
               Row(
                 spacing: AppTheme.spacingS,
-                children: List.generate(series.genres?.length ?? 0, (index) {
-                  var genre = series.genres![index];
+                children: List.generate(series.genres.length, (index) {
+                  var genre = series.genres[index];
                   return Text(
-                    "${genre.name}${index != series.genres!.length - 1 ? ',' : ''}",
+                    "${genre.name}${index != series.genres.length - 1 ? ',' : ''}",
                     style: Theme.of(context).textTheme.labelLarge!.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -758,19 +781,15 @@ class BannerItemSeries extends StatelessWidget {
               Row(
                 spacing: AppTheme.spacingXS,
                 children: [
-                  SvgPicture.network(
-                    AppConstants.tmdbSmallLogo,
-                    height: 16,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xFF01B4E4),
-                      BlendMode.srcIn,
-                    ),
+                  RatingTag(
+                    shouldRenderMobile: false,
+                    rating: series.imdbRatings.toString(),
+                    icon: AppIcons.imdb,
                   ),
-                  Text(
-                    series.voteAverage.toStringAsFixed(2),
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
+                  RatingTag(
+                    shouldRenderMobile: false,
+                    rating: series.voteAverage.toStringAsFixed(2),
+                    icon: AppIcons.tmdb,
                   ),
                 ],
               ),

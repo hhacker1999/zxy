@@ -15,6 +15,7 @@ import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/shared/cast_crew.dart';
 import 'package:zxy_app/views/shared/duration_extension.dart';
 import 'package:zxy_app/views/shared/library_list.dart';
+import 'package:zxy_app/views/shared/ratings_tag.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 import 'package:zxy_app/views/view_item_state.dart';
@@ -139,6 +140,7 @@ class _MovieViewState extends State<MovieView> {
                             updateColorOnHover: false,
                             resource: details.collection!.parts.map((e) {
                               return ZxyMedia(
+                                imdbRatings: e.imdbRatings,
                                 adult: e.adult ?? false,
                                 genreIds: e.genreIds ?? [],
                                 type: ZxyMediaType.movie,
@@ -147,11 +149,45 @@ class _MovieViewState extends State<MovieView> {
                                 overview: "",
                                 popularity: e.popularity,
                                 posterPath: e.posterPath,
-                                voteAverage: null,
+                                voteAverage: e.voteAverage,
                                 voteCount: null,
                               );
                             }).toList(),
                             title: details.collection!.name,
+                            onTap: (media) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.movieView,
+                                arguments: media.id,
+                              );
+                            },
+                          ),
+                        ],
+
+                        if (details.recommendations != null &&
+                            details.recommendations!.results.isNotEmpty) ...[
+                          screenInfo.shouldRenderMobile
+                              ? AppTheme.boxHeightM
+                              : AppTheme.boxHeightL,
+                          LibraryList(
+                            updateColorOnHover: false,
+                            resource: details.recommendations!.results.map((e) {
+                              return ZxyMedia(
+                                imdbRatings: e.imdbRatings,
+                                name: e.title,
+                                adult: e.adult ?? false,
+                                genreIds: e.genreIds ?? [],
+                                type: ZxyMediaType.movie,
+                                id: e.id,
+                                originalLanguage: "",
+                                overview: "",
+                                popularity: e.popularity,
+                                posterPath: e.posterPath,
+                                voteAverage: e.voteAverage,
+                                voteCount: null,
+                              );
+                            }).toList(),
+                            title: "You may also like",
                             onTap: (media) {
                               Navigator.pushNamed(
                                 context,
@@ -171,6 +207,7 @@ class _MovieViewState extends State<MovieView> {
                             updateColorOnHover: false,
                             resource: details.similar!.results.map((e) {
                               return ZxyMedia(
+                                imdbRatings: e.imdbRatings,
                                 name: e.title,
                                 adult: e.adult ?? false,
                                 genreIds: e.genreIds ?? [],
@@ -180,7 +217,7 @@ class _MovieViewState extends State<MovieView> {
                                 overview: "",
                                 popularity: e.popularity,
                                 posterPath: e.posterPath,
-                                voteAverage: null,
+                                voteAverage: e.voteAverage,
                                 voteCount: null,
                               );
                             }).toList(),
@@ -368,19 +405,15 @@ class PosterItem extends StatelessWidget {
               Row(
                 spacing: AppTheme.spacingS,
                 children: [
-                  SvgPicture.network(
-                    AppConstants.tmdbSmallLogo,
-                    height: 16,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xFF01B4E4),
-                      BlendMode.srcIn,
-                    ),
+                  RatingTag(
+                    shouldRenderMobile: true,
+                    rating: movie.imdbRatings.toString(),
+                    icon: AppIcons.imdb,
                   ),
-                  Text(
-                    movie.voteAverage.toStringAsFixed(2),
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
+                  RatingTag(
+                    shouldRenderMobile: true,
+                    rating: movie.voteAverage.toStringAsFixed(2),
+                    icon: AppIcons.tmdb,
                   ),
                 ],
               ),
@@ -468,8 +501,6 @@ class BannerItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ZxyImage(
-                width: width * 0.3,
-                height: height * 0.3,
                 path: logoPath ?? "",
                 size: "w500",
                 fit: BoxFit.contain,
@@ -512,27 +543,23 @@ class BannerItem extends StatelessWidget {
                   );
                 }).toList(),
               ),
-              AppTheme.boxHeightXS,
+              AppTheme.boxHeightS,
               Row(
-                spacing: AppTheme.spacingXS,
+                spacing: AppTheme.spacingM,
                 children: [
-                  SvgPicture.network(
-                    AppConstants.tmdbSmallLogo,
-                    height: 16,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xFF01B4E4),
-                      BlendMode.srcIn,
-                    ),
+                  RatingTag(
+                    shouldRenderMobile: false,
+                    rating: movie.imdbRatings.toString(),
+                    icon: AppIcons.imdb,
                   ),
-                  Text(
-                    movie.voteAverage.toStringAsFixed(2),
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
+                  RatingTag(
+                    shouldRenderMobile: false,
+                    rating: movie.voteAverage.toStringAsFixed(2),
+                    icon: AppIcons.tmdb,
                   ),
                 ],
               ),
-              AppTheme.boxHeightL,
+              AppTheme.boxHeightM,
               StreamRow(
                 onTap: () async {
                   await Navigator.pushNamed(

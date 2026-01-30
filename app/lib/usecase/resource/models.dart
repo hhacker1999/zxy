@@ -44,6 +44,7 @@ class ZxyMedia {
   final double? voteAverage;
   final int? voteCount;
   final ZxyMediaType type;
+  final double imdbRatings;
 
   ZxyMedia({
     required this.adult,
@@ -63,6 +64,7 @@ class ZxyMedia {
     required this.voteCount,
     this.name,
     this.originalName,
+    required this.imdbRatings,
   });
 
   @override
@@ -91,6 +93,7 @@ class ZxyMedia {
         name: json["name"],
         voteAverage: json["vote_average"]?.toDouble() ?? 0,
         voteCount: json["vote_count"] ?? 0,
+        imdbRatings: json["imdb_rating"]?.toDouble() ?? 0,
       );
 }
 

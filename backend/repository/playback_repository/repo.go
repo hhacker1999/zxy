@@ -181,7 +181,7 @@ func (r *Repository) GetProgressMultiple(
 	if progressLte != 0 {
 		query += fmt.Sprintf(" and progress <= %.2f", progressLte)
 	}
-	if progressLte != 0 {
+	if progressGte != 0 {
 		query += fmt.Sprintf(" and progress >= %.2f", progressGte)
 	}
 

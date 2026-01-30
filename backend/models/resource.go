@@ -1,10 +1,12 @@
 package models
 
-type PaginatedResponse struct {
-	Pages        int
-	TotalPages   int
-	TotalResults int
-	Result       any
+import "time"
+
+type MediaPaginatedResponse struct {
+	Page         int        `json:"page"`
+	TotalPages   int        `json:"total_pages"`
+	TotalResults int        `json:"total_results"`
+	Results      []ZxyMedia `json:"results"`
 }
 
 type CreatedBy struct {
@@ -120,6 +122,9 @@ type TMDBShow struct {
 	Credits             Credits             `json:"credits"`
 	Images              Images              `json:"images"`
 	Similar             SimilarShow         `json:"similar"`
+	Recommendations     SimilarShow         `json:"recommendations"`
+	Videos              Videos              `json:"videos"`
+	ImdbRating          float64             `json:"imdb_rating"`
 }
 
 type GuestStar struct {
@@ -180,6 +185,9 @@ type TMDBMovie struct {
 	VoteCount           int64               `json:"vote_count"`
 	Images              Images              `json:"images"`
 	Similar             SimilarMovie        `json:"similar"`
+	Recommendations     SimilarMovie        `json:"recommendations"`
+	Videos              Videos              `json:"videos"`
+	ImdbRating          float64             `json:"imdb_rating"`
 }
 
 type BelongsToCollection struct {
@@ -242,6 +250,7 @@ type SimilarResultMovie struct {
 	Video            bool    `json:"video"`
 	VoteAverage      float64 `json:"vote_average"`
 	VoteCount        int64   `json:"vote_count"`
+	ImdbRating       float64 `json:"imdb_rating"`
 }
 
 type SimilarResultShow struct {
@@ -259,6 +268,7 @@ type SimilarResultShow struct {
 	Name             string   `json:"name"`
 	VoteAverage      float64  `json:"vote_average"`
 	VoteCount        int64    `json:"vote_count"`
+	ImdbRating       float64  `json:"imdb_rating"`
 }
 
 type Collection struct {
@@ -288,4 +298,45 @@ type Part struct {
 	Video            bool    `json:"video"`
 	VoteAverage      float64 `json:"vote_average"`
 	VoteCount        int64   `json:"vote_count"`
+	ImdbRating       float64 `json:"imdb_rating"`
+}
+
+type Videos struct {
+	Results []Result `json:"results"`
+}
+
+type Result struct {
+	ISO639_1    string    `json:"iso_639_1"`
+	ISO3166_1   string    `json:"iso_3166_1"`
+	Name        string    `json:"name"`
+	Key         string    `json:"key"`
+	Site        string    `json:"site"`
+	Size        int64     `json:"size"`
+	Type        string    `json:"type"`
+	Official    bool      `json:"official"`
+	PublishedAt time.Time `json:"published_at"`
+	ID          string    `json:"id"`
+}
+
+type ZxyMedia struct {
+	Adult            bool     `json:"adult"`
+	BackdropPath     string   `json:"backdrop_path"`
+	ID               int64    `json:"id"`
+	Title            *string  `json:"title,omitempty"`
+	OriginalTitle    *string  `json:"original_title,omitempty"`
+	Overview         string   `json:"overview"`
+	PosterPath       string   `json:"poster_path"`
+	MediaType        string   `json:"media_type"`
+	OriginalLanguage string   `json:"original_language"`
+	GenreIDS         []int64  `json:"genre_ids"`
+	Popularity       float64  `json:"popularity"`
+	ReleaseDate      *string  `json:"release_date,omitempty"`
+	Video            *bool    `json:"video,omitempty"`
+	VoteAverage      float64  `json:"vote_average"`
+	VoteCount        int64    `json:"vote_count"`
+	Name             *string  `json:"name,omitempty"`
+	OriginalName     *string  `json:"original_name,omitempty"`
+	FirstAirDate     *string  `json:"first_air_date,omitempty"`
+	OriginCountry    []string `json:"origin_country,omitempty"`
+	ImdbRating       float64  `json:"imdb_rating"`
 }
