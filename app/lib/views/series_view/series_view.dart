@@ -301,13 +301,13 @@ class EpisodesList extends StatelessWidget {
           final episode = season.episodes[index];
           return InkWell(
             onTap: () {
-              showStreamSelectionDialog(
-                context,
-                color,
-                vm.episodeStreamsState,
-                vm.onStreamSelect,
-                vm.selectedStream.value,
-              );
+              // showStreamSelectionDialog(
+              //   context,
+              //   color,
+              //   vm.episodeStreamsState,
+              //   vm.onStreamSelect,
+              //   vm.selectedStream.value,
+              // );
               vm.onEpisodeSelect(index);
             },
             child: SizedBox(
@@ -404,13 +404,13 @@ class EpisodesList extends StatelessWidget {
           final episode = season.episodes[index];
           return InkWell(
             onTap: () {
-              showStreamSelectionDialog(
-                context,
-                color,
-                vm.episodeStreamsState,
-                vm.onStreamSelect,
-                vm.selectedStream.value,
-              );
+              // showStreamSelectionDialog(
+              //   context,
+              //   color,
+              //   vm.episodeStreamsState,
+              //   vm.onStreamSelect,
+              //   vm.selectedStream.value,
+              // );
               vm.onEpisodeSelect(index);
             },
             child: SizedBox(
@@ -589,20 +589,20 @@ class PosterItemSeries extends StatelessWidget {
                       }).toList(),
                     ),
                     AppTheme.boxHeightM,
-                    StreamRow(
-                      onTap: () async {
-                        await Navigator.pushNamed(
-                          context,
-                          AppRoutes.videoPlayerView,
-                          arguments: vm,
-                        );
-                        vm.onPause();
-                      },
-                      color: color,
-                      selectedStream: vm.selectedStream,
-                      streamState: vm.episodeStreamsState,
-                      onStreamSelect: vm.onStreamSelect,
-                    ),
+                    // StreamRow(
+                    //   onTap: () async {
+                    //     await Navigator.pushNamed(
+                    //       context,
+                    //       AppRoutes.videoPlayerView,
+                    //       arguments: vm,
+                    //     );
+                    //     vm.onPause();
+                    //   },
+                    //   color: color,
+                    //   selectedStream: vm.selectedStream,
+                    //   streamState: vm.episodeStreamsState,
+                    //   onStreamSelect: vm.onStreamSelect,
+                    // ),
                   ],
                 ),
               ),
@@ -794,20 +794,20 @@ class BannerItemSeries extends StatelessWidget {
                 ],
               ),
               AppTheme.boxHeightL,
-              StreamRow(
-                color: color,
-                onTap: () async {
-                  await Navigator.pushNamed(
-                    context,
-                    AppRoutes.videoPlayerView,
-                    arguments: vm,
-                  );
-                  vm.onPause();
-                },
-                selectedStream: vm.selectedStream,
-                streamState: vm.episodeStreamsState,
-                onStreamSelect: vm.onStreamSelect,
-              ),
+              // StreamRow(
+              //   color: color,
+              //   onTap: () async {
+              //     await Navigator.pushNamed(
+              //       context,
+              //       AppRoutes.videoPlayerView,
+              //       arguments: vm,
+              //     );
+              //     vm.onPause();
+              //   },
+              //   selectedStream: vm.selectedStream,
+              //   streamState: vm.episodeStreamsState,
+              //   onStreamSelect: vm.onStreamSelect,
+              // ),
               AppTheme.boxHeightM,
               SizedBox(
                 width: width * 0.5,

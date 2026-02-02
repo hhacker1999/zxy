@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type AddonStreamResponse struct {
 	Streams []AddonStream `json:"streams"`
@@ -21,6 +23,23 @@ type StreamResult struct {
 	Container     string        `json:"container"`
 	Language      string        `json:"language"`
 	BehaviorHints BehaviorHints `json:"behaviorHints"`
+}
+
+type ZxyStreamsRes struct {
+	UHD []ZxyResolutionResponse `json:"uhd"`
+	FHD []ZxyResolutionResponse `json:"fhd"`
+	HD  []ZxyResolutionResponse `json:"hd"`
+}
+
+type ZxyResolutionResponse struct {
+	VisualTags    []string `json:"visual_tags"`
+	AudioTags     []string `json:"audio_tags"`
+	FileName      string   `json:"file_name"`
+	LanguageCodes []string `json:"language_codes"`
+	Size          float64  `json:"size"`
+	Url           string   `json:"url"`
+	Quality       string   `json:"quality"`
+	Resolution    string   `json:"resolution"`
 }
 
 type BehaviorHints struct {

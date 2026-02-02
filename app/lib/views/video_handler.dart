@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
+import 'package:zxy_app/views/view_item_state.dart';
 
 abstract class VideoHandler {
-  List<StreamItem> getCurrentStreams();
-  int getSelectedStreamIndex();
+  ValueListenable<ViewItemState<ZxyStreamResponse>> getCurrentStreamsNotifier();
+  ValueListenable<double> getProgressNotifier();
+  ValueListenable<int> getSelectedStreamNotifier();
   void onProgress(Duration duration);
   void onPause();
   void onPlay();

@@ -177,4 +177,8 @@ class AppIcons {
   static const String logo = "icons/logo.png";
   static const String imdb = "icons/imdb.svg";
   static const String tmdb = "icons/tmdb.svg";
+  static const String loading = "icons/loading.json";
+  static const String uhd = "icons/4k.svg";
+  static const String fhd = "icons/hd.svg";
+  static const String hdr = "icons/hdr.svg";
 }

@@ -7,8 +7,10 @@ class ZxyButton extends StatelessWidget {
   final VoidCallback? onTap;
   final Duration? duration;
   final bool changeColorBaseOnTap;
+  final double? radius;
   const ZxyButton({
     super.key,
+    this.radius,
     required this.color,
     required this.child,
     this.changeColorBaseOnTap = false,
@@ -27,7 +29,9 @@ class ZxyButton extends StatelessWidget {
           vertical: AppTheme.spacingS,
         ),
         decoration: BoxDecoration(
-          borderRadius: AppTheme.roundedSmall,
+          borderRadius: radius != null
+              ? BorderRadius.circular(radius!)
+              : AppTheme.roundedSmall,
           color: onTap == null && changeColorBaseOnTap
               ? AppTheme.textSecondary
               : color ?? AppTheme.accentColor,

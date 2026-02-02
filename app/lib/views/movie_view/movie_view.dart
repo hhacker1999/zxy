@@ -347,20 +347,21 @@ class PosterItem extends StatelessWidget {
                     ValueListenableBuilder(
                       valueListenable: vm.movieStreamState,
                       builder: (_, streamState, _) {
-                        return StreamRow(
-                          onTap: () async {
-                            await Navigator.pushNamed(
-                              context,
-                              AppRoutes.videoPlayerView,
-                              arguments: vm,
-                            );
-                            vm.onPause();
-                          },
-                          color: color,
-                          selectedStream: vm.selectedStream,
-                          streamState: vm.movieStreamState,
-                          onStreamSelect: vm.onStreamSelect,
-                        );
+                        return SizedBox();
+                        // return StreamRow(
+                        //   onTap: () async {
+                        //     await Navigator.pushNamed(
+                        //       context,
+                        //       AppRoutes.videoPlayerView,
+                        //       arguments: vm,
+                        //     );
+                        //     vm.onPause();
+                        //   },
+                        //   color: color,
+                        //   selectedStream: vm.selectedStream,
+                        //   streamState: vm.movieStreamState,
+                        //   onStreamSelect: vm.onStreamSelect,
+                        // );
                       },
                     ),
                   ],
@@ -570,8 +571,7 @@ class BannerItem extends StatelessWidget {
                   vm.onPause();
                 },
                 color: color,
-                selectedStream: vm.selectedStream,
-                streamState: vm.movieStreamState,
+                handler: vm,
                 onStreamSelect: vm.onStreamSelect,
               ),
               AppTheme.boxHeightM,

@@ -10,21 +10,19 @@ class StreamUsecase {
 
   const StreamUsecase(this._httpService);
 
-  Future<List<StreamItem>> getMovieStreams(String id) async {
+  Future<ZxyStreamResponse> getMovieStreams(String id) async {
     final response = await _httpService.get(
       Uri.parse("${AppConstants.baseUrl}$_streamPath?type=movie&id=$id"),
       auth: RequestAuth.profile,
     );
     final decoded = json.decode(response.body);
     if (decoded == null) {
-      return [];
+      return ZxyStreamResponse(uhd: [], fhd: [], hd: []);
     }
-    return List<Map<String, dynamic>>.from(
-      decoded,
-    ).map((e) => StreamItem.fromJson(e)).toList();
+    return ZxyStreamResponse.fromJson(decoded);
   }
 
-  Future<List<StreamItem>> getSeriesStreams(
+  Future<ZxyStreamResponse> getSeriesStreams(
     String id,
     int season,
     int episode,
@@ -35,8 +33,10 @@ class StreamUsecase {
       ),
       auth: RequestAuth.profile,
     );
-    return List<Map<String, dynamic>>.from(
-      json.decode(response.body),
-    ).map((e) => StreamItem.fromJson(e)).toList();
+    final decoded = json.decode(response.body);
+    if (decoded == null) {
+      return ZxyStreamResponse(uhd: [], fhd: [], hd: []);
+    }
+    return ZxyStreamResponse.fromJson(decoded);
   }
 }

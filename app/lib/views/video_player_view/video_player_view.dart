@@ -156,8 +156,8 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   @override
   void initState() {
     super.initState();
-    _streams = widget.handler.getCurrentStreams();
-    _selectedStream = widget.handler.getSelectedStreamIndex();
+    // _streams = widget.handler.getCurrentStreams();
+    _selectedStream = widget.handler.getSelectedStreamNotifier().value;
     print("Link playing");
     print(_streams[_selectedStream].url);
     print("--------------------------------------------------");

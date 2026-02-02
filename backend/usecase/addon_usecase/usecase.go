@@ -13,8 +13,6 @@ import (
 	"zxy/models"
 	addonsrepository "zxy/repository/addons_repository"
 	userrepository "zxy/repository/user_repository"
-
-	"github.com/razsteinmetz/go-ptn"
 )
 
 const userPath = "api/v1/user"
@@ -175,7 +173,7 @@ func (u *Usecase) RemoveDebridKey(
 		fmt.Println("Error getting transaction object", err)
 		return apperrors.SomethingWentWrongError{}
 	}
-  defer txn.Rollback()
+	defer txn.Rollback()
 
 	ctx := context.WithValue(context.Background(), "txn", txn)
 	err = u.addonRepo.RemoveProfileAddons(ctx,
@@ -190,11 +188,11 @@ func (u *Usecase) RemoveDebridKey(
 		return apperrors.SomethingWentWrongError{}
 	}
 
-  err = txn.Commit()
-  if err != nil{
-    fmt.Println("Error committing transaction", err)
-    return apperrors.SomethingWentWrongError{}
-  }
+	err = txn.Commit()
+	if err != nil {
+		fmt.Println("Error committing transaction", err)
+		return apperrors.SomethingWentWrongError{}
+	}
 
 	return nil
 }
@@ -233,25 +231,25 @@ func (u *Usecase) GetMovieStream(id string) ([]models.StreamResult, error) {
 
 	var finalResult []models.StreamResult
 
-	for _, v := range res.Streams {
-		if len(v.BehaviorHints.Filename) != 0 {
-			info, err := ptn.Parse(v.BehaviorHints.Filename)
-			if err != nil {
-				fmt.Println("Error parsing file name", err)
-			}
-			temp := models.StreamResult{
-				Name:          v.Name,
-				Description:   v.Description,
-				Url:           v.URL,
-				Resolution:    info.Resolution,
-				Container:     info.Container,
-				Language:      info.Language,
-				BehaviorHints: v.BehaviorHints,
-			}
-			finalResult = append(finalResult, temp)
-		}
-
-	}
+	// for _, v := range res.Streams {
+	// 	if len(v.BehaviorHints.Filename) != 0 {
+	// 		info, err := ptn.Parse(v.BehaviorHints.Filename)
+	// 		if err != nil {
+	// 			fmt.Println("Error parsing file name", err)
+	// 		}
+	// 		temp := models.StreamResult{
+	// 			Name:          v.Name,
+	// 			Description:   v.Description,
+	// 			Url:           v.URL,
+	// 			Resolution:    info.Resolution,
+	// 			Container:     info.Container,
+	// 			Language:      info.Language,
+	// 			BehaviorHints: v.BehaviorHints,
+	// 		}
+	// 		finalResult = append(finalResult, temp)
+	// 	}
+	//
+	// }
 
 	return finalResult, nil
 }
@@ -294,35 +292,36 @@ func (u *Usecase) GetSeriesStream(
 
 	var finalResult []models.StreamResult
 
-	for _, v := range res.Streams {
-		if len(v.BehaviorHints.Filename) != 0 {
-			info, err := ptn.Parse(v.BehaviorHints.Filename)
-			if err != nil {
-				fmt.Println("Error parsing file name", err)
-			}
-			temp := models.StreamResult{
-				Name:          v.Name,
-				Description:   v.Description,
-				Url:           v.URL,
-				Resolution:    info.Resolution,
-				Container:     info.Container,
-				Language:      info.Language,
-				BehaviorHints: v.BehaviorHints,
-			}
-			finalResult = append(finalResult, temp)
-		}
-
-	}
+	// for _, v := range res.Streams {
+	// 	if len(v.BehaviorHints.Filename) != 0 {
+	// 		info, err := ptn.Parse(v.BehaviorHints.Filename)
+	// 		if err != nil {
+	// 			fmt.Println("Error parsing file name", err)
+	// 		}
+	// 		temp := models.StreamResult{
+	// 			Name:          v.Name,
+	// 			Description:   v.Description,
+	// 			Url:           v.URL,
+	// 			Resolution:    info.Resolution,
+	// 			Container:     info.Container,
+	// 			Language:      info.Language,
+	// 			BehaviorHints: v.BehaviorHints,
+	// 		}
+	// 		finalResult = append(finalResult, temp)
+	// 	}
+	//
+	// }
 
 	return finalResult, nil
 }
 
-func (u *Usecase) GetMovieStreamProfile(id string, profileId int) ([]models.StreamResult, error) {
-	var res models.AddonStreamResponse
+func (u *Usecase) GetMovieStreamProfile(id string, profileId int) (models.ZxyStreamsRes, error) {
+	var res models.ZxyStreamsRes
+	var aioRes models.AddonStreamResponse
 
 	addonUrl, err := u.getUserAddonUrl(profileId)
 	if err != nil {
-		return nil, err
+		return res, err
 	}
 
 	addonResponse, err := http.DefaultClient.Get(
@@ -334,14 +333,14 @@ func (u *Usecase) GetMovieStreamProfile(id string, profileId int) ([]models.Stre
 	)
 	if err != nil {
 		fmt.Println("Error sending movie stream request ", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return res, apperrors.SomethingWentWrongError{}
 	}
 	defer addonResponse.Body.Close()
 
 	bodyBytes, err := io.ReadAll(addonResponse.Body)
 	if err != nil {
 		fmt.Println("Error reading movie stream response ", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return res, apperrors.SomethingWentWrongError{}
 	}
 
 	if addonResponse.StatusCode != http.StatusOK {
@@ -350,69 +349,135 @@ func (u *Usecase) GetMovieStreamProfile(id string, profileId int) ([]models.Stre
 			addonResponse.StatusCode,
 			string(bodyBytes),
 		)
-		return nil, apperrors.SomethingWentWrongError{}
+		return res, apperrors.SomethingWentWrongError{}
 	}
 
-	err = json.Unmarshal(bodyBytes, &res)
+	err = json.Unmarshal(bodyBytes, &aioRes)
 	if err != nil {
 		fmt.Println("Error unmarshalling movie stream response ", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return res, apperrors.SomethingWentWrongError{}
 	}
 
-	var finalResult []models.StreamResult
+	uhd := []models.ZxyResolutionResponse{}
+	fhd := []models.ZxyResolutionResponse{}
+	hd := []models.ZxyResolutionResponse{}
 
-	for _, v := range res.Streams {
-		if len(v.BehaviorHints.Filename) != 0 {
-			info, err := ptn.Parse(v.BehaviorHints.Filename)
-			if err != nil {
-				fmt.Println("Error parsing file name", err)
-			}
-			temp := models.StreamResult{
-				Name:          v.Name,
-				Description:   v.Description,
-				Url:           v.URL,
-				Resolution:    info.Resolution,
-				Container:     info.Container,
-				Language:      info.Language,
-				BehaviorHints: v.BehaviorHints,
-			}
-			finalResult = append(finalResult, temp)
+	for _, v := range aioRes.Streams {
+		if v.URL == "" {
+			continue
+		}
+		mp := make(map[string]any)
+		err = json.Unmarshal([]byte(v.Name), &mp)
+		if err != nil {
+			fmt.Println("Error unmarshalling stream name", err)
 		}
 
+		var temp models.ZxyResolutionResponse
+		dataMap, ok := mp["stream"].(map[string]any)
+		if !ok {
+			fmt.Println("stream is not a map")
+			continue
+		}
+
+		vTags, ok := dataMap["visualTags"].([]any)
+		if ok {
+			tmp := []string{}
+			for _, a := range vTags {
+				tg, ok := a.(string)
+				if ok {
+					tmp = append(tmp, tg)
+				}
+			}
+			temp.VisualTags = tmp
+		}
+		aTags, ok := dataMap["audioTags"].([]any)
+		if ok {
+			tmp := []string{}
+			for _, a := range aTags {
+				tg, ok := a.(string)
+				if ok {
+					tmp = append(tmp, tg)
+				}
+			}
+			temp.AudioTags = tmp
+		}
+		lCodes, ok := dataMap["languageCodes"].([]any)
+		if ok {
+			tmp := []string{}
+			for _, a := range lCodes {
+				tg, ok := a.(string)
+				if ok {
+					tmp = append(tmp, tg)
+				}
+			}
+			temp.LanguageCodes = tmp
+		}
+		fName, ok := dataMap["filename"].(string)
+		if ok {
+			temp.FileName = fName
+		}
+		quality, ok := dataMap["quality"].(string)
+		if ok {
+			temp.Quality = quality
+		}
+		size, ok := dataMap["size"].(float64)
+		if ok {
+			temp.Size = size
+		}
+		temp.Url = v.URL
+		res, ok := dataMap["resolution"].(string)
+		if ok {
+			temp.Resolution = res
+			if res == "2160p" {
+				uhd = append(uhd, temp)
+			}
+			if res == "1080p" {
+				fhd = append(fhd, temp)
+			}
+			if res == "720p" {
+				hd = append(hd, temp)
+			}
+		} else {
+			fmt.Println("resolution not found")
+		}
 	}
 
-	return finalResult, nil
+	res.UHD = uhd
+	res.FHD = fhd
+	res.HD = hd
+
+	return res, nil
 }
 func (u *Usecase) GetSeriesStreamProfile(
 	id string,
 	season int,
 	episode int,
 	profileId int,
-) ([]models.StreamResult, error) {
-	fmt.Println("Getting streams for series ", id, season, episode)
-	var res models.AddonStreamResponse
+) (models.ZxyStreamsRes, error) {
+	var res models.ZxyStreamsRes
+	var aioRes models.AddonStreamResponse
 
 	addonUrl, err := u.getUserAddonUrl(profileId)
 	if err != nil {
-		return nil, err
+		return res, err
 	}
 	addonResponse, err := http.DefaultClient.Get(
 		strings.Replace(
 			addonUrl,
 			"manifest.json",
-			fmt.Sprintf("/stream/series/%s:%d:%d.json", id, season, episode), 1,
+			fmt.Sprintf("stream/series/%s:%d:%d.json", id, season, episode), 1,
 		),
 	)
 	if err != nil {
 		fmt.Println("Error sending series stream request ", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return res, apperrors.SomethingWentWrongError{}
 	}
 	defer addonResponse.Body.Close()
 
 	bodyBytes, err := io.ReadAll(addonResponse.Body)
 	if err != nil {
 		fmt.Println("Error reading series stream response ", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		return res, apperrors.SomethingWentWrongError{}
 	}
 
 	if addonResponse.StatusCode != http.StatusOK {
@@ -421,38 +486,104 @@ func (u *Usecase) GetSeriesStreamProfile(
 			addonResponse.StatusCode,
 			string(bodyBytes),
 		)
-		return nil, apperrors.SomethingWentWrongError{}
+		return res, apperrors.SomethingWentWrongError{}
 	}
 
-	err = json.Unmarshal(bodyBytes, &res)
+	err = json.Unmarshal(bodyBytes, &aioRes)
 	if err != nil {
-		fmt.Println("Error unmarshalling series stream response ", err)
-		return nil, apperrors.SomethingWentWrongError{}
+		fmt.Println("Error unmarshalling movie stream response ", err)
+		return res, apperrors.SomethingWentWrongError{}
 	}
 
-	var finalResult []models.StreamResult
+	uhd := []models.ZxyResolutionResponse{}
+	fhd := []models.ZxyResolutionResponse{}
+	hd := []models.ZxyResolutionResponse{}
 
-	for _, v := range res.Streams {
-		if len(v.BehaviorHints.Filename) != 0 {
-			info, err := ptn.Parse(v.BehaviorHints.Filename)
-			if err != nil {
-				fmt.Println("Error parsing file name", err)
-			}
-			temp := models.StreamResult{
-				Name:          v.Name,
-				Description:   v.Description,
-				Url:           v.URL,
-				Resolution:    info.Resolution,
-				Container:     info.Container,
-				Language:      info.Language,
-				BehaviorHints: v.BehaviorHints,
-			}
-			finalResult = append(finalResult, temp)
+	for _, v := range aioRes.Streams {
+		if v.URL == "" {
+			continue
+		}
+		mp := make(map[string]any)
+		err = json.Unmarshal([]byte(v.Name), &mp)
+		if err != nil {
+			fmt.Println("Error unmarshalling stream name", err)
 		}
 
+		var temp models.ZxyResolutionResponse
+		dataMap, ok := mp["stream"].(map[string]any)
+		if !ok {
+			fmt.Println("stream is not a map")
+			continue
+		}
+
+		vTags, ok := dataMap["visualTags"].([]any)
+		if ok {
+			tmp := []string{}
+			for _, a := range vTags {
+				tg, ok := a.(string)
+				if ok {
+					tmp = append(tmp, tg)
+				}
+			}
+			temp.VisualTags = tmp
+		}
+		aTags, ok := dataMap["audioTags"].([]any)
+		if ok {
+			tmp := []string{}
+			for _, a := range aTags {
+				tg, ok := a.(string)
+				if ok {
+					tmp = append(tmp, tg)
+				}
+			}
+			temp.AudioTags = tmp
+		}
+		lCodes, ok := dataMap["languageCodes"].([]any)
+		if ok {
+			tmp := []string{}
+			for _, a := range lCodes {
+				tg, ok := a.(string)
+				if ok {
+					tmp = append(tmp, tg)
+				}
+			}
+			temp.LanguageCodes = tmp
+		}
+		fName, ok := dataMap["filename"].(string)
+		if ok {
+			temp.FileName = fName
+		}
+		quality, ok := dataMap["quality"].(string)
+		if ok {
+			temp.Quality = quality
+		}
+		size, ok := dataMap["size"].(float64)
+		if ok {
+			temp.Size = size
+		}
+		temp.Url = v.URL
+		res, ok := dataMap["resolution"].(string)
+		if ok {
+			temp.Resolution = res
+			if res == "2160p" {
+				uhd = append(uhd, temp)
+			}
+			if res == "1080p" {
+				fhd = append(fhd, temp)
+			}
+			if res == "720p" {
+				hd = append(hd, temp)
+			}
+		} else {
+			fmt.Println("resolution not found")
+		}
 	}
 
-	return finalResult, nil
+	res.UHD = uhd
+	res.FHD = fhd
+	res.HD = hd
+
+	return res, nil
 }
 
 func (u *Usecase) getUserAddonUrl(profileId int) (string, error) {
@@ -475,7 +606,7 @@ func (u *Usecase) getUserAddonUrl(profileId int) (string, error) {
 }
 
 func (u *Usecase) StoreAddonFromApiKeyContext(
-  ctx context.Context,
+	ctx context.Context,
 	userId int,
 	profileId int,
 	apiKey string,

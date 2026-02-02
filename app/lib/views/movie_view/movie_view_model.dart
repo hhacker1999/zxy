@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
@@ -13,7 +14,7 @@ class MovieViewModel implements VideoHandler {
   final MediaUsecase mediaUc;
   final StreamUsecase streamUc;
   final ProgressUsecase progressUc;
-  String? imdbId;
+  final UserBloc userBloc;
 
   ValueNotifier<int> selectedStream = ValueNotifier(0);
 
@@ -21,6 +22,7 @@ class MovieViewModel implements VideoHandler {
     required this.mediaUc,
     required this.streamUc,
     required this.progressUc,
+    required this.userBloc,
   });
 
   final ValueNotifier<ViewItemState<MovieDetails>> _movieDetailsState =
@@ -32,20 +34,24 @@ class MovieViewModel implements VideoHandler {
   final ValueNotifier<double> _progressNotifier = ValueNotifier(0);
   ValueListenable<double> get progress => _progressNotifier;
 
-  final ValueNotifier<ViewItemState<List<StreamItem>>> _movieStreamsState =
+  final ValueNotifier<ViewItemState<ZxyStreamResponse>> _movieStreamsState =
       ValueNotifier(ItemInitial());
 
-  ValueListenable<ViewItemState<List<StreamItem>>> get movieStreamState =>
+  ValueListenable<ViewItemState<ZxyStreamResponse>> get movieStreamState =>
       _movieStreamsState;
 
   Future<void> initialise(int id) async {
     try {
       final details = await mediaUc.getMovieDetails(id);
-      imdbId = details.externalIds.imdbId;
       _movieDetailsState.value = ItemLoaded(data: details);
       final progress = await progressUc.getMovieProgress(details.id.toString());
       _progressNotifier.value = progress?.progress ?? 0;
-      _getMovieStreams();
+      final userHasAddedDebrid =
+          userBloc.profileNotifier.value != null &&
+          userBloc.profileNotifier.value!.debridType.isNotEmpty;
+      if (userHasAddedDebrid) {
+        _getMovieStreams();
+      }
     } catch (e) {
       if (kDebugMode) {
         print(e);
@@ -58,7 +64,11 @@ class MovieViewModel implements VideoHandler {
   Future<void> _getMovieStreams() async {
     try {
       _movieStreamsState.value = ItemLoading();
-      final streams = await streamUc.getMovieStreams(imdbId!);
+      final details =
+          (_movieDetailsState.value as ItemLoaded<MovieDetails>).data;
+      final streams = await streamUc.getMovieStreams(
+        details.externalIds.imdbId ?? "",
+      );
       _movieStreamsState.value = ItemLoaded(data: streams);
     } catch (e) {
       if (kDebugMode) {
@@ -86,18 +96,16 @@ class MovieViewModel implements VideoHandler {
   Duration _totalDuration = Duration.zero;
   Duration _currentProgress = Duration.zero;
   bool _isPaused = false;
-  double _lastProgressSent = 0;
 
   @override
-  List<StreamItem> getCurrentStreams() {
-    if (_movieStreamsState.value is! ItemLoaded) {
-      return [];
-    }
-    return (_movieStreamsState.value as ItemLoaded<List<StreamItem>>).data;
-  }
+  ValueListenable<ViewItemState<ZxyStreamResponse>>
+  getCurrentStreamsNotifier() => _movieStreamsState;
 
   @override
-  int getSelectedStreamIndex() => selectedStream.value;
+  ValueListenable<double> getProgressNotifier() => _progressNotifier;
+
+  @override
+  ValueListenable<int> getSelectedStreamNotifier() => selectedStream;
 
   @override
   bool isMovie() => true;
@@ -126,12 +134,12 @@ class MovieViewModel implements VideoHandler {
       if (_totalDuration == Duration.zero || _isPaused) {
         return;
       }
-      _lastProgressSent =
+      _progressNotifier.value =
           (_currentProgress.inSeconds / _totalDuration.inSeconds) * 100;
       progressUc.updateWatchProgressMovie(
         (_movieDetailsState.value as ItemLoaded<MovieDetails>).data.id
             .toString(),
-        _lastProgressSent,
+        _progressNotifier.value,
       );
     });
   }
@@ -143,6 +151,6 @@ class MovieViewModel implements VideoHandler {
 
   @override
   double getStartingPercentage() {
-    return _lastProgressSent != 0 ? _lastProgressSent : _progressNotifier.value;
+    return _progressNotifier.value;
   }
 }

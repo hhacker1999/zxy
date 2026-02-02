@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
@@ -14,9 +15,10 @@ class SeriesViewModel implements VideoHandler {
   final MediaUsecase mediaUc;
   final StreamUsecase streamUc;
   final ProgressUsecase progressUc;
+  final UserBloc userBloc;
 
   late final List<Season> seasons;
-  final Map<String, List<StreamItem>> _streams = {};
+  final Map<String, ZxyStreamResponse> _streams = {};
 
   String? imdbId;
 
@@ -26,6 +28,7 @@ class SeriesViewModel implements VideoHandler {
     required this.mediaUc,
     required this.streamUc,
     required this.progressUc,
+    required this.userBloc,
   });
 
   final ValueNotifier<ViewItemState<SeriesDetails>> _seriesDetailsState =
@@ -38,10 +41,10 @@ class SeriesViewModel implements VideoHandler {
       ValueNotifier({});
   ValueListenable<Map<String, WatchProgress>> get progress => _progressNotifier;
 
-  final ValueNotifier<ViewItemState<List<StreamItem>>> _episodeStreamsState =
+  final ValueNotifier<ViewItemState<ZxyStreamResponse>> _episodeStreamsState =
       ValueNotifier(ItemInitial());
 
-  ValueListenable<ViewItemState<List<StreamItem>>> get episodeStreamsState =>
+  ValueListenable<ViewItemState<ZxyStreamResponse>> get episodeStreamsState =>
       _episodeStreamsState;
 
   final ValueNotifier<(int, int)> activeSeasonEpisode =
@@ -106,24 +109,30 @@ class SeriesViewModel implements VideoHandler {
       _episodeStreamsState.value = ItemLoaded(data: cacheStreams);
       return;
     }
-    try {
-      _episodeStreamsState.value = ItemLoading();
-      final streams = await streamUc.getSeriesStreams(
-        imdbId!,
-        seasons[activeSeasonEpisode.value.$1].seasonNumber,
-        seasons[activeSeasonEpisode.value.$1]
-            .episodes[activeSeasonEpisode.value.$2]
-            .episodeNumber,
-      );
-      _streams["${activeSeasonEpisode.value.$1}:${activeSeasonEpisode.value.$2}"] =
-          streams;
-      _episodeStreamsState.value = ItemLoaded(data: streams);
-    } catch (e) {
-      if (kDebugMode) {
-        print(e);
+
+    final userHasAddedDebrid =
+        userBloc.profileNotifier.value != null &&
+        userBloc.profileNotifier.value!.debridType.isNotEmpty;
+    if (userHasAddedDebrid) {
+      try {
+        _episodeStreamsState.value = ItemLoading();
+        final streams = await streamUc.getSeriesStreams(
+          imdbId!,
+          seasons[activeSeasonEpisode.value.$1].seasonNumber,
+          seasons[activeSeasonEpisode.value.$1]
+              .episodes[activeSeasonEpisode.value.$2]
+              .episodeNumber,
+        );
+        _streams["${activeSeasonEpisode.value.$1}:${activeSeasonEpisode.value.$2}"] =
+            streams;
+        _episodeStreamsState.value = ItemLoaded(data: streams);
+      } catch (e) {
+        if (kDebugMode) {
+          print(e);
+        }
+        _episodeStreamsState.value = ItemError(error: e.toString());
+        rethrow;
       }
-      _episodeStreamsState.value = ItemError(error: e.toString());
-      rethrow;
     }
   }
 
@@ -152,13 +161,16 @@ class SeriesViewModel implements VideoHandler {
   double _lastProgressSent = 0;
 
   @override
-  List<StreamItem> getCurrentStreams() {
-    return _streams["${activeSeasonEpisode.value.$1}:${activeSeasonEpisode.value.$2}"] ??
-        [];
+  ValueListenable<ViewItemState<ZxyStreamResponse>>
+  getCurrentStreamsNotifier() => _episodeStreamsState;
+
+  @override
+  ValueListenable<double> getProgressNotifier() {
+    return ValueNotifier(0);
   }
 
   @override
-  int getSelectedStreamIndex() => selectedStream.value;
+  ValueListenable<int> getSelectedStreamNotifier() => selectedStream;
 
   @override
   double getStartingPercentage() {

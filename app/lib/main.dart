@@ -97,6 +97,7 @@ class _MyAppState extends State<MyApp> {
                         mediaUc: deps.mediaUc,
                         streamUc: deps.streamUc,
                         progressUc: deps.progUc,
+                        userBloc: context.read<UserBloc>(),
                       ),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) =>
@@ -113,6 +114,7 @@ class _MyAppState extends State<MyApp> {
                         mediaUc: deps.mediaUc,
                         streamUc: deps.streamUc,
                         progressUc: deps.progUc,
+                        userBloc: context.read<UserBloc>(),
                       ),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) => ShowView(id: args),

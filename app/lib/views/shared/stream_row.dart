@@ -3,89 +3,134 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:lottie/lottie.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/zxy_button.dart';
+import 'package:zxy_app/views/video_handler.dart';
+import 'package:zxy_app/views/video_player_view/video_player_view.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class StreamRow extends StatelessWidget {
-  final ValueListenable<ViewItemState<List<StreamItem>>> streamState;
+  final VideoHandler handler;
   final ValueChanged<int> onStreamSelect;
   final VoidCallback onTap;
   final Color? color;
   final bool isMobile;
-  final ValueListenable<int> selectedStream;
   const StreamRow({
     super.key,
-    required this.streamState,
+    required this.handler,
     this.isMobile = false,
     required this.onStreamSelect,
     this.color,
     required this.onTap,
-    required this.selectedStream,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: streamState,
-      builder: (_, value, _) {
+    return MultiValueListenableBuilder(
+      notifiers: [
+        handler.getCurrentStreamsNotifier(),
+        handler.getSelectedStreamNotifier(),
+        handler.getProgressNotifier(),
+      ],
+      builder: (_) {
+        final progress = handler.getProgressNotifier().value;
+        final streams = handler.getCurrentStreamsNotifier().value;
         return Row(
           mainAxisAlignment: isMobile
               ? MainAxisAlignment.center
               : MainAxisAlignment.start,
           children: [
             ZxyButton(
-              onTap:
-                  (value is ItemLoaded<List<StreamItem>>) &&
-                      (value).data.isNotEmpty
-                  ? onTap
-                  : null,
+              radius: AppTheme.radiusLarge,
+              onTap: () {
+                // if (streams is ItemLoading) {
+                showStreamSelectionDialog(
+                  context,
+                  color,
+                  handler.getCurrentStreamsNotifier(),
+                  onStreamSelect,
+                  handler.getSelectedStreamNotifier(),
+                );
+                // }
+              },
               color: color,
               child: Row(
                 spacing: AppTheme.spacingS,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (streamState is ItemLoaded)
-                    SvgPicture.asset(
-                      AppIcons.play,
-                      colorFilter: const ColorFilter.mode(
-                        AppTheme.textPrimary,
-                        BlendMode.srcIn,
-                      ),
-                      height: AppTheme.spacingM,
+                  SvgPicture.asset(
+                    AppIcons.play,
+                    colorFilter: const ColorFilter.mode(
+                      AppTheme.textPrimary,
+                      BlendMode.srcIn,
                     ),
+                    height: AppTheme.spacingM,
+                  ),
                   Text(
-                    "Play",
+                    progress == 0 ? "Play" : "Resume",
                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                       color: AppTheme.textPrimary,
                     ),
                   ),
+                  if (progress != 0) ...[
+                    AppTheme.boxWidthXS,
+                    SizedBox(
+                      width: 100,
+                      child: LinearProgressIndicator(
+                        borderRadius: AppTheme.roundedXSmall,
+                        value: progress / 100,
+                        color: AppTheme.textPrimary,
+                        backgroundColor: Colors.black,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-            AppTheme.boxWidthM,
-            ZxyButton(
-              changeColorBaseOnTap: true,
-              color: AppTheme.textPrimary,
-              child: Text(
-                value is ItemLoaded ? "Select stream" : "Loading Streams",
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium!.copyWith(color: Colors.black),
+            if (streams is ItemLoading)
+              LottieBuilder.asset(
+                AppIcons.loading,
+                height: 80,
+                width: 100,
+                fit: BoxFit.fill,
               ),
-              onTap: () {
-                showStreamSelectionDialog(
-                  context,
-                  color,
-                  streamState,
-                  onStreamSelect,
-                  selectedStream.value,
-                );
-              },
-            ),
+            if (streams is ItemLoaded<ZxyStreamResponse>)
+              Builder(
+                builder: (_) {
+                  final streamsList = List.from(streams.data.uhd)
+                    ..addAll(streams.data.fhd)
+                    ..addAll(streams.data.hd);
+                  if (streamsList.isEmpty) {
+                    return SizedBox.shrink();
+                  }
+                  final selected =
+                      streamsList[handler.getSelectedStreamNotifier().value];
+                  return Row(
+                    spacing: AppTheme.spacingS,
+                    children: [
+                      AppTheme.boxWidthS,
+                      if (selected.resolution == "2160p")
+                        SvgPicture.asset(AppIcons.uhd, height: 20, width: 80),
+                      if (selected.resolution == "1080p")
+                        SvgPicture.asset(AppIcons.fhd, height: 20, width: 80),
+                      if (selected.resolution == "720p")
+                        Text(
+                          selected.resolution,
+                          style: Theme.of(context).textTheme.labelSmall!
+                              .copyWith(color: AppTheme.textPrimary),
+                        ),
+                      if (selected.visualTags.contains("HDR") ||
+                          selected.visualTags.contains("HDR10") ||
+                          selected.visualTags.contains("HDR10+"))
+                        SvgPicture.asset(AppIcons.hdr, height: 20, width: 80),
+                    ],
+                  );
+                },
+              ),
           ],
         );
       },
@@ -96,13 +141,13 @@ class StreamRow extends StatelessWidget {
 void showStreamSelectionDialog(
   BuildContext context,
   Color? color,
-  ValueListenable<ViewItemState<List<StreamItem>>> notifier,
+  ValueListenable<ViewItemState<ZxyStreamResponse>> notifier,
   ValueChanged<int> onStreamSelect,
-  int selected,
+  ValueListenable<int> selectedStreamNotifier,
 ) {
   showDialog(
     context: context,
-    barrierDismissible: false,
+    barrierDismissible: true,
     builder: (context) {
       final screenInfo = Screen.of(context);
       return Dialog(
@@ -117,9 +162,11 @@ void showStreamSelectionDialog(
             maxHeight: screenInfo.height * 0.7,
           ),
           padding: const EdgeInsets.all(AppTheme.spacingL),
-          child: ValueListenableBuilder(
-            valueListenable: notifier,
-            builder: (context, state, _) {
+          child: MultiValueListenableBuilder(
+            notifiers: [notifier, selectedStreamNotifier],
+            builder: (context) {
+              final state = notifier.value;
+              final selected = selectedStreamNotifier.value;
               if (state is ItemLoading) {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
@@ -132,9 +179,10 @@ void showStreamSelectionDialog(
                   ],
                 );
               }
-
-              if (state is ItemLoaded<List<StreamItem>>) {
-                final streams = state.data;
+              if (state is ItemLoaded<ZxyStreamResponse>) {
+                final streams = List<ZxyResolutionItem>.from(state.data.uhd)
+                  ..addAll(state.data.fhd)
+                  ..addAll(state.data.hd);
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,6 +211,18 @@ void showStreamSelectionDialog(
                         itemBuilder: (context, index) {
                           final stream = streams[index];
                           final isSelected = selected == index;
+                          String streamString = stream.resolution;
+                          streamString += "|${stream.quality}";
+                          if (stream.visualTags.isNotEmpty) {
+                            streamString += "|";
+                            streamString += stream.visualTags.join("|");
+                          }
+                          // if (stream.audioTags.isNotEmpty) {
+                          //   streamString += "|";
+                          //   streamString += stream.audioTags.join("|");
+                          // }
+                          final sz = (stream.size ?? 0) / (1024 * 1024 * 1024);
+                          streamString += "|${sz.toStringAsFixed(2)}Gb";
                           return InkWell(
                             splashColor: Colors.transparent,
                             highlightColor: Colors.transparent,
@@ -196,16 +256,9 @@ void showStreamSelectionDialog(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    stream.name,
+                                    streamString,
                                     style: Theme.of(context).textTheme.bodyLarge
                                         ?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    stream.description,
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: AppTheme.textSecondary,
-                                        ),
                                   ),
                                 ],
                               ),
@@ -232,4 +285,3 @@ void showStreamSelectionDialog(
     },
   );
 }
-
