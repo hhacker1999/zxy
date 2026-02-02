@@ -1,8 +1,6 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
-import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
@@ -37,9 +35,10 @@ class SeriesViewModel implements VideoHandler {
   ValueListenable<ViewItemState<SeriesDetails>> get seriesDetailState =>
       _seriesDetailsState;
 
-  final ValueNotifier<Map<String, WatchProgress>> _progressNotifier =
+  final ValueNotifier<Map<String, ValueNotifier<double>>> _progressNotifier =
       ValueNotifier({});
-  ValueListenable<Map<String, WatchProgress>> get progress => _progressNotifier;
+  ValueListenable<Map<String, ValueNotifier<double>>> get progress =>
+      _progressNotifier;
 
   final ValueNotifier<ViewItemState<ZxyStreamResponse>> _episodeStreamsState =
       ValueNotifier(ItemInitial());
@@ -60,7 +59,9 @@ class SeriesViewModel implements VideoHandler {
         details.id.toString(),
       );
       for (var element in progressRes) {
-        _progressNotifier.value[element.mediaId] = element;
+        _progressNotifier.value[element.mediaId] = ValueNotifier(
+          element.progress,
+        );
       }
       onEpisodeSelect(0);
       _seriesDetailsState.value = ItemLoaded(data: details);
@@ -166,11 +167,19 @@ class SeriesViewModel implements VideoHandler {
 
   @override
   ValueListenable<double> getProgressNotifier() {
-    return ValueNotifier(0);
+    final info = _getCurrentSeasonEpisode();
+    final series =
+        (_seriesDetailsState.value as ItemLoaded<SeriesDetails>).data;
+
+    final key = "${series.id}:${info.$1.seasonNumber}:${info.$2.episodeNumber}";
+    var progressNotifier = _progressNotifier.value[key];
+    progressNotifier ??= ValueNotifier(0);
+    _progressNotifier.value[key] = progressNotifier;
+    return progressNotifier;
   }
 
   @override
-  ValueListenable<int> getSelectedStreamNotifier() => selectedStream;
+  ValueNotifier<int> getSelectedStreamNotifier() => selectedStream;
 
   @override
   double getStartingPercentage() {
@@ -185,7 +194,7 @@ class SeriesViewModel implements VideoHandler {
     if (value == null) {
       return 0;
     }
-    return value.progress;
+    return value.value;
   }
 
   @override
@@ -202,6 +211,13 @@ class SeriesViewModel implements VideoHandler {
   }
 
   @override
+  void onStop() {
+    _isPaused = true;
+    _progressTimer?.cancel();
+    _progressTimer = null;
+  }
+
+  @override
   void onPlay() {
     _isPaused = false;
 
@@ -210,7 +226,7 @@ class SeriesViewModel implements VideoHandler {
         (_seriesDetailsState.value as ItemLoaded<SeriesDetails>).data;
 
     final key = "${series.id}:${info.$1.seasonNumber}:${info.$2.episodeNumber}";
-    final value = _progressNotifier.value[key];
+    final progressNotifier = _progressNotifier.value[key];
     _progressTimer ??= Timer.periodic(const Duration(seconds: 5), (_) {
       if (_totalDuration == Duration.zero || _isPaused) {
         return;
@@ -223,20 +239,10 @@ class SeriesViewModel implements VideoHandler {
         info.$2.episodeNumber,
         _lastProgressSent,
       );
-      if (value == null) {
-        _progressNotifier.value[key] = WatchProgress(
-          mediaId: key,
-          progress: _lastProgressSent,
-          userId: -1,
-          profileId: -1,
-          isWatched: false,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
+      if (progressNotifier == null) {
+        _progressNotifier.value[key] = ValueNotifier(_lastProgressSent);
       } else {
-        _progressNotifier.value[key] = value.copyWith(
-          progress: _lastProgressSent,
-        );
+        progressNotifier.value = _lastProgressSent;
       }
       _progressNotifier.value = Map.from(_progressNotifier.value);
     });

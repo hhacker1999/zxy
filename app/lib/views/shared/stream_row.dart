@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:lottie/lottie.dart';
 import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/screen.dart';
@@ -48,13 +49,18 @@ class StreamRow extends StatelessWidget {
               radius: AppTheme.radiusLarge,
               onTap: () {
                 // if (streams is ItemLoading) {
-                showStreamSelectionDialog(
+                Navigator.pushNamed(
                   context,
-                  color,
-                  handler.getCurrentStreamsNotifier(),
-                  onStreamSelect,
-                  handler.getSelectedStreamNotifier(),
+                  AppRoutes.videoPlayerView,
+                  arguments: handler,
                 );
+                // showStreamSelectionDialog(
+                //   context,
+                //   color,
+                //   handler.getCurrentStreamsNotifier(),
+                //   onStreamSelect,
+                //   handler.getSelectedStreamNotifier(),
+                // );
                 // }
               },
               color: color,

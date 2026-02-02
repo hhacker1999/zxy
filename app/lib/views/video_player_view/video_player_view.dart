@@ -12,7 +12,9 @@ import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/shared/glass_container.dart';
+import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/video_handler.dart';
+import 'package:zxy_app/views/view_item_state.dart';
 
 class SeekValueNotifier extends ChangeNotifier
     implements ValueListenable<SeekBarInfo?> {
@@ -72,7 +74,6 @@ class SubtitleFontStyle {
 }
 
 class ZxyPlayerState {
-  final ValueListenable? a = null;
   final ValueNotifier<bool> isPlaying = ValueNotifier(false);
   final SeekValueNotifier seekInfo = SeekValueNotifier(SeekBarInfo());
   final ValueNotifier<VideoTrack?> videoDetails = ValueNotifier(null);
@@ -83,7 +84,7 @@ class ZxyPlayerState {
       ValueNotifier(null);
   final ValueNotifier<double> volumeDetails = ValueNotifier(100);
   final ValueNotifier<bool> isOverlayVisible = ValueNotifier(false);
-  final ValueNotifier<bool> buffering = ValueNotifier(true);
+  final ValueNotifier<bool> bufferingOrLoading = ValueNotifier(true);
   final ValueNotifier<bool> settingsVisible = ValueNotifier(false);
   final ValueNotifier<int> audioDelay = ValueNotifier(0);
   final ValueNotifier<int> subtitleDelay = ValueNotifier(0);
@@ -147,8 +148,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   late final StreamSubscription<bool> _bufferingSub;
   late final StreamSubscription<bool> _playingSub;
   late final ZxyPlayerState _state;
-  late List<StreamItem> _streams;
-  int _selectedStream = 0;
   Timer? _hoverTimer;
   double pinRadius = 20;
   double progressHeight = 10;
@@ -157,10 +156,10 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   void initState() {
     super.initState();
     // _streams = widget.handler.getCurrentStreams();
-    _selectedStream = widget.handler.getSelectedStreamNotifier().value;
-    print("Link playing");
-    print(_streams[_selectedStream].url);
-    print("--------------------------------------------------");
+    // _selectedStream = widget.handler.getSelectedStreamNotifier().value;
+    // print("Link playing");
+    // print(_streams[_selectedStream].url);
+    // print("--------------------------------------------------");
     _state = ZxyPlayerState();
     _player = Player(configuration: PlayerConfiguration());
     _controller = VideoController(
@@ -188,15 +187,50 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
 
       player.setProperty('scale', 'ewa_lanczossharp'),
       player.setProperty('cscale', 'ewa_lanczossharp'),
-    ]).then((_) {
-      _player.open(
-        Media(_streams[_selectedStream].url),
-        play: _state.isPlaying.value,
+    ]);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setupPlayerUpdateSubscriptions();
+      _updatePlayerBasedOnStreamsUpdate();
+      widget.handler.getCurrentStreamsNotifier().addListener(
+        _onCurrentStreamsUpdate,
       );
     });
-    print(_streams[_selectedStream].description);
-    print(_streams[_selectedStream].url);
-    setupSubscriptions();
+  }
+
+  void _onCurrentStreamsUpdate() {
+    _updatePlayerBasedOnStreamsUpdate();
+  }
+
+  // NOTE: This function listens to streams and load url from strems
+  void _updatePlayerBasedOnStreamsUpdate() {
+    final val = widget.handler.getCurrentStreamsNotifier().value;
+    if (val is ItemLoading) {
+      showToast(context, false, "Loading streams", "");
+    }
+
+    if (val is ItemError) {
+      showToast(context, true, "Error loading streams", "");
+    }
+
+    if (val is ItemLoaded<ZxyStreamResponse>) {
+      final uhdStreams = val.data.uhd;
+      final fhdStreams = val.data.fhd;
+      final hdStreams = val.data.hd;
+      if (uhdStreams.isEmpty && fhdStreams.isEmpty && hdStreams.isEmpty) {
+        showToast(context, true, "No Streams found", "");
+        Navigator.pop(context);
+        return;
+      }
+
+      final selectedStream = widget.handler.getSelectedStreamNotifier().value;
+      final streams = List<ZxyResolutionItem>.from(uhdStreams)
+        ..addAll(fhdStreams)
+        ..addAll(hdStreams);
+      _player.open(
+        Media(streams[selectedStream].url),
+        play: _state.isPlaying.value,
+      );
+    }
   }
 
   void onMediaInitialized(Tracks tracks) {
@@ -228,7 +262,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       val = b.channelscount!.compareTo(a.channelscount!);
       return val;
     });
-    int trackIndex = audioTracks.indexWhere((track) => track.language == "eng");
+    int trackIndex = audioTracks.indexWhere(
+      (track) => track.isDefault != null && track.isDefault!,
+    );
     _state.audioDetails.value = (
       audioTracks,
       trackIndex == -1 ? 0 : trackIndex,
@@ -244,33 +280,33 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     _player.play().then((_) => widget.handler.onPlay());
   }
 
-  void setupSubscriptions() {
+  void setupPlayerUpdateSubscriptions() {
     _trackSub = _player.stream.tracks.listen((tracks) {
       if (tracks.video.isNotEmpty ||
           tracks.audio.isNotEmpty ||
           tracks.subtitle.isNotEmpty) {
         //NOTE: All media info is now available
-        print("Printing video details");
-        for (var element in tracks.video) {
-          print("Codec ${element.codec}");
-          print("Bitrate ${element.bitrate}");
-        }
-        print("--------------------------------------------------");
-
-        print("Printing audio details");
-        for (var element in tracks.audio) {
-          print("Codec ${element.codec}");
-          print("Bitrate ${element.bitrate}");
-          print("Language ${element.language}");
-        }
-        print("--------------------------------------------------");
-
-        print("Printing subtitiles details");
-        for (var element in tracks.subtitle) {
-          print("Language ${element.language}");
-          print("Title ${element.title}");
-        }
-        print("--------------------------------------------------");
+        // print("Printing video details");
+        // for (var element in tracks.video) {
+        //   print("Codec ${element.codec}");
+        //   print("Bitrate ${element.bitrate}");
+        // }
+        // print("--------------------------------------------------");
+        //
+        // print("Printing audio details");
+        // for (var element in tracks.audio) {
+        //   print("Codec ${element.codec}");
+        //   print("Bitrate ${element.bitrate}");
+        //   print("Language ${element.language}");
+        // }
+        // print("--------------------------------------------------");
+        //
+        // print("Printing subtitiles details");
+        // for (var element in tracks.subtitle) {
+        //   print("Language ${element.language}");
+        //   print("Title ${element.title}");
+        // }
+        // print("--------------------------------------------------");
         onMediaInitialized(tracks);
       }
     });
@@ -299,12 +335,12 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       _state.seekInfo.value = _state.seekInfo.value.copyWith(buffered: buffer);
     });
 
-    _player.stream.track.listen((track) {
-      print(track.subtitle);
-    });
+    // _player.stream.track.listen((track) {
+    //   print(track.subtitle);
+    // });
 
     _bufferingSub = _player.stream.buffering.listen((buffering) {
-      _state.buffering.value = buffering;
+      _state.bufferingOrLoading.value = buffering;
     });
     _playingSub = _player.stream.playing.listen((playing) {
       _state.isPlaying.value = playing;
@@ -333,9 +369,19 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     }
   }
 
+  void onVideoStreamChanged(ZxyResolutionItem streamItem) {
+    _player.stop();
+    _state.bufferingOrLoading.value = true;
+    _player.open(Media(streamItem.url), play: _state.isPlaying.value);
+  }
+
   @override
   void dispose() {
-    _player.pause();
+    widget.handler.getCurrentStreamsNotifier().removeListener(
+      _onCurrentStreamsUpdate,
+    );
+    _player.stop();
+    widget.handler.onStop();
     _playbackSub.cancel();
     _currentSub.cancel();
     _bufferSub.cancel();
@@ -438,9 +484,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                       Align(
                         alignment: Alignment.center,
                         child: MultiValueListenableBuilder(
-                          notifiers: [_state.buffering],
+                          notifiers: [_state.bufferingOrLoading],
                           builder: (_) {
-                            final isBuffering = _state.buffering.value;
+                            final isBuffering = _state.bufferingOrLoading.value;
                             return Visibility(
                               visible: isBuffering,
                               child: CupertinoActivityIndicator(),
@@ -449,6 +495,25 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                         ),
                       ),
                       VideoSettingsSidebar(
+                        onVideoStreamChanged: onVideoStreamChanged,
+                        streamNotifier: widget.handler
+                            .getCurrentStreamsNotifier(),
+                        selectedStreamNotifier: widget.handler
+                            .getSelectedStreamNotifier(),
+                        updateAudioDelay: () {
+                          final delaySec = _state.audioDelay.value / 1000;
+                          (_player.platform as NativePlayer).setProperty(
+                            "audio-delay",
+                            delaySec.toString(),
+                          );
+                        },
+                        updateSubDelay: () {
+                          final delaySec = _state.subtitleDelay.value / 1000;
+                          (_player.platform as NativePlayer).setProperty(
+                            "sub-delay",
+                            delaySec.toString(),
+                          );
+                        },
                         player: _player,
                         state: _state,
                         height: constr.maxHeight - 40,
@@ -491,10 +556,20 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
 class VideoSettingsSidebar extends StatelessWidget {
   final double height;
   final Player player;
+  final VoidCallback updateAudioDelay;
+  final VoidCallback updateSubDelay;
+  final ValueListenable<ViewItemState<ZxyStreamResponse>> streamNotifier;
+  final ValueNotifier<int> selectedStreamNotifier;
+  final ValueChanged<ZxyResolutionItem> onVideoStreamChanged;
   const VideoSettingsSidebar({
     super.key,
     required ZxyPlayerState state,
     required this.height,
+    required this.updateAudioDelay,
+    required this.updateSubDelay,
+    required this.onVideoStreamChanged,
+    required this.streamNotifier,
+    required this.selectedStreamNotifier,
     required this.player,
   }) : _state = state;
 
@@ -515,297 +590,295 @@ class VideoSettingsSidebar extends StatelessWidget {
         );
       },
       child: GlassContainer(
+        containerOpacity: 0.7,
         height: height,
         width: 400,
         padding: const EdgeInsets.all(20),
         radius: AppTheme.roundedMedium,
-        child: MultiValueListenableBuilder(
-          notifiers: [
-            _state.audioDetails,
-            _state.videoDetails,
-            _state.subtitleDetails,
-            _state.subtitleDelay,
-            _state.audioDelay,
-            _state.subtitleFontStyle,
-          ],
-          builder: (_) {
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Audio Tracks"),
-                  if (_state.audioDetails.value != null &&
-                      _state.audioDetails.value!.$1.isNotEmpty)
-                    ...List.generate(_state.audioDetails.value!.$1.length + 1, (
-                      index,
-                    ) {
-                      final radioSelectedVal =
-                          _state.audioDetails.value!.$2 + 1;
-                      final currentBuildAudioInfo = _state
-                          .audioDetails
-                          .value!
-                          .$1[index != 0 ? index - 1 : 0];
-                      return Row(
-                        spacing: AppTheme.spacingS,
-                        children: [
-                          CupertinoRadio(
-                            value: index,
-                            groupValue: radioSelectedVal,
-                            onChanged: (_) {
-                              if (index == 0) {
-                                player.setAudioTrack(AudioTrack.no());
-                                _state.audioDetails.value = (
-                                  _state.audioDetails.value!.$1,
-                                  -1,
-                                );
-                                return;
-                              }
-                              player.setAudioTrack(currentBuildAudioInfo);
+        child: ValueListenableBuilder(
+          valueListenable: streamNotifier,
+          builder: (_, streamState, _) {
+            late final List<ZxyResolutionItem> streams;
+            if (streamState is ItemLoaded<ZxyStreamResponse>) {
+              streams = List.from(streamState.data.uhd)
+                ..addAll(streamState.data.fhd)
+                ..addAll(streamState.data.hd);
+            } else {
+              streams = [];
+            }
+            return MultiValueListenableBuilder(
+              notifiers: [
+                _state.audioDetails,
+                _state.videoDetails,
+                _state.subtitleDetails,
+                _state.subtitleDelay,
+                _state.audioDelay,
+                _state.subtitleFontStyle,
+                selectedStreamNotifier,
+              ],
+              builder: (_) {
+                return SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (streams.isNotEmpty)
+                        SideBarToggleList(
+                          items: streams.map((e) {
+                            String streamString = e.resolution;
+                            streamString += "|${e.quality}";
+                            if (e.visualTags.isNotEmpty) {
+                              streamString += "|";
+                              streamString += e.visualTags.join("|");
+                            }
+                            // if (stream.audioTags.isNotEmpty) {
+                            //   streamString += "|";
+                            //   streamString += stream.audioTags.join("|");
+                            // }
+                            final sz = (e.size ?? 0) / (1024 * 1024 * 1024);
+                            streamString += "|${sz.toStringAsFixed(2)}Gb";
+                            return streamString;
+                          }).toList(),
+                          onChanged: (index) {
+                            selectedStreamNotifier.value = index;
+                            onVideoStreamChanged(streams[index]);
+                          },
+                          title: "Video Streams",
+                          selected: selectedStreamNotifier.value,
+                        ),
+                      if (streams.isNotEmpty) AppTheme.boxHeightM,
+                      if (_state.audioDetails.value != null &&
+                          _state.audioDetails.value!.$1.isNotEmpty)
+                        SideBarToggleList(
+                          items: List.empty(growable: true)
+                            ..add("None")
+                            ..addAll(
+                              _state.audioDetails.value!.$1.map((e) {
+                                return "[${e.language!.length == 3 ? AppConstants.iso6392Languages[e.language] : AppConstants.isoLanguages[e.language]}] ${e.codec ?? ''} ${e.title ?? ''} ${e.channelscount ?? 0}ch";
+                              }),
+                            ),
+                          onChanged: (index) {
+                            if (index == 0) {
+                              player.setAudioTrack(AudioTrack.no());
                               _state.audioDetails.value = (
                                 _state.audioDetails.value!.$1,
-                                index - 1,
+                                -1,
                               );
+                              return;
+                            }
+
+                            final currentBuildAudioInfo = _state
+                                .audioDetails
+                                .value!
+                                .$1[index != 0 ? index - 1 : 0];
+                            player.setAudioTrack(currentBuildAudioInfo);
+                            _state.audioDetails.value = (
+                              _state.audioDetails.value!.$1,
+                              index - 1,
+                            );
+                          },
+                          title: "Audio Tracks",
+                          selected: _state.audioDetails.value != null
+                              ? _state.audioDetails.value!.$2 + 1
+                              : 0,
+                        ),
+                      if (_state.audioDetails.value != null &&
+                          _state.audioDetails.value!.$1.isNotEmpty)
+                        AppTheme.boxHeightM,
+                      if (_state.subtitleDetails.value != null &&
+                          _state.subtitleDetails.value!.$1.isNotEmpty)
+                        SideBarToggleList(
+                          items: List.empty(growable: true)
+                            ..add("None")
+                            ..addAll(
+                              _state.subtitleDetails.value!.$1.map((e) {
+                                return "[${e.language!.length == 3 ? AppConstants.iso6392Languages[e.language] : AppConstants.isoLanguages[e.language]}] ${e.title ?? 0}";
+                              }),
+                            ),
+                          onChanged: (index) {
+                            if (index == 0) {
+                              player.setSubtitleTrack(SubtitleTrack.no());
+                              _state.subtitleDetails.value = (
+                                _state.subtitleDetails.value!.$1,
+                                -1,
+                              );
+                              return;
+                            }
+
+                            final currentBuildsubtitleInfo =
+                                _state.subtitleDetails.value!.$1.isNotEmpty
+                                ? _state.subtitleDetails.value!.$1[index != 0
+                                      ? index - 1
+                                      : 0]
+                                : null;
+                            player.setSubtitleTrack(currentBuildsubtitleInfo!);
+                            _state.subtitleDetails.value = (
+                              _state.subtitleDetails.value!.$1,
+                              index - 1,
+                            );
+                          },
+                          title: "Subtitle Tracks",
+                          selected: _state.subtitleDetails.value != null
+                              ? _state.subtitleDetails.value!.$2 + 1
+                              : 0,
+                        ),
+                      AppTheme.boxHeightM,
+                      Text("Audio delay"),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              _state.audioDelay.value -= 10;
+                              updateAudioDelay();
                             },
+                            icon: Icon(
+                              Icons.remove,
+                              color: AppTheme.textSecondary,
+                              size: 16,
+                            ),
                           ),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                if (index == 0) {
-                                  player.setAudioTrack(AudioTrack.no());
-                                  _state.audioDetails.value = (
-                                    _state.audioDetails.value!.$1,
-                                    -1,
-                                  );
-                                  return;
-                                }
-                                player.setAudioTrack(currentBuildAudioInfo);
-                                _state.audioDetails.value = (
-                                  _state.audioDetails.value!.$1,
-                                  index - 1,
-                                );
-                              },
-                              child: Text(
-                                index == 0
-                                    ? "None"
-                                    : "[${currentBuildAudioInfo.language!.length == 3 ? AppConstants.iso6392Languages[currentBuildAudioInfo.language] : AppConstants.isoLanguages[currentBuildAudioInfo.language]}] ${currentBuildAudioInfo.codec ?? ''} ${currentBuildAudioInfo.title ?? ''} ${currentBuildAudioInfo.channelscount ?? 0}ch",
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                          Text("${_state.audioDelay.value}ms"),
+                          IconButton(
+                            onPressed: () {
+                              _state.audioDelay.value += 10;
+                              updateAudioDelay();
+                            },
+                            icon: Icon(
+                              Icons.add,
+                              color: AppTheme.textSecondary,
+                              size: 16,
                             ),
                           ),
                         ],
-                      );
-                    }),
-                  AppTheme.boxHeightM,
-                  Text("Subtitle Tracks"),
-                  if (_state.subtitleDetails.value != null)
-                    ...List.generate(
-                      _state.subtitleDetails.value!.$1.length + 1,
-                      (index) {
-                        final radioSelectedVal =
-                            _state.subtitleDetails.value!.$2 + 1;
-                        final currentBuildsubtitleInfo =
-                            _state.subtitleDetails.value!.$1.isNotEmpty
-                            ? _state.subtitleDetails.value!.$1[index != 0
-                                  ? index - 1
-                                  : 0]
-                            : null;
-                        return Row(
-                          spacing: AppTheme.spacingS,
-                          children: [
-                            CupertinoRadio(
-                              value: index,
-                              groupValue: radioSelectedVal,
-                              onChanged: (_) {
-                                if (index == 0) {
-                                  player.setSubtitleTrack(SubtitleTrack.no());
-                                  _state.subtitleDetails.value = (
-                                    _state.subtitleDetails.value!.$1,
-                                    -1,
-                                  );
-                                  return;
-                                }
-                                player.setSubtitleTrack(
-                                  currentBuildsubtitleInfo!,
-                                );
-                                _state.subtitleDetails.value = (
-                                  _state.subtitleDetails.value!.$1,
-                                  index - 1,
-                                );
-                              },
+                      ),
+                      AppTheme.boxHeightM,
+                      Text("Subtitle delay"),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              _state.subtitleDelay.value -= 10;
+                              updateSubDelay();
+                            },
+                            icon: Icon(
+                              Icons.remove,
+                              color: AppTheme.textSecondary,
+                              size: 16,
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                if (index == 0) {
-                                  player.setSubtitleTrack(SubtitleTrack.no());
-                                  _state.subtitleDetails.value = (
-                                    _state.subtitleDetails.value!.$1,
-                                    -1,
-                                  );
-                                  return;
-                                }
-                                player.setSubtitleTrack(
-                                  currentBuildsubtitleInfo!,
-                                );
-                                _state.subtitleDetails.value = (
-                                  _state.subtitleDetails.value!.$1,
-                                  index - 1,
-                                );
-                              },
-                              child: Text(
-                                index == 0
-                                    ? "None"
-                                    : "[${currentBuildsubtitleInfo!.language!.length == 3 ? AppConstants.iso6392Languages[currentBuildsubtitleInfo.language] : AppConstants.isoLanguages[currentBuildsubtitleInfo.language]}] ${currentBuildsubtitleInfo.title ?? 0}",
-                              ),
+                          ),
+                          Text("${_state.subtitleDelay.value}ms"),
+                          IconButton(
+                            onPressed: () {
+                              _state.subtitleDelay.value += 10;
+                              updateSubDelay();
+                            },
+                            icon: Icon(
+                              Icons.add,
+                              color: AppTheme.textSecondary,
+                              size: 16,
                             ),
-                          ],
-                        );
-                      },
-                    ),
-                  AppTheme.boxHeightM,
-                  Text("Audio delay"),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          _state.audioDelay.value -= 10;
-                        },
-                        icon: Icon(
-                          Icons.remove,
+                          ),
+                        ],
+                      ),
 
-                          color: AppTheme.textSecondary,
-                          size: 16,
-                        ),
+                      AppTheme.boxHeightM,
+                      Text("Subtitle font size"),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              _state.subtitleFontStyle.value = _state
+                                  .subtitleFontStyle
+                                  .value
+                                  .copyWith(
+                                    fontSize: max(
+                                      _state.subtitleFontStyle.value.fontSize -
+                                          6,
+                                      0,
+                                    ),
+                                  );
+                            },
+                            icon: Icon(
+                              Icons.remove,
+                              color: AppTheme.textSecondary,
+                              size: 16,
+                            ),
+                          ),
+                          Text("${_state.subtitleFontStyle.value.fontSize}"),
+                          IconButton(
+                            onPressed: () {
+                              _state.subtitleFontStyle.value = _state
+                                  .subtitleFontStyle
+                                  .value
+                                  .copyWith(
+                                    fontSize: min(
+                                      _state.subtitleFontStyle.value.fontSize +
+                                          6,
+                                      150,
+                                    ),
+                                  );
+                            },
+                            icon: Icon(
+                              Icons.add,
+                              color: AppTheme.textSecondary,
+                              size: 16,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text("${_state.audioDelay.value}ms"),
-                      IconButton(
-                        onPressed: () {
-                          _state.audioDelay.value += 10;
-                        },
-                        icon: Icon(
-                          Icons.add,
-                          color: AppTheme.textSecondary,
-                          size: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  AppTheme.boxHeightM,
-                  Text("Subtitle delay"),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          _state.subtitleDelay.value -= 10;
-                        },
-                        icon: Icon(
-                          Icons.remove,
-                          color: AppTheme.textSecondary,
-                          size: 16,
-                        ),
-                      ),
-                      Text("${_state.subtitleDelay.value}ms"),
-                      IconButton(
-                        onPressed: () {
-                          _state.subtitleDelay.value += 10;
-                        },
-                        icon: Icon(
-                          Icons.add,
-                          color: AppTheme.textSecondary,
-                          size: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  AppTheme.boxHeightM,
-                  Text("Subtitle font size"),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          _state.subtitleFontStyle.value = _state
-                              .subtitleFontStyle
-                              .value
-                              .copyWith(
-                                fontSize: max(
-                                  _state.subtitleFontStyle.value.fontSize - 6,
-                                  0,
-                                ),
-                              );
-                        },
-                        icon: Icon(
-                          Icons.remove,
-                          color: AppTheme.textSecondary,
-                          size: 16,
-                        ),
-                      ),
-                      Text("${_state.subtitleFontStyle.value.fontSize}"),
-                      IconButton(
-                        onPressed: () {
-                          _state.subtitleFontStyle.value = _state
-                              .subtitleFontStyle
-                              .value
-                              .copyWith(
-                                fontSize: min(
-                                  _state.subtitleFontStyle.value.fontSize + 6,
-                                  150,
-                                ),
-                              );
-                        },
-                        icon: Icon(
-                          Icons.add,
-                          color: AppTheme.textSecondary,
-                          size: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text("Subtitle padding"),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          _state.subtitleFontStyle.value = _state
-                              .subtitleFontStyle
-                              .value
-                              .copyWith(
-                                fontPadding: max(
-                                  _state.subtitleFontStyle.value.fontPadding -
-                                      6,
-                                  0,
-                                ),
-                              );
-                        },
-                        icon: Icon(
-                          Icons.remove,
-                          color: AppTheme.textSecondary,
-                          size: 16,
-                        ),
-                      ),
-                      Text("${_state.subtitleFontStyle.value.fontPadding}"),
-                      IconButton(
-                        onPressed: () {
-                          _state.subtitleFontStyle.value = _state
-                              .subtitleFontStyle
-                              .value
-                              .copyWith(
-                                fontPadding: min(
-                                  _state.subtitleFontStyle.value.fontPadding +
-                                      6,
-                                  150,
-                                ),
-                              );
-                        },
-                        icon: Icon(
-                          Icons.add,
-                          color: AppTheme.textSecondary,
-                          size: 16,
-                        ),
+                      Text("Subtitle padding"),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              _state.subtitleFontStyle.value = _state
+                                  .subtitleFontStyle
+                                  .value
+                                  .copyWith(
+                                    fontPadding: max(
+                                      _state
+                                              .subtitleFontStyle
+                                              .value
+                                              .fontPadding -
+                                          6,
+                                      0,
+                                    ),
+                                  );
+                            },
+                            icon: Icon(
+                              Icons.remove,
+                              color: AppTheme.textSecondary,
+                              size: 16,
+                            ),
+                          ),
+                          Text("${_state.subtitleFontStyle.value.fontPadding}"),
+                          IconButton(
+                            onPressed: () {
+                              _state.subtitleFontStyle.value = _state
+                                  .subtitleFontStyle
+                                  .value
+                                  .copyWith(
+                                    fontPadding: min(
+                                      _state
+                                              .subtitleFontStyle
+                                              .value
+                                              .fontPadding +
+                                          6,
+                                      150,
+                                    ),
+                                  );
+                            },
+                            icon: Icon(
+                              Icons.add,
+                              color: AppTheme.textSecondary,
+                              size: 16,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         ),
@@ -1366,6 +1439,61 @@ class ProgressBar extends StatelessWidget {
         ),
         size: size,
       ),
+    );
+  }
+}
+
+class SideBarToggleList extends StatefulWidget {
+  final List<String> items;
+  final String title;
+  final int selected;
+  final ValueChanged<int> onChanged;
+  const SideBarToggleList({
+    super.key,
+    required this.items,
+    required this.onChanged,
+    required this.title,
+    required this.selected,
+  });
+
+  @override
+  State<SideBarToggleList> createState() => _SideBarToggleListState();
+}
+
+class _SideBarToggleListState extends State<SideBarToggleList> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(widget.title),
+        ...List.generate(widget.items.length, (index) {
+          return Row(
+            spacing: AppTheme.spacingS,
+            children: [
+              CupertinoRadio(
+                value: index,
+                groupValue: widget.selected,
+                onChanged: (_) {
+                  widget.onChanged(index);
+                },
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    widget.onChanged(index);
+                  },
+                  child: Text(
+                    widget.items[index],
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+      ],
     );
   }
 }

@@ -370,6 +370,7 @@ func (u *Usecase) GetMovieStreamProfile(id string, profileId int) (models.ZxyStr
 		err = json.Unmarshal([]byte(v.Name), &mp)
 		if err != nil {
 			fmt.Println("Error unmarshalling stream name", err)
+			return res, apperrors.SomethingWentWrongError{}
 		}
 
 		var temp models.ZxyResolutionResponse
@@ -491,7 +492,7 @@ func (u *Usecase) GetSeriesStreamProfile(
 
 	err = json.Unmarshal(bodyBytes, &aioRes)
 	if err != nil {
-		fmt.Println("Error unmarshalling movie stream response ", err)
+		fmt.Println("Error unmarshalling series stream response ", err)
 		return res, apperrors.SomethingWentWrongError{}
 	}
 

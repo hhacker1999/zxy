@@ -5,10 +5,11 @@ import 'package:zxy_app/views/view_item_state.dart';
 abstract class VideoHandler {
   ValueListenable<ViewItemState<ZxyStreamResponse>> getCurrentStreamsNotifier();
   ValueListenable<double> getProgressNotifier();
-  ValueListenable<int> getSelectedStreamNotifier();
+  ValueNotifier<int> getSelectedStreamNotifier();
   void onProgress(Duration duration);
   void onPause();
   void onPlay();
+  void onStop();
   void onDurationUpdate(Duration duration);
   bool isMovie();
   double getStartingPercentage();

@@ -246,7 +246,7 @@ class _ShowViewState extends State<ShowView> {
                                 overview: "",
                                 popularity: e.popularity,
                                 posterPath: e.posterPath ?? "",
-                                voteAverage:e.voteAverage,
+                                voteAverage: e.voteAverage,
                                 voteCount: null,
                               );
                             }).toList(),
@@ -794,20 +794,19 @@ class BannerItemSeries extends StatelessWidget {
                 ],
               ),
               AppTheme.boxHeightL,
-              // StreamRow(
-              //   color: color,
-              //   onTap: () async {
-              //     await Navigator.pushNamed(
-              //       context,
-              //       AppRoutes.videoPlayerView,
-              //       arguments: vm,
-              //     );
-              //     vm.onPause();
-              //   },
-              //   selectedStream: vm.selectedStream,
-              //   streamState: vm.episodeStreamsState,
-              //   onStreamSelect: vm.onStreamSelect,
-              // ),
+              StreamRow(
+                color: color,
+                onTap: () async {
+                  await Navigator.pushNamed(
+                    context,
+                    AppRoutes.videoPlayerView,
+                    arguments: vm,
+                  );
+                  vm.onPause();
+                },
+                handler: vm,
+                onStreamSelect: vm.onStreamSelect,
+              ),
               AppTheme.boxHeightM,
               SizedBox(
                 width: width * 0.5,

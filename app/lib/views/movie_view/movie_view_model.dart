@@ -105,7 +105,7 @@ class MovieViewModel implements VideoHandler {
   ValueListenable<double> getProgressNotifier() => _progressNotifier;
 
   @override
-  ValueListenable<int> getSelectedStreamNotifier() => selectedStream;
+  ValueNotifier<int> getSelectedStreamNotifier() => selectedStream;
 
   @override
   bool isMovie() => true;
@@ -118,6 +118,13 @@ class MovieViewModel implements VideoHandler {
   @override
   void onPause() {
     _isPaused = true;
+  }
+
+  @override
+  void onStop() {
+    _isPaused = true;
+    _progressTimer?.cancel();
+    _progressTimer = null;
   }
 
   @override
