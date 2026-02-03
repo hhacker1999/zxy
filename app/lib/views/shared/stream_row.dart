@@ -9,6 +9,7 @@ import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/screen.dart';
+import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/shared/zxy_button.dart';
 import 'package:zxy_app/views/video_handler.dart';
 import 'package:zxy_app/views/video_player_view/video_player_view.dart';
@@ -48,20 +49,19 @@ class StreamRow extends StatelessWidget {
             ZxyButton(
               radius: AppTheme.radiusLarge,
               onTap: () {
-                // if (streams is ItemLoading) {
+                if (streams is ItemLoaded<ZxyStreamResponse>) {
+                  if (streams.data.uhd.isEmpty &&
+                      streams.data.fhd.isEmpty &&
+                      streams.data.hd.isEmpty) {
+                    showToast(context, true, "No streams found", "");
+                    return;
+                  }
+                }
                 Navigator.pushNamed(
                   context,
                   AppRoutes.videoPlayerView,
                   arguments: handler,
                 );
-                // showStreamSelectionDialog(
-                //   context,
-                //   color,
-                //   handler.getCurrentStreamsNotifier(),
-                //   onStreamSelect,
-                //   handler.getSelectedStreamNotifier(),
-                // );
-                // }
               },
               color: color,
               child: Row(

@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 class ScreenData {
   final bool shouldRenderMobile;
+  final bool isMobileDevice;
   final double height;
   final double width;
 
@@ -9,6 +12,7 @@ class ScreenData {
     required this.shouldRenderMobile,
     required this.height,
     required this.width,
+    required this.isMobileDevice,
   });
 }
 
@@ -46,6 +50,7 @@ class Screen extends StatelessWidget {
       builder: (context, constr) {
         return _ScreenScope(
           data: ScreenData(
+            isMobileDevice: Platform.isIOS || Platform.isAndroid,
             shouldRenderMobile: _updateRenderMobile(constr),
             height: constr.maxHeight,
             width: constr.maxWidth,

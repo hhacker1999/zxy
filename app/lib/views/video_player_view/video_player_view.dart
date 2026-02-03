@@ -1,7 +1,6 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -90,6 +89,7 @@ class ZxyPlayerState {
   final ValueNotifier<bool> settingsVisible = ValueNotifier(false);
   final ValueNotifier<int> audioDelay = ValueNotifier(0);
   final ValueNotifier<int> subtitleDelay = ValueNotifier(0);
+  final ValueNotifier<BoxFit> playerFit = ValueNotifier(BoxFit.contain);
   final ValueNotifier<SubtitleFontStyle> subtitleFontStyle = ValueNotifier(
     SubtitleFontStyle(
       fontSize: 24,
@@ -105,6 +105,9 @@ class ZxyPlayerState {
     videoDetails.dispose();
     audioDetails.dispose();
     subtitleDetails.dispose();
+    audioDelay.dispose();
+    subtitleDelay.dispose();
+    playerFit.dispose();
   }
 }
 
@@ -150,10 +153,13 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   late final StreamSubscription<bool> _bufferingSub;
   late final StreamSubscription<bool> _playingSub;
   late final ZxyPlayerState _state;
-  bool updateLandscape = false;
+  DateTime? lastTap;
+  bool updateLayoutToNormal = false;
   Timer? _hoverTimer;
   double pinRadius = 20;
   double progressHeight = 10;
+  // NOTE: To determine zoom in or out for player fit
+  double horizontalScale = 1;
 
   @override
   void initState() {
@@ -192,15 +198,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       player.setProperty('cscale', 'ewa_lanczossharp'),
     ]);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // We only need landscape in mobiles
-      if (Screen.of(context).shouldRenderMobile) {
-        updateLandscape = true;
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]);
-      }
-
+      initialMobileDeviceSetup();
       setupPlayerUpdateSubscriptions();
       _updatePlayerBasedOnStreamsUpdate();
       widget.handler.getCurrentStreamsNotifier().addListener(
@@ -282,7 +280,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       trackIndex == -1 ? 0 : trackIndex,
     );
     if (audioTracks.isNotEmpty) {
-      print("selected track is ${audioTracks[_state.audioDetails.value!.$2]}");
       _player.setAudioTrack(audioTracks[_state.audioDetails.value!.$2]);
     }
 
@@ -297,28 +294,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       if (tracks.video.isNotEmpty ||
           tracks.audio.isNotEmpty ||
           tracks.subtitle.isNotEmpty) {
-        //NOTE: All media info is now available
-        // print("Printing video details");
-        // for (var element in tracks.video) {
-        //   print("Codec ${element.codec}");
-        //   print("Bitrate ${element.bitrate}");
-        // }
-        // print("--------------------------------------------------");
-        //
-        // print("Printing audio details");
-        // for (var element in tracks.audio) {
-        //   print("Codec ${element.codec}");
-        //   print("Bitrate ${element.bitrate}");
-        //   print("Language ${element.language}");
-        // }
-        // print("--------------------------------------------------");
-        //
-        // print("Printing subtitiles details");
-        // for (var element in tracks.subtitle) {
-        //   print("Language ${element.language}");
-        //   print("Title ${element.title}");
-        // }
-        // print("--------------------------------------------------");
         onMediaInitialized(tracks);
       }
     });
@@ -332,7 +307,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       if (_state.seekInfo.value.playback == Duration.zero &&
           duration != Duration.zero &&
           widget.handler.getStartingPercentage() != 0) {
-        // NOTE: Video is initialised so we need to pickup from where we left off
         final startDuration =
             duration.inSeconds * (widget.handler.getStartingPercentage() / 100);
         _player.seek(Duration(seconds: startDuration.floor()));
@@ -371,7 +345,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     });
   }
 
-  void onHover(bool isTap) {
+  void onHover() {
     if (!_state.isOverlayVisible.value) {
       _state.isOverlayVisible.value = true;
     }
@@ -399,14 +373,34 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     _player.open(Media(streamItem.url), play: _state.isPlaying.value);
   }
 
-  @override
-  void dispose() {
-    if (updateLandscape) {
+  void initialMobileDeviceSetup() {
+    if (Screen.of(context).isMobileDevice) {
+      updateLayoutToNormal = true;
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+    }
+  }
+
+  void onBackPress() {
+    _player.stop();
+    if (updateLayoutToNormal) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
       ]);
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: SystemUiOverlay.values,
+      );
     }
+    Navigator.pop(context);
+  }
+
+  @override
+  void dispose() {
     widget.handler.getCurrentStreamsNotifier().removeListener(
       _onCurrentStreamsUpdate,
     );
@@ -424,186 +418,234 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     super.dispose();
   }
 
+  void onSkipPressOrTap(bool isRight) {
+    final currDur = _state.seekInfo.value.current;
+    if (isRight) {
+      _player.seek(currDur + Duration(seconds: 15));
+    } else {
+      _player.seek(currDur - Duration(seconds: 15));
+    }
+    // onHover();
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenData = Screen.of(context);
-    return Scaffold(
-      body: LayoutBuilder(
-        builder: (_, constr) {
-          pinRadius = constr.maxHeight * 0.012;
-          progressHeight = constr.maxHeight * 0.01;
-          return SizedBox(
-            height: constr.maxHeight,
-            width: constr.maxWidth,
-            child: CallbackShortcuts(
-              bindings: {
-                SingleActivator(LogicalKeyboardKey.space): () {
-                  onPauseOrPlay();
-                  onHover(true);
+    return PopScope(
+      onPopInvokedWithResult: (handled, _) {
+        if (handled) return;
+        onBackPress();
+      },
+      canPop: false,
+      child: Scaffold(
+        body: LayoutBuilder(
+          builder: (_, constr) {
+            pinRadius = constr.maxHeight * 0.012;
+            progressHeight = constr.maxHeight * 0.01;
+            return SizedBox(
+              height: constr.maxHeight,
+              width: constr.maxWidth,
+              child: CallbackShortcuts(
+                bindings: {
+                  SingleActivator(LogicalKeyboardKey.space): () {
+                    onPauseOrPlay();
+                    onHover();
+                  },
+                  SingleActivator(LogicalKeyboardKey.arrowRight): () {
+                    onSkipPressOrTap(true);
+                  },
+                  SingleActivator(LogicalKeyboardKey.arrowLeft): () {
+                    onSkipPressOrTap(false);
+                  },
+                  SingleActivator(LogicalKeyboardKey.arrowUp): () {
+                    final currVol = _state.volumeDetails.value;
+                    final volumeToSet = min(100, currVol + 10);
+                    _state.volumeDetails.value = volumeToSet.toDouble();
+                    _player.setVolume(volumeToSet.toDouble());
+                    onHover();
+                  },
+                  SingleActivator(LogicalKeyboardKey.arrowDown): () {
+                    final currVol = _state.volumeDetails.value;
+                    final volumeToSet = max(0, currVol - 10);
+                    _state.volumeDetails.value = volumeToSet.toDouble();
+                    _player.setVolume(volumeToSet.toDouble());
+                    onHover();
+                  },
                 },
-                SingleActivator(LogicalKeyboardKey.arrowRight): () {
-                  final currDur = _state.seekInfo.value.current;
-                  _player.seek(currDur + Duration(seconds: 15));
-                  onHover(true);
-                },
-                SingleActivator(LogicalKeyboardKey.arrowLeft): () {
-                  final currDur = _state.seekInfo.value.current;
-                  _player.seek(currDur - Duration(seconds: 15));
-                  onHover(true);
-                },
-                SingleActivator(LogicalKeyboardKey.arrowUp): () {
-                  final currVol = _state.volumeDetails.value;
-                  final volumeToSet = min(100, currVol + 10);
-                  _state.volumeDetails.value = volumeToSet.toDouble();
-                  _player.setVolume(volumeToSet.toDouble());
-                  onHover(true);
-                },
-                SingleActivator(LogicalKeyboardKey.arrowDown): () {
-                  final currVol = _state.volumeDetails.value;
-                  final volumeToSet = max(0, currVol - 10);
-                  _state.volumeDetails.value = volumeToSet.toDouble();
-                  _player.setVolume(volumeToSet.toDouble());
-                  onHover(true);
-                },
-              },
-              child: Focus(
-                autofocus: true,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Listener(
-                        onPointerHover: (_) {
-                          onHover(false);
-                          print("hover");
-                        },
-                        onPointerMove: (e) {
-                          if (Platform.isAndroid || Platform.isIOS) {
-                            return;
-                          }
-                          onHover(false);
-                          print("move");
-                        },
-                        onPointerDown: (_) {
-                          onTap();
-                          print("down");
-                        },
-                        child: Video(
-                          controller: _controller,
-                          controls: NoVideoControls,
-                          width: constr.maxWidth,
-                          subtitleViewConfiguration: SubtitleViewConfiguration(
-                            visible: false,
+                child: Focus(
+                  autofocus: true,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: MouseRegion(
+                          onHover: (_) {
+                            onHover();
+                          },
+                          child: GestureDetector(
+                            onScaleEnd: (_) {
+                              horizontalScale = 1;
+                            },
+                            onScaleUpdate: (details) {
+                              final prev = horizontalScale;
+                              horizontalScale *= details.horizontalScale;
+                              print(horizontalScale);
+                              if (horizontalScale < prev) {
+                                if (_state.playerFit.value == BoxFit.cover) {
+                                  _state.playerFit.value = BoxFit.contain;
+                                }
+                              }
+                              if (horizontalScale > prev) {
+                                if (_state.playerFit.value == BoxFit.contain) {
+                                  _state.playerFit.value = BoxFit.cover;
+                                }
+                              }
+                            },
+                            onTapDown: (details) {
+                              final cTime = DateTime.now();
+                              if (lastTap != null) {
+                                final diff = cTime.difference(lastTap!);
+                                if (diff < Duration(milliseconds: 200)) {
+                                  final position = details.localPosition;
+                                  final center = constr.maxWidth / 2;
+                                  if (position.dx > center + 20) {
+                                    onSkipPressOrTap(true);
+                                  }
+                                  if (position.dx < center - 20) {
+                                    onSkipPressOrTap(false);
+                                  }
+                                  lastTap = cTime;
+                                  return;
+                                }
+                              }
+                              lastTap = cTime;
+                              onTap();
+                            },
+                            child: ValueListenableBuilder(
+                              valueListenable: _state.playerFit,
+                              builder: (_, fit, _) {
+                                return Video(
+                                  fit: fit,
+                                  controller: _controller,
+                                  controls: NoVideoControls,
+                                  width: constr.maxWidth,
+                                  subtitleViewConfiguration:
+                                      SubtitleViewConfiguration(visible: false),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    ValueListenableBuilder(
-                      valueListenable: _state.subtitleFontStyle,
-                      builder: (_, style, _) {
-                        return Positioned(
-                          bottom: style.fontPadding,
-                          left: 0,
-                          right: 0,
-                          child: SubtitleView(
-                            controller: _controller,
-                            configuration: SubtitleViewConfiguration(
-                              style: TextStyle(
-                                height: 1.4,
-                                fontSize: style.fontSize,
-                                letterSpacing: 0.0,
-                                wordSpacing: 0.0,
-                                color: style.color,
-                                fontWeight: FontWeight.normal,
-                                backgroundColor: style.bgColor,
+                      ValueListenableBuilder(
+                        valueListenable: _state.subtitleFontStyle,
+                        builder: (_, style, _) {
+                          return Positioned(
+                            bottom: style.fontPadding,
+                            left: 0,
+                            right: 0,
+                            child: SubtitleView(
+                              controller: _controller,
+                              configuration: SubtitleViewConfiguration(
+                                style: TextStyle(
+                                  height: 1.4,
+                                  fontSize: style.fontSize,
+                                  letterSpacing: 0.0,
+                                  wordSpacing: 0.0,
+                                  color: style.color,
+                                  fontWeight: FontWeight.normal,
+                                  backgroundColor: style.bgColor,
+                                ),
+                                textAlign: TextAlign.center,
+                                padding: EdgeInsets.only(
+                                  bottom: style.fontPadding,
+                                ),
                               ),
-                              textAlign: TextAlign.center,
-                              padding: EdgeInsets.only(
-                                bottom: style.fontPadding,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    Align(
-                      alignment: Alignment.center,
-                      child: MultiValueListenableBuilder(
-                        notifiers: [_state.bufferingOrLoading],
-                        builder: (_) {
-                          final isBuffering = _state.bufferingOrLoading.value;
-                          return Visibility(
-                            visible: isBuffering,
-                            child: CupertinoActivityIndicator(),
-                          );
-                        },
-                      ),
-                    ),
-                    Align(
-                      alignment: screenData.shouldRenderMobile
-                          ? Alignment.center
-                          : Alignment.bottomCenter,
-                      child: ValueListenableBuilder(
-                        valueListenable: _state.isOverlayVisible,
-                        builder: (_, visible, _) {
-                          return AnimatedVisibileOpacity(
-                            visible: visible,
-                            duration: const Duration(milliseconds: 400),
-                            child: Padding(
-                              padding: screenData.shouldRenderMobile
-                                  ? EdgeInsets.zero
-                                  : const EdgeInsets.only(bottom: 100),
-                              child: screenData.shouldRenderMobile
-                                  ? MobileVideoPlayerHUD(
-                                      onPauseOrPlay: onPauseOrPlay,
-                                      iconHeight: constr.maxHeight * 0.1,
-                                      state: _state,
-                                      pinRadius: pinRadius,
-                                      progressHeight: progressHeight,
-                                      player: _player,
-                                    )
-                                  : ProgressHudWithBar(
-                                      onPauseOrPlay: onPauseOrPlay,
-                                      iconHeight: constr.maxHeight * 0.1,
-                                      state: _state,
-                                      pinRadius: pinRadius,
-                                      progressHeight: progressHeight,
-                                      player: _player,
-                                    ),
                             ),
                           );
                         },
                       ),
-                    ),
-                    VideoSettingsSidebar(
-                      onVideoStreamChanged: onVideoStreamChanged,
-                      streamNotifier: widget.handler
-                          .getCurrentStreamsNotifier(),
-                      selectedStreamNotifier: widget.handler
-                          .getSelectedStreamNotifier(),
-                      updateAudioDelay: () {
-                        final delaySec = _state.audioDelay.value / 1000;
-                        (_player.platform as NativePlayer).setProperty(
-                          "audio-delay",
-                          delaySec.toString(),
-                        );
-                      },
-                      updateSubDelay: () {
-                        final delaySec = _state.subtitleDelay.value / 1000;
-                        (_player.platform as NativePlayer).setProperty(
-                          "sub-delay",
-                          delaySec.toString(),
-                        );
-                      },
-                      player: _player,
-                      state: _state,
-                      height: constr.maxHeight - 40,
-                    ),
-                  ],
+                      Align(
+                        alignment: Alignment.center,
+                        child: MultiValueListenableBuilder(
+                          notifiers: [_state.bufferingOrLoading],
+                          builder: (_) {
+                            final isBuffering = _state.bufferingOrLoading.value;
+                            return Visibility(
+                              visible: isBuffering,
+                              child: CupertinoActivityIndicator(),
+                            );
+                          },
+                        ),
+                      ),
+                      Align(
+                        alignment: screenData.shouldRenderMobile
+                            ? Alignment.center
+                            : Alignment.bottomCenter,
+                        child: ValueListenableBuilder(
+                          valueListenable: _state.isOverlayVisible,
+                          builder: (_, visible, _) {
+                            return AnimatedVisibileOpacity(
+                              visible: visible,
+                              duration: const Duration(milliseconds: 400),
+                              child: Padding(
+                                padding: screenData.shouldRenderMobile
+                                    ? EdgeInsets.zero
+                                    : const EdgeInsets.only(bottom: 100),
+                                child: screenData.shouldRenderMobile
+                                    ? MobileVideoPlayerHUD(
+                                        onBackOrStop: onBackPress,
+                                        onPauseOrPlay: onPauseOrPlay,
+                                        iconHeight: constr.maxHeight * 0.1,
+                                        state: _state,
+                                        pinRadius: pinRadius,
+                                        progressHeight: progressHeight,
+                                        player: _player,
+                                      )
+                                    : ProgressHudWithBar(
+                                        onBackOrStop: onBackPress,
+                                        onPauseOrPlay: onPauseOrPlay,
+                                        iconHeight: constr.maxHeight * 0.1,
+                                        state: _state,
+                                        pinRadius: pinRadius,
+                                        progressHeight: progressHeight,
+                                        player: _player,
+                                      ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      VideoSettingsSidebar(
+                        onVideoStreamChanged: onVideoStreamChanged,
+                        streamNotifier: widget.handler
+                            .getCurrentStreamsNotifier(),
+                        selectedStreamNotifier: widget.handler
+                            .getSelectedStreamNotifier(),
+                        updateAudioDelay: () {
+                          final delaySec = _state.audioDelay.value / 1000;
+                          (_player.platform as NativePlayer).setProperty(
+                            "audio-delay",
+                            delaySec.toString(),
+                          );
+                        },
+                        updateSubDelay: () {
+                          final delaySec = _state.subtitleDelay.value / 1000;
+                          (_player.platform as NativePlayer).setProperty(
+                            "sub-delay",
+                            delaySec.toString(),
+                          );
+                        },
+                        player: _player,
+                        state: _state,
+                        height: constr.maxHeight - 40,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -1066,6 +1108,7 @@ class ProgressHudWithBar extends StatelessWidget {
     required this.progressHeight,
     required this.onPauseOrPlay,
     required Player player,
+    required this.onBackOrStop,
     required this.iconHeight,
   }) : _state = state,
        _player = player;
@@ -1076,6 +1119,7 @@ class ProgressHudWithBar extends StatelessWidget {
   final Player _player;
   final double iconHeight;
   final VoidCallback onPauseOrPlay;
+  final VoidCallback onBackOrStop;
 
   @override
   Widget build(BuildContext context) {
@@ -1179,8 +1223,7 @@ class ProgressHudWithBar extends StatelessWidget {
                         ),
                         GestureDetector(
                           onTap: () {
-                            _player.stop();
-                            Navigator.pop(context);
+                            onBackOrStop();
                           },
                           child: Icon(
                             Icons.stop,
@@ -1229,6 +1272,7 @@ class ProgressHudWithBar extends StatelessWidget {
                   Expanded(
                     flex: 20,
                     child: ZxyProgressBar(
+                      renderMobileLayout: false,
                       player: _player,
                       state: _state,
                       pinRadius: 8,
@@ -1263,6 +1307,7 @@ class MobileVideoPlayerHUD extends StatelessWidget {
     required this.progressHeight,
     required this.onPauseOrPlay,
     required Player player,
+    required this.onBackOrStop,
     required this.iconHeight,
   }) : _state = state,
        _player = player;
@@ -1273,6 +1318,7 @@ class MobileVideoPlayerHUD extends StatelessWidget {
   final Player _player;
   final double iconHeight;
   final VoidCallback onPauseOrPlay;
+  final VoidCallback onBackOrStop;
 
   @override
   Widget build(BuildContext context) {
@@ -1294,8 +1340,7 @@ class MobileVideoPlayerHUD extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: () {
-                  _player.stop();
-                  Navigator.pop(context);
+                  onBackOrStop();
                 },
                 child: Container(
                   padding: const EdgeInsets.all(AppTheme.spacingXS),
@@ -1399,19 +1444,20 @@ class MobileVideoPlayerHUD extends StatelessWidget {
           ),
           child: SafeArea(
             top: false,
+            left: false,
+            right: false,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Progress bar with time labels
                 ValueListenableBuilder(
                   valueListenable: _state.seekInfo,
                   builder: (context, seekInfo, child) {
                     return Column(
                       children: [
-                        // Seek bar
                         SizedBox(
                           height: 28, // Larger touch target for mobile
                           child: ZxyProgressBar(
+                            renderMobileLayout: true,
                             player: _player,
                             state: _state,
                             pinRadius: 10,
@@ -1419,7 +1465,6 @@ class MobileVideoPlayerHUD extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: AppTheme.spacingXS),
-                        // Time display
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -1569,11 +1614,13 @@ class ZxyProgressBar extends StatelessWidget {
   final double pinRadius;
   final double progressHeight;
   final Player player;
+  final bool renderMobileLayout;
   const ZxyProgressBar({
     super.key,
     required this.state,
     required this.player,
     required this.pinRadius,
+    required this.renderMobileLayout,
     required this.progressHeight,
   });
 
@@ -1615,7 +1662,9 @@ class ZxyProgressBar extends StatelessWidget {
             ProgressRegion(
               start: 0,
               end: 1,
-              color: Colors.black.withOpacity(0.4),
+              color: renderMobileLayout
+                  ? Colors.grey.withOpacity(0.4)
+                  : Colors.black.withOpacity(0.4),
             ),
             ProgressRegion(
               start: state.seekInfo.value.playback == Duration.zero
@@ -1626,7 +1675,9 @@ class ZxyProgressBar extends StatelessWidget {
                   ? 0
                   : (state.seekInfo.value.buffered.inSeconds /
                         state.seekInfo.value.playback.inSeconds),
-              color: Colors.grey.withOpacity(0.4),
+              color: renderMobileLayout
+                  ? Colors.white.withOpacity(0.5)
+                  : Colors.grey.withOpacity(0.4),
             ),
             ProgressRegion(
               start: 0,
@@ -1634,10 +1685,14 @@ class ZxyProgressBar extends StatelessWidget {
                   ? 0
                   : (state.seekInfo.value.current.inSeconds /
                         state.seekInfo.value.playback.inSeconds),
-              color: Colors.grey.withOpacity(0.4),
+              color: renderMobileLayout
+                  ? Colors.white
+                  : Colors.grey.withOpacity(0.4),
             ),
           ],
-          pinColor: Colors.grey.withOpacity(0.8),
+          pinColor: renderMobileLayout
+              ? Colors.white
+              : Colors.grey.withOpacity(0.8),
           size: Size(constr.maxWidth, pinRadius * 2),
         );
       },
