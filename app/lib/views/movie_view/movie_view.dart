@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
@@ -347,21 +346,19 @@ class PosterItem extends StatelessWidget {
                     ValueListenableBuilder(
                       valueListenable: vm.movieStreamState,
                       builder: (_, streamState, _) {
-                        return SizedBox();
-                        // return StreamRow(
-                        //   onTap: () async {
-                        //     await Navigator.pushNamed(
-                        //       context,
-                        //       AppRoutes.videoPlayerView,
-                        //       arguments: vm,
-                        //     );
-                        //     vm.onPause();
-                        //   },
-                        //   color: color,
-                        //   selectedStream: vm.selectedStream,
-                        //   streamState: vm.movieStreamState,
-                        //   onStreamSelect: vm.onStreamSelect,
-                        // );
+                        return StreamRow(
+                          onTap: () async {
+                            await Navigator.pushNamed(
+                              context,
+                              AppRoutes.videoPlayerView,
+                              arguments: vm,
+                            );
+                            vm.onPause();
+                          },
+                          color: color,
+                          handler: vm,
+                          onStreamSelect: vm.onStreamSelect,
+                        );
                       },
                     ),
                   ],
