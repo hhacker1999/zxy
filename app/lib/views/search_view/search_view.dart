@@ -49,6 +49,11 @@ class _SearchViewState extends State<SearchView> {
         return Column(
           children: [
             TopHeader(
+              onChanged: (val) {
+                if (val.isEmpty) {
+                  vm.reset();
+                }
+              },
               showBack: true,
               searchController: searchController,
               onSearch: () {
@@ -88,9 +93,13 @@ class _SearchViewState extends State<SearchView> {
                     return ValueListenableBuilder(
                       valueListenable: vm.itemsState,
                       builder: (_, itemState, _) {
-                        if (itemState is ItemLoading ||
-                            itemState is ItemInitial) {
+                        if (itemState is ItemLoading) {
                           return Center(child: CupertinoActivityIndicator());
+                        }
+                        if (itemState is ItemInitial) {
+                          return Center(
+                            child: Text("Search movie or show by name"),
+                          );
                         }
                         if (itemState is ItemError) {
                           return Center(

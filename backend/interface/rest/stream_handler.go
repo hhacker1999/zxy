@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 	"zxy/models"
 )
 
@@ -144,4 +145,32 @@ func (i *RestInterface) HandleRemoveDebridKey(w http.ResponseWriter, r *http.Req
 	}
 
 	response.StatusCode = http.StatusOK
+}
+
+func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	initialUrl := r.URL.Query().Get("internal")
+	if len(initialUrl) == 0 {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid url"
+		res.SendResponse(w)
+		return
+	}
+
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	resp, err := client.Head(initialUrl)
+	if err != nil {
+		res.StatusCode = http.StatusBadGateway
+		res.Error = "Source resolution failed"
+		res.SendResponse(w)
+		return
+	}
+	defer resp.Body.Close()
+
+	finalURL := resp.Request.URL.String()
+
+	http.Redirect(w, r, finalURL, http.StatusFound)
 }

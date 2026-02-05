@@ -46,6 +46,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router := chi.NewRouter()
 	router.Post("/signup", i.handleSignup)
 	router.Post("/login", i.handleLogin)
+	router.Get("/stream", i.handleStream)
 	router.Post("/profile/login", i.SessionHandler(i.handleProfileLogin, false))
 	router.Get("/user", i.SessionHandler(i.handleGetUser, false))
 	router.Get("/user/profile", i.SessionHandler(i.handleGetUserProfile, true))

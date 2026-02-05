@@ -58,6 +58,10 @@ class SearchViewModel {
     }
   }
 
+  void reset() {
+    itemsState.value = ItemInitial();
+  }
+
   Future<void> loadMoreResults() async {
     try {
       final oldItems = (itemsState.value as ItemLoaded<List<ZxyMedia>>);

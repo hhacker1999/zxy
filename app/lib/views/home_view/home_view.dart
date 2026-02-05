@@ -39,15 +39,15 @@ class _HomeViewState extends State<HomeView> {
           builder: (_, list, _) {
             return Column(
               children: [
-                ValueListenableBuilder(
-                  valueListenable: homeViewModel.topBannerState,
-                  builder: (_, state, _) {
-                    if (state is! ItemLoaded<List<ZxyMedia>>) {
-                      return SizedBox.shrink();
-                    }
-                    return TopBanner(media: state.data);
-                  },
-                ),
+                // ValueListenableBuilder(
+                //   valueListenable: homeViewModel.topBannerState,
+                //   builder: (_, state, _) {
+                //     if (state is! ItemLoaded<List<ZxyMedia>>) {
+                //       return SizedBox.shrink();
+                //     }
+                //     return TopBanner(media: state.data);
+                //   },
+                // ),
                 ContinueWatchingHeader(homeViewModel: homeViewModel),
                 Column(
                   spacing: Screen.of(context).shouldRenderMobile

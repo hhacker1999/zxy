@@ -16,8 +16,8 @@ class AppTheme {
 
   // Backgrounds: Cool, deep grey-blues (Modern "Gunmetal" feel)
   // This differs from Plex's warm greys to match the cool Purple better.
-  // static const Color backgroundDark = Color(0xFF16161A);
-  static const Color backgroundDark = Color(0xFF010101);
+  static const Color backgroundDark = Color(0xFF16161A);
+  // static const Color backgroundDark = Color(0xFF010101);
   static const Color backgroundBlack = Color(
     0xFF010101,
   ); // Pure black for OLEDs
@@ -31,6 +31,7 @@ class AppTheme {
   // static const Color textPrimary = Color(0xFF010101); // Pure White
   static const Color textSecondary = Color(0xFF94A1B2); // Cool Grey
   static const Color textDisabled = Color(0xFF5F6C7B);
+  static const Color textBlack = Color(0xFF010101);
 
   // Status Colors (Softened for dark mode)
   static const Color errorColor = Color(0xFFEF4565);

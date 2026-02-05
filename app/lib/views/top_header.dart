@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 
@@ -10,9 +9,11 @@ class TopHeader extends StatelessWidget {
   final TextEditingController searchController;
   final VoidCallback onSearch;
   final bool showBack;
+  final ValueChanged<String> onChanged;
   const TopHeader({
     super.key,
     required this.searchController,
+    required this.onChanged,
     required this.onSearch,
     this.showBack = false,
   });
@@ -26,38 +27,41 @@ class TopHeader extends StatelessWidget {
           borderOpacity: 0.15,
           containerOpacity: 0.15,
           width: double.maxFinite,
-          height: 80,
+          height: 60,
           radius: AppTheme.roundedMedium,
-          padding: EdgeInsets.all(AppTheme.spacingM),
+          padding: EdgeInsets.all(AppTheme.spacingS),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (showBack)
-                InkWell(
-                  hoverColor: Colors.transparent,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: Row(
-                    children: [
-                      Icon(Icons.arrow_back_ios, size: 34),
-                      Text(
-                        "Back",
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      AppTheme.boxWidthXL,
-                    ],
-                  ),
-                ),
-              Image.asset(AppIcons.logo),
-              AppTheme.boxWidthL,
+              // if (showBack)
+              //   InkWell(
+              //     hoverColor: Colors.transparent,
+              //     onTap: () {
+              //       Navigator.pop(context);
+              //     },
+              //     child: Row(
+              //       children: [
+              //         Icon(Icons.arrow_back_ios, size: 34),
+              //         Text(
+              //           "Back",
+              //           style: Theme.of(context).textTheme.labelLarge,
+              //         ),
+              //         AppTheme.boxWidthXL,
+              //       ],
+              //     ),
+              //   ),
+              // Image.asset(AppIcons.logo),
+              // AppTheme.boxWidthL,
               SizedBox(
                 width: 400,
                 child: TextField(
                   enabled: true,
                   onSubmitted: (_) {
                     onSearch();
+                  },
+                  onChanged: (val) {
+                    onChanged(val);
                   },
                   controller: searchController,
                   decoration: InputDecoration(

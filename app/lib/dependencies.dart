@@ -23,6 +23,8 @@ class Dependencies {
     _authUc = AuthUsecase(_storage, _httpService);
   }
 
+  FlutterSecureStorage get storage => _storage;
+
   MediaUsecase get mediaUc => _mediaUc;
   StreamUsecase get streamUc => _streamUc;
   AuthUsecase get authUc => _authUc;

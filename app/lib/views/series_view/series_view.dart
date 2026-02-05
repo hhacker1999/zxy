@@ -308,6 +308,11 @@ class EpisodesList extends StatelessWidget {
               return InkWell(
                 onTap: () {
                   vm.onEpisodeSelect(index);
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.videoPlayerView,
+                    arguments: vm,
+                  );
                 },
                 child: SizedBox(
                   height: episodeHeight,
@@ -407,14 +412,12 @@ class EpisodesList extends StatelessWidget {
                   "$id:${season.seasonNumber}:${episode.episodeNumber}";
               return InkWell(
                 onTap: () {
-                  // showStreamSelectionDialog(
-                  //   context,
-                  //   color,
-                  //   vm.episodeStreamsState,
-                  //   vm.onStreamSelect,
-                  //   vm.selectedStream.value,
-                  // );
                   vm.onEpisodeSelect(index);
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.videoPlayerView,
+                    arguments: vm,
+                  );
                 },
                 child: SizedBox(
                   width: episodeWidth,

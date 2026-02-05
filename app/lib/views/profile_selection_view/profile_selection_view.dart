@@ -106,7 +106,11 @@ class ProfileSelectionView extends StatelessWidget {
                               ZxyButton(
                                 onTap: () => viewModel.submitPin(context),
                                 color: AppTheme.accentColor,
-                                child: const Text("Enter"),
+                                child: Text(
+                                  "Enter",
+                                  style: Theme.of(context).textTheme.labelSmall!
+                                      .copyWith(color: AppTheme.textBlack),
+                                ),
                               ),
                             ],
                           ),
@@ -149,9 +153,7 @@ class _ProfileCard extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               color: AppTheme.surfaceLight,
-              borderRadius: BorderRadius.circular(
-                size / 2,
-              ),
+              borderRadius: BorderRadius.circular(size / 2),
               border: Border.all(color: Colors.transparent, width: 2),
             ),
             // Placeholder for avatar logic - assuming standard or name initials

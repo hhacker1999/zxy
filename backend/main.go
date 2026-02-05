@@ -95,6 +95,7 @@ func main() {
 		cfg.TmdbAT,
 		db,
 		userRepo,
+    cfg.ZxyUrl,
 	)
 	if err != nil {
 		return

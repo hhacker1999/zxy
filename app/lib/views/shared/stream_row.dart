@@ -71,7 +71,7 @@ class StreamRow extends StatelessWidget {
                   SvgPicture.asset(
                     AppIcons.play,
                     colorFilter: const ColorFilter.mode(
-                      AppTheme.textPrimary,
+                      AppTheme.textBlack,
                       BlendMode.srcIn,
                     ),
                     height: AppTheme.spacingM,
@@ -83,7 +83,7 @@ class StreamRow extends StatelessWidget {
                         ? "Resume"
                         : handler.shortTitle(),
                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.textBlack,
                     ),
                   ),
                   if (progress != 0) ...[
@@ -93,8 +93,8 @@ class StreamRow extends StatelessWidget {
                       child: LinearProgressIndicator(
                         borderRadius: AppTheme.roundedXSmall,
                         value: progress / 100,
-                        color: AppTheme.textPrimary,
-                        backgroundColor: Colors.black,
+                        color: AppTheme.textBlack,
+                        backgroundColor: AppTheme.textBlack.withOpacity(0.4),
                       ),
                     ),
                   ],

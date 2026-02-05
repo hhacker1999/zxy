@@ -133,7 +133,7 @@
         "includeP2P": false,
         "removeTrash": true,
         "mediaTypes": [],
-        "url": "http://192.168.1.50:2020"
+        "url": "http://comet:8000"
       }
     },
     {
@@ -193,7 +193,7 @@
       },
       {
         "key": "size",
-        "direction": "asc"
+        "direction": "desc"
       },
       {
         "key": "quality",
@@ -268,20 +268,19 @@
     "multiGroupBehaviour": "aggressive",
     "keys": [
       "filename",
-      "infoHash"
+      "infoHash",
+      "smartDetect"
     ],
-    "cached": "per_addon",
-    "uncached": "per_service",
-    "p2p": "single_result"
+    "cached": "single_result",
+    "uncached": "disabled",
+    "p2p": "disabled"
   },
   "proxy": {
     "id": "builtin",
     "proxiedAddons": [],
     "proxiedServices": []
   },
-  "uuid": "878713cd-b22c-469d-9ffc-f419c9311854",
   "trusted": false,
-  "addonPassword": "golusadh",
   "addonName": "ZXY AIO",
   "addonDescription": "ZXY AIO setup",
   "excludedResolutions": [
@@ -583,8 +582,7 @@
   },
   "usePosterRedirectApi": true,
   "resultLimits": {
-    "resolution": 5,
-    "quality": 2
+    "resolution": 5
   },
   "size": {
     "global": {
@@ -600,6 +598,10 @@
     "resolution": {
       "2160p": {
         "movies": [
+          0,
+          100000000000
+        ],
+        "series": [
           1000000000,
           100000000000
         ]
@@ -615,9 +617,9 @@
       "filter"
     ]
   },
-  "tmdbAccessToken": "{tmdb-at}",
   "yearMatching": {
     "enabled": true,
+    "tolerance": 0,
     "requestTypes": [],
     "addons": []
   },

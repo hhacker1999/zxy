@@ -26,6 +26,7 @@ dependencies:
   flutter_secure_storage: ^10.0.0
   toastification: ^3.0.3
   lottie: ^3.3.2
+  window_manager: ^0.5.1
 
 dev_dependencies:
   flutter_test:

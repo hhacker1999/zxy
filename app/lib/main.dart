@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
+import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view.dart';
@@ -55,6 +56,11 @@ class _MyAppState extends State<MyApp> {
       providers: [
         Provider<HomeViewModel>(
           create: (_) => HomeViewModel(tmdbUc: deps.mediaUc, pguc: deps.progUc),
+          dispose: (_, model) => model.dispose(),
+          lazy: true,
+        ),
+        Provider<SettingsBloc>(
+          create: (_) => SettingsBloc(storage: deps.storage),
           dispose: (_, model) => model.dispose(),
           lazy: true,
         ),

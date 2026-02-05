@@ -211,6 +211,7 @@ class NavigationDrawerBar extends StatelessWidget {
                 spacing: AppTheme.spacingM,
                 children: List.generate(leftCards.length, (index) {
                   return ColorAnimatedCard(
+                    radius: AppTheme.roundedLarge,
                     onTap: () {
                       vm.selectedIndex.value = index;
                     },

@@ -25,6 +25,7 @@ type Usecase struct {
 	tmdbAt    string
 	db        *sql.DB
 	userRepo  *userrepository.Repository
+	zxyUrl    string
 }
 
 func New(
@@ -35,6 +36,7 @@ func New(
 	tmdbAt string,
 	db *sql.DB,
 	userRepo *userrepository.Repository,
+	zxyUrl string,
 ) (*Usecase, error) {
 
 	byte, err := os.ReadFile(templatePath)
@@ -57,6 +59,7 @@ func New(
 		tmdbAt:    tmdbAt,
 		db:        db,
 		userRepo:  userRepo,
+		zxyUrl:    zxyUrl,
 	}, nil
 }
 
@@ -425,7 +428,7 @@ func (u *Usecase) GetMovieStreamProfile(id string, profileId int) (models.ZxyStr
 		if ok {
 			temp.Size = size
 		}
-		temp.Url = v.URL
+		temp.Url = fmt.Sprintf("%s/stream?internal=%s", u.zxyUrl, v.URL)
 		res, ok := dataMap["resolution"].(string)
 		if ok {
 			temp.Resolution = res
@@ -562,7 +565,7 @@ func (u *Usecase) GetSeriesStreamProfile(
 		if ok {
 			temp.Size = size
 		}
-		temp.Url = v.URL
+		temp.Url = fmt.Sprintf("%s/stream?internal=%s", u.zxyUrl, v.URL)
 		res, ok := dataMap["resolution"].(string)
 		if ok {
 			temp.Resolution = res

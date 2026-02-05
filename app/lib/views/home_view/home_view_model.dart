@@ -44,8 +44,8 @@ class HomeViewModel {
   late ValueNotifier<ViewItemState<List<ContinueWatchingCardInfo>>>
   continueWatchingState;
 
-  final ValueNotifier<ViewItemState<List<ZxyMedia>>> topBannerState =
-      ValueNotifier(ItemLoading<List<ZxyMedia>>());
+  // final ValueNotifier<ViewItemState<List<ZxyMedia>>> topBannerState =
+  //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
 
   Future<void> initialise() async {
     if (_initialised) {
@@ -107,14 +107,14 @@ class HomeViewModel {
       initialiseContinueWatching(),
     ]);
 
-    final shows = (trendingMoviesState.value as ItemLoaded<List<ZxyMedia>>).data
-        .take(4);
-    final movies = (trendingShowsState.value as ItemLoaded<List<ZxyMedia>>).data
-        .take(5);
-    final combined = List<ZxyMedia>.from(shows)
-      ..addAll(movies)
-      ..shuffle();
-    topBannerState.value = ItemLoaded(data: combined);
+    // final shows = (trendingMoviesState.value as ItemLoaded<List<ZxyMedia>>).data
+    //     .take(4);
+    // final movies = (trendingShowsState.value as ItemLoaded<List<ZxyMedia>>).data
+    //     .take(5);
+    // final combined = List<ZxyMedia>.from(shows)
+    //   ..addAll(movies)
+    //   ..shuffle();
+    // topBannerState.value = ItemLoaded(data: combined);
   }
 
   Future<void> initialiseContinueWatching() async {
@@ -273,6 +273,6 @@ class HomeViewModel {
     }
     homeViewLists.dispose();
     continueWatchingState.dispose();
-    topBannerState.dispose();
+    // topBannerState.dispose();
   }
 }
