@@ -1,0 +1,37 @@
+networks:
+  media-net:
+    external: true
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: zxy_pg
+    environment:
+      POSTGRES_USER: pg
+      POSTGRES_PASSWORD: pg
+      POSTGRES_DB: pg
+    networks:
+      - media-net
+    ports:
+      - "5696:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d my_database"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    container_name: zxy_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "6969:6969"
+    networks:
+      - media-net
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .env:/app/.env
