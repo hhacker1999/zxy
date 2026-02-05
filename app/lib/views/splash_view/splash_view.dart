@@ -6,7 +6,6 @@ import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:zxy_app/app_constants.dart';
-import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/splash_view/splash_view_model.dart';
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
-import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
@@ -164,7 +163,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                               ),
                             ),
                             if (screenData.shouldRenderMobile)
-                              SizedBox(height: 20),
+                              SizedBox(height: 24),
                           ],
                         );
                       },
@@ -271,6 +270,7 @@ class ZxyNavBar extends StatelessWidget {
                 vertical: AppTheme.spacingS,
               ),
               decoration: BoxDecoration(
+                color: AppTheme.backgroundBlack,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.3), // Subtle dark color
@@ -280,14 +280,14 @@ class ZxyNavBar extends StatelessWidget {
                   ),
                 ],
 
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.2),
-                    Colors.black.withOpacity(0.9),
-                  ],
-                ),
+                // gradient: LinearGradient(
+                //   begin: Alignment.topCenter,
+                //   end: Alignment.bottomCenter,
+                //   colors: [
+                //     Colors.black.withOpacity(0.2),
+                //     Colors.black.withOpacity(0.9),
+                //   ],
+                // ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -307,7 +307,7 @@ class ZxyNavBar extends StatelessWidget {
                           card.$2,
                           color: selectedIndex == index
                               ? color ?? AppTheme.accentColor
-                              : AppTheme.textPrimary,
+                              : AppTheme.textSecondary,
                           height: 25,
                           width: 25,
                         ),
@@ -318,7 +318,7 @@ class ZxyNavBar extends StatelessWidget {
                                 fontSize: 10,
                                 color: selectedIndex == index
                                     ? color ?? AppTheme.accentColor
-                                    : AppTheme.textPrimary,
+                                    : AppTheme.textSecondary,
                               ),
                         ),
                       ],

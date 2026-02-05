@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
-
+import 'dart:math';
 import 'shared/glass_container.dart';
 
 class TopHeader extends StatelessWidget {
@@ -30,59 +30,34 @@ class TopHeader extends StatelessWidget {
           height: 60,
           radius: AppTheme.roundedMedium,
           padding: EdgeInsets.all(AppTheme.spacingS),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // if (showBack)
-              //   InkWell(
-              //     hoverColor: Colors.transparent,
-              //     onTap: () {
-              //       Navigator.pop(context);
-              //     },
-              //     child: Row(
-              //       children: [
-              //         Icon(Icons.arrow_back_ios, size: 34),
-              //         Text(
-              //           "Back",
-              //           style: Theme.of(context).textTheme.labelLarge,
-              //         ),
-              //         AppTheme.boxWidthXL,
-              //       ],
-              //     ),
-              //   ),
-              // Image.asset(AppIcons.logo),
-              // AppTheme.boxWidthL,
-              SizedBox(
-                width: 400,
-                child: TextField(
-                  enabled: true,
-                  onSubmitted: (_) {
-                    onSearch();
-                  },
-                  onChanged: (val) {
-                    onChanged(val);
-                  },
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: color ?? AppTheme.accentColor,
-                      ),
-                      borderRadius: AppTheme.roundedMedium,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: AppTheme.roundedMedium,
-                    ),
-                    fillColor: AppTheme.lightGreyBg,
-                    hintText: "Search Movies and Shows",
-                    hintStyle: Theme.of(context).textTheme.labelLarge,
-                    prefixIcon: Icon(Icons.search),
+          child: SizedBox(
+            width: min(double.maxFinite, 400),
+            child: TextField(
+              enabled: true,
+              onSubmitted: (_) {
+                onSearch();
+              },
+              onChanged: (val) {
+                onChanged(val);
+              },
+              controller: searchController,
+              decoration: InputDecoration(
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: color ?? AppTheme.accentColor,
                   ),
-                  cursorColor: color ?? AppTheme.accentColor,
+                  borderRadius: AppTheme.roundedMedium,
                 ),
+                border: OutlineInputBorder(
+                  borderRadius: AppTheme.roundedMedium,
+                ),
+                fillColor: AppTheme.lightGreyBg,
+                hintText: "Search Movies and Shows",
+                hintStyle: Theme.of(context).textTheme.labelLarge,
+                prefixIcon: Icon(Icons.search),
               ),
-            ],
+              cursorColor: color ?? AppTheme.accentColor,
+            ),
           ),
         );
       },

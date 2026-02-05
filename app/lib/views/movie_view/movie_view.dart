@@ -10,6 +10,7 @@ import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
+import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/shared/cast_crew.dart';
 import 'package:zxy_app/views/shared/duration_extension.dart';
@@ -310,10 +311,10 @@ class PosterItem extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ZxyImage(
-                      width: width,
-                      height: height * 0.08,
+                      width: 140,
+                      height: height * 0.10,
                       path: logoPath ?? "",
-                      size: "w500",
+                      size: "w154",
                       fit: BoxFit.contain,
                       replacement: Text(
                         movie.title,
@@ -321,12 +322,13 @@ class PosterItem extends StatelessWidget {
                             ?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
+                              fontSize: 14,
                             ),
                       ),
                     ),
                     AppTheme.boxHeightM,
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       spacing: AppTheme.spacingS,
                       children: List.generate(movie.genres?.length ?? 0, (
                         index,
@@ -362,14 +364,9 @@ class PosterItem extends StatelessWidget {
                 ),
               ),
               Positioned(
-                left: AppTheme.spacingS,
+                left: AppTheme.spacingM,
                 top: MediaQuery.of(context).viewPadding.top + AppTheme.spacingL,
-                child: IconButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  icon: Icon(Icons.arrow_back),
-                ),
+                child: MediaBackButton(radius: 17.5),
               ),
             ],
           ),

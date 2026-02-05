@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -632,10 +631,10 @@ class PosterItemSeries extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ZxyImage(
-                      width: width,
-                      height: height * 0.08,
+                      width: 140,
+                      height: height * 0.10,
                       path: logoPath ?? "",
-                      size: "w500",
+                      size: "w154",
                       fit: BoxFit.contain,
                       replacement: Text(
                         series.name,
@@ -643,12 +642,13 @@ class PosterItemSeries extends StatelessWidget {
                             ?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
+                              fontSize: 14,
                             ),
                       ),
                     ),
                     AppTheme.boxHeightM,
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       spacing: AppTheme.spacingS,
                       children: List.generate(series.genres.length, (index) {
                         var genre = series.genres[index];
@@ -660,31 +660,27 @@ class PosterItemSeries extends StatelessWidget {
                       }).toList(),
                     ),
                     AppTheme.boxHeightM,
-                    // StreamRow(
-                    //   onTap: () async {
-                    //     await Navigator.pushNamed(
-                    //       context,
-                    //       AppRoutes.videoPlayerView,
-                    //       arguments: vm,
-                    //     );
-                    //     vm.onPause();
-                    //   },
-                    //   color: color,
-                    //   selectedStream: vm.selectedStream,
-                    //   streamState: vm.episodeStreamsState,
-                    //   onStreamSelect: vm.onStreamSelect,
-                    // ),
+                    StreamRow(
+                      onTap: () async {
+                        await Navigator.pushNamed(
+                          context,
+                          AppRoutes.videoPlayerView,
+                          arguments: vm,
+                        );
+                        vm.onPause();
+                      },
+                      color: color,
+                      handler: vm,
+                      onStreamSelect: vm.onStreamSelect,
+                    ),
                   ],
                 ),
               ),
               Positioned(
-                left: AppTheme.spacingL,
-                top: MediaQuery.of(context).viewPadding.top + AppTheme.spacingL,
-                child: IconButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  icon: Icon(Icons.arrow_back),
+                left: AppTheme.spacingM,
+                top: MediaQuery.of(context).viewPadding.top + AppTheme.spacingM,
+                child: MediaBackButton(
+                  radius: 17.5,
                 ),
               ),
             ],
@@ -742,6 +738,29 @@ class PosterItemSeries extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class MediaBackButton extends StatelessWidget {
+  const MediaBackButton({super.key, required this.radius});
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+      },
+      child: Container(
+        height: radius * 2,
+        width: radius * 2,
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(radius),
+        ),
+        child: Icon(Icons.arrow_back),
+      ),
     );
   }
 }

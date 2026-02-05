@@ -141,7 +141,11 @@ class _LoginViewState extends State<LoginView> {
                                   );
                                 }
                               },
-                              child: Text(isLogin ? 'Login' : 'Sign Up'),
+                              child: Text(
+                                isLogin ? 'Login' : 'Sign Up',
+                                style: Theme.of(context).textTheme.labelLarge!
+                                    .copyWith(color: AppTheme.textBlack),
+                              ),
                             );
                           },
                         ),

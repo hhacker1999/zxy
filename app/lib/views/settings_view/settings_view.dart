@@ -312,25 +312,27 @@ class _ProfileChip extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (profile.isAdmin)
-                Icon(
-                  Icons.admin_panel_settings,
-                  size: 16,
-                  color: AppTheme.accentColor,
-                )
-              else
-                const SizedBox(width: 16),
-
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: const Icon(Icons.edit, size: 16),
-                onPressed: onEdit,
-              ),
-            ],
+          Container(
+            color: Colors.red,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (profile.isAdmin)
+                  Icon(
+                    Icons.admin_panel_settings,
+                    size: 16,
+                    color: AppTheme.accentColor,
+                  )
+                else
+                  const SizedBox(width: 16),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.edit, size: 16),
+                  onPressed: onEdit,
+                ),
+              ],
+            ),
           ),
           CircleAvatar(
             backgroundColor: AppTheme.surfaceColor,

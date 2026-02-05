@@ -395,7 +395,9 @@ func (u *Usecase) GetMovieDetails(id string, at string) (models.TMDBMovie, error
 			response.Collection = collection
 		}
 		go u.localTmdbRepo.InsertDetails(int(response.ID), "movie", response)
-	}
+	} else {
+    fmt.Println("Found movie in database")
+  }
 
 	ids := []int{}
 	if response.ImdbRating == 0 {
