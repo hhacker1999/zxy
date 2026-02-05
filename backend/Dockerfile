@@ -17,8 +17,8 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY --from=builder /zxy .
-COPY --from=builder /build/schema .
-COPY --from=builder /build/aio_template .
+COPY --from=builder /build/schema ./schema
+COPY --from=builder /build/aio_template.json ./aio_template.json
 
 EXPOSE 6969
 
