@@ -8,14 +8,16 @@ class AppTheme {
 
   // PRIMARY ACCENT: "Vibrant Violet"
   // Replaces the Plex Gold.
-  static const Color accentColor = Color(0xFF7F5AF0);
+  // static const Color accentColor = Color(0xFF7F5AF0);
+  static const Color accentColor = Color(0xFFFFFFFF);
 
   // Secondary Accent (Optional): Used for subtle highlights or gradients
   static const Color accentVariant = Color(0xFF94a1b2);
 
   // Backgrounds: Cool, deep grey-blues (Modern "Gunmetal" feel)
   // This differs from Plex's warm greys to match the cool Purple better.
-  static const Color backgroundDark = Color(0xFF16161A);
+  // static const Color backgroundDark = Color(0xFF16161A);
+  static const Color backgroundDark = Color(0xFF010101);
   static const Color backgroundBlack = Color(
     0xFF010101,
   ); // Pure black for OLEDs
@@ -26,6 +28,7 @@ class AppTheme {
 
   // Text Colors
   static const Color textPrimary = Color(0xFFFFFFFE); // Pure White
+  // static const Color textPrimary = Color(0xFF010101); // Pure White
   static const Color textSecondary = Color(0xFF94A1B2); // Cool Grey
   static const Color textDisabled = Color(0xFF5F6C7B);
 

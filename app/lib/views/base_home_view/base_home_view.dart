@@ -13,6 +13,8 @@ import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
+import 'package:zxy_app/views/search_view/search_view.dart';
+import 'package:zxy_app/views/search_view/search_view_model.dart';
 import 'package:zxy_app/views/settings_view/settings_view.dart';
 import 'package:zxy_app/views/settings_view/settings_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
@@ -31,7 +33,6 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
   late final BaseHomeViewModel vm;
   late final List<Widget> baseChildren;
   late final List<(String, String)> leftCards;
-  late final TextEditingController searchController;
 
   @override
   void initState() {
@@ -49,6 +50,13 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
         dispose: (_, vm) => vm.dispose(),
         builder: (_, _) {
           return FilterView();
+        },
+      ),
+      Provider<SearchViewModel>(
+        create: (_) => SearchViewModel(mediaUC: widget.deps.mediaUc),
+        dispose: (_, vm) => vm.dispose(),
+        builder: (_, _) {
+          return SearchView(keyword: "");
         },
       ),
       Provider<FilterViewModel>(
@@ -72,10 +80,10 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
     leftCards = [
       ("Home", AppIcons.home),
       ("Movies", AppIcons.movie),
+      ("Search", AppIcons.search),
       ("TV Shows", AppIcons.show),
       ("Settings", AppIcons.settings),
     ];
-    searchController = TextEditingController();
   }
 
   @override
@@ -91,7 +99,6 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
 
   @override
   void dispose() {
-    searchController.dispose();
     routeObserver.unsubscribe(this);
     super.dispose();
   }
@@ -110,23 +117,24 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
       builder: (_, color) {
         return Column(
           children: [
-            if (!screenData.shouldRenderMobile)
-              TopHeader(
-                searchController: searchController,
-                onSearch: () {
-                  if (searchController.value.text.isNotEmpty) {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.searchView,
-                      arguments: searchController.value.text,
-                    );
-                    searchController.clear();
-                  }
-                },
-              ),
-            if (!screenData.shouldRenderMobile) AppTheme.boxHeightM,
+            // if (!screenData.shouldRenderMobile)
+            //   TopHeader(
+            //     searchController: searchController,
+            //     onSearch: () {
+            //       if (searchController.value.text.isNotEmpty) {
+            //         Navigator.pushNamed(
+            //           context,
+            //           AppRoutes.searchView,
+            //           arguments: searchController.value.text,
+            //         );
+            //         searchController.clear();
+            //       }
+            //     },
+            //   ),
+            // if (!screenData.shouldRenderMobile) AppTheme.boxHeightM,
             Expanded(
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Visibility(
                     visible: !screenData.shouldRenderMobile,
@@ -192,96 +200,47 @@ class NavigationDrawerBar extends StatelessWidget {
         return ValueListenableBuilder(
           valueListenable: context.read<ImageBloc>().bgGradColor,
           builder: (_, color, _) {
-            return Visibility(
-              replacement: GlassContainer(
-                borderOpacity: 0.15,
-                containerOpacity: 0.0,
-                radius: AppTheme.roundedXXLarge,
-                width: screenData.width,
-                height: 80,
-                padding: EdgeInsets.all(AppTheme.spacingS),
-                margin: EdgeInsets.only(
-                  left: AppTheme.spacingL,
-                  right: AppTheme.spacingL,
-                  bottom: AppTheme.spacingL,
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(leftCards.length, (index) {
-                    return ColorAnimatedCard(
-                      width: 80,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacingXS,
-                        vertical: AppTheme.spacingS,
-                      ),
-                      radius: AppTheme.roundedXLarge,
-                      onTap: () {
-                        vm.selectedIndex.value = index;
-                      },
-                      isSelected: value == index,
-                      baseColor: AppTheme.lightGreyBg,
-                      animationSelectedColor: color ?? AppTheme.accentColor,
-                      child: Column(
-                        children: [
-                          SvgPicture.asset(
-                            leftCards[index].$2,
-                            color: AppTheme.textPrimary,
-                            height: 18,
-                            width: 18,
-                          ),
-                          SizedBox(height: AppTheme.spacingXS),
-                          Text(
-                            leftCards[index].$1,
-                            style: Theme.of(context).textTheme.labelSmall!
-                                .copyWith(
-                                  color: AppTheme.textPrimary,
-                                  fontSize: 10,
-                                ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ),
-              ),
-              visible: !screenData.shouldRenderMobile,
-              child: GlassContainer(
-                borderOpacity: 0.15,
-                containerOpacity: 0.15,
-                width: 280,
-                radius: AppTheme.roundedMedium,
-                height: double.maxFinite,
-                padding: EdgeInsets.all(AppTheme.spacingM),
-                child: Column(
-                  spacing: AppTheme.spacingM,
-                  children: List.generate(leftCards.length, (index) {
-                    return ColorAnimatedCard(
-                      onTap: () {
-                        vm.selectedIndex.value = index;
-                      },
-                      isSelected: value == index,
-                      baseColor: AppTheme.lightGreyBg,
-                      animationSelectedColor: color ?? AppTheme.accentColor,
-                      child: Row(
-                        children: [
-                          SvgPicture.asset(
-                            leftCards[index].$2,
-                            color: AppTheme.textPrimary,
-                            height: 25,
-                            width: 25,
-                          ),
-                          SizedBox(width: AppTheme.spacingS),
-                          Text(
-                            leftCards[index].$1,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ),
+            return GlassContainer(
+              borderOpacity: 0.15,
+              containerOpacity: 0.15,
+              width: 280,
+              radius: AppTheme.roundedXXLarge,
+              // height: 350,
+              padding: EdgeInsets.all(AppTheme.spacingM),
+              child: Column(
+                spacing: AppTheme.spacingM,
+                children: List.generate(leftCards.length, (index) {
+                  return ColorAnimatedCard(
+                    onTap: () {
+                      vm.selectedIndex.value = index;
+                    },
+                    isSelected: value == index,
+                    baseColor: AppTheme.lightGreyBg,
+                    animationSelectedColor: color ?? AppTheme.accentColor,
+                    child: Row(
+                      children: [
+                        SvgPicture.asset(
+                          leftCards[index].$2,
+                          color: value != index
+                              ? AppTheme.textSecondary
+                              : AppTheme.backgroundDark,
+                          height: 25,
+                          width: 25,
+                        ),
+                        SizedBox(width: AppTheme.spacingS),
+                        Text(
+                          leftCards[index].$1,
+                          style: Theme.of(context).textTheme.titleLarge!
+                              .copyWith(
+                                color: value != index
+                                    ? AppTheme.textSecondary
+                                    : AppTheme.backgroundDark,
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
               ),
             );
           },

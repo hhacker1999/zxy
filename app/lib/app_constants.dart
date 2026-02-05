@@ -170,6 +170,7 @@ class AppIcons {
   static const String home = "icons/home.svg";
   static const String profile = "icons/profile.svg";
   static const String movie = "icons/movie.svg";
+  static const String search = "icons/search.svg";
   static const String show = "icons/show.svg";
   static const String settings = "icons/settings.svg";
   static const String play = "icons/play.svg";

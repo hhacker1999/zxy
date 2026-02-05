@@ -29,19 +29,16 @@ class MovieView extends StatefulWidget {
 
 class _MovieViewState extends State<MovieView> {
   late final MovieViewModel vm;
-  late final TextEditingController searchController;
 
   @override
   void initState() {
     super.initState();
     vm = context.read<MovieViewModel>();
-    searchController = TextEditingController();
     vm.initialise(widget.id);
   }
 
   @override
   void dispose() {
-    searchController.dispose();
     super.dispose();
   }
 

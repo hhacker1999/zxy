@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
+import 'package:zxy_app/views/shared/zxy_button.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
 class ContinueWatchingCard extends StatelessWidget {
@@ -76,28 +79,60 @@ class ContinueWatchingCard extends StatelessWidget {
                       size: screenData.shouldRenderMobile ? "w300" : "w780",
                       fit: BoxFit.cover,
                     ),
-                    Positioned(
-                      // bottom: spacing,
-                      // left: spacing,
-                      // right: spacing,
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: LinearProgressIndicator(
-                        value: info.progress.progress / 100,
-                        backgroundColor: AppTheme.surfaceLight,
-                        color: AppTheme.textPrimary,
-                        minHeight: screenData.shouldRenderMobile ? 2 : 4,
-                      ),
-                    ),
+                    // Positioned(
+                    //   // bottom: spacing,
+                    //   // left: spacing,
+                    //   // right: spacing,
+                    //   bottom: 0,
+                    //   left: 0,
+                    //   right: 0,
+                    //   child: LinearProgressIndicator(
+                    //     value: info.progress.progress / 100,
+                    //     backgroundColor: AppTheme.surfaceLight,
+                    //     color: AppTheme.textPrimary,
+                    //     minHeight: screenData.shouldRenderMobile ? 2 : 4,
+                    //   ),
+                    // ),
                     Positioned.fill(
-                      child: Container(
-                        color: Colors.black.withOpacity(0.3),
-                        child: Center(
-                          child: Icon(
-                            Icons.play_circle_outline,
-                            size: screenData.shouldRenderMobile ? 30 : 42,
-                          ),
+                      child: Container(color: Colors.black.withOpacity(0.3)),
+                    ),
+
+                    Positioned(
+                      bottom: 10,
+                      left: 10,
+                      child: ZxyButton(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacingM,
+                          vertical: AppTheme.spacingS,
+                        ),
+                        radius: AppTheme.radiusLarge,
+                        onTap: () {
+                          onTap();
+                        },
+                        color: AppTheme.accentColor,
+                        child: Row(
+                          spacing: AppTheme.spacingS,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SvgPicture.asset(
+                              AppIcons.play,
+                              colorFilter: const ColorFilter.mode(
+                                AppTheme.backgroundDark,
+                                BlendMode.srcIn,
+                              ),
+                              height: AppTheme.spacingM,
+                            ),
+                            AppTheme.boxWidthXS,
+                            SizedBox(
+                              width: 60,
+                              child: LinearProgressIndicator(
+                                borderRadius: AppTheme.roundedXSmall,
+                                value: info.progress.progress / 100,
+                                color: AppTheme.backgroundDark,
+                                backgroundColor: AppTheme.backgroundDark.withOpacity(0.4),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

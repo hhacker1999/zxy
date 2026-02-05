@@ -160,4 +160,16 @@ class MovieViewModel implements VideoHandler {
   double getStartingPercentage() {
     return _progressNotifier.value;
   }
+
+  @override
+  String longTitle() {
+    final details = (_movieDetailsState.value as ItemLoaded<MovieDetails>).data;
+    return details.title;
+  }
+
+  @override
+  String shortTitle() {
+    final details = (_movieDetailsState.value as ItemLoaded<MovieDetails>).data;
+    return details.title;
+  }
 }

@@ -13,4 +13,6 @@ abstract class VideoHandler {
   void onDurationUpdate(Duration duration);
   bool isMovie();
   double getStartingPercentage();
+  String longTitle();
+  String shortTitle();
 }

@@ -77,7 +77,11 @@ class StreamRow extends StatelessWidget {
                     height: AppTheme.spacingM,
                   ),
                   Text(
-                    progress == 0 ? "Play" : "Resume",
+                    progress == 0
+                        ? "Play"
+                        : handler.isMovie()
+                        ? "Resume"
+                        : handler.shortTitle(),
                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                       color: AppTheme.textPrimary,
                     ),
@@ -85,7 +89,7 @@ class StreamRow extends StatelessWidget {
                   if (progress != 0) ...[
                     AppTheme.boxWidthXS,
                     SizedBox(
-                      width: 100,
+                      width: 60,
                       child: LinearProgressIndicator(
                         borderRadius: AppTheme.roundedXSmall,
                         value: progress / 100,
@@ -100,9 +104,9 @@ class StreamRow extends StatelessWidget {
             if (streams is ItemLoading)
               LottieBuilder.asset(
                 AppIcons.loading,
-                height: 80,
+                height: 40,
                 width: 100,
-                fit: BoxFit.fill,
+                fit: BoxFit.contain,
               ),
             if (streams is ItemLoaded<ZxyStreamResponse>)
               Builder(

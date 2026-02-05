@@ -252,4 +252,16 @@ class SeriesViewModel implements VideoHandler {
   void onProgress(Duration duration) {
     _currentProgress = duration;
   }
+
+  @override
+  String longTitle() {
+    final series =
+        (_seriesDetailsState.value as ItemLoaded<SeriesDetails>).data;
+    return "Episode ${(activeSeasonEpisode.value.$2 + 1).toString().padLeft(2, '0')}:${series.seasons[activeSeasonEpisode.value.$1].episodes[activeSeasonEpisode.value.$2].name}";
+  }
+
+  @override
+  String shortTitle() {
+    return "S${(activeSeasonEpisode.value.$1 + 1).toString().padLeft(2, '0')}:E${(activeSeasonEpisode.value.$2 + 1).toString().padLeft(2, '0')}";
+  }
 }

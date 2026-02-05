@@ -11,6 +11,7 @@ import 'package:zxy_app/views/continue_watching_card.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/library_list.dart';
+import 'package:zxy_app/views/shared/zxy_image.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class HomeView extends StatefulWidget {
@@ -25,8 +26,6 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
-    // final readToken =
-    //     "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU";
     homeViewModel = context.read<HomeViewModel>()..initialise();
   }
 
@@ -40,15 +39,15 @@ class _HomeViewState extends State<HomeView> {
           builder: (_, list, _) {
             return Column(
               children: [
-                // ValueListenableBuilder(
-                //   valueListenable: homeViewModel.topBannerState,
-                //   builder: (_, state, _) {
-                //     if (state is! ItemLoaded<List<ZxyMedia>>) {
-                //       return SizedBox.shrink();
-                //     }
-                //     return TopBanner(media: state.data);
-                //   },
-                // ),
+                ValueListenableBuilder(
+                  valueListenable: homeViewModel.topBannerState,
+                  builder: (_, state, _) {
+                    if (state is! ItemLoaded<List<ZxyMedia>>) {
+                      return SizedBox.shrink();
+                    }
+                    return TopBanner(media: state.data);
+                  },
+                ),
                 ContinueWatchingHeader(homeViewModel: homeViewModel),
                 Column(
                   spacing: Screen.of(context).shouldRenderMobile
@@ -135,8 +134,94 @@ class _TopBannerState extends State<TopBanner> {
 
   @override
   Widget build(BuildContext context) {
+    final screenData = Screen.of(context);
+    final bannerHeight = screenData.shouldRenderMobile ? 220.0 : 450.0;
+
     return Column(
       children: [
+        ClipRRect(
+          borderRadius: AppTheme.roundedMedium,
+          child: SizedBox(
+            height: bannerHeight,
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: widget.media.length,
+              itemBuilder: (context, index) {
+                final media = widget.media[index];
+                final title = media.title ?? media.name ?? '';
+
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Backdrop Image
+                    ZxyImage(
+                      path: media.backdropPath ?? "",
+                      size: screenData.shouldRenderMobile ? 'w300' : 'original',
+                      height: bannerHeight,
+                      width: double.maxFinite,
+                      fit: BoxFit.cover,
+                    ),
+
+                    // Gradient Overlay
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.7),
+                            Colors.black.withOpacity(0.9),
+                          ],
+                          stops: const [0.3, 0.7, 1.0],
+                        ),
+                      ),
+                    ),
+
+                    // Title Overlay
+                    Positioned(
+                      bottom: AppTheme.spacingL,
+                      left: AppTheme.spacingL,
+                      right: AppTheme.spacingL,
+                      child: Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: screenData.shouldRenderMobile
+                            ? Theme.of(
+                                context,
+                              ).textTheme.headlineMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.8),
+                                    blurRadius: 8,
+                                  ),
+                                ],
+                              )
+                            : Theme.of(
+                                context,
+                              ).textTheme.displayMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.8),
+                                    blurRadius: 12,
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+        AppTheme.boxHeightM,
+        // Page Indicators
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,

@@ -8,8 +8,10 @@ class ZxyButton extends StatelessWidget {
   final Duration? duration;
   final bool changeColorBaseOnTap;
   final double? radius;
+  final EdgeInsets? padding;
   const ZxyButton({
     super.key,
+    this.padding,
     this.radius,
     required this.color,
     required this.child,
@@ -24,10 +26,12 @@ class ZxyButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: duration ?? const Duration(milliseconds: 300),
-        padding: EdgeInsets.symmetric(
-          horizontal: AppTheme.spacingL,
-          vertical: AppTheme.spacingS,
-        ),
+        padding:
+            padding ??
+            EdgeInsets.symmetric(
+              horizontal: AppTheme.spacingL,
+              vertical: AppTheme.spacingS,
+            ),
         decoration: BoxDecoration(
           borderRadius: radius != null
               ? BorderRadius.circular(radius!)

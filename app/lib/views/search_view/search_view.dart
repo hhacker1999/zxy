@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
-import 'package:zxy_app/views/base_home_view/base_home_view.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/search_view/search_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
@@ -28,9 +27,12 @@ class _SearchViewState extends State<SearchView> {
   @override
   void initState() {
     super.initState();
+    vm = context.read<SearchViewModel>();
     searchController = TextEditingController(text: widget.keyword);
+    if (widget.keyword.isNotEmpty) {
+      vm.loadResults(widget.keyword);
+    }
     scrollController = ScrollController();
-    vm = context.read<SearchViewModel>()..loadResults(widget.keyword);
   }
 
   @override

@@ -395,8 +395,6 @@ func (u *Usecase) GetMovieDetails(id string, at string) (models.TMDBMovie, error
 			response.Collection = collection
 		}
 		go u.localTmdbRepo.InsertDetails(int(response.ID), "movie", response)
-	} else {
-		fmt.Println("Movie found in local db")
 	}
 
 	ids := []int{}
@@ -589,8 +587,6 @@ func (u *Usecase) GetShowDetails(id string, at string) (models.TMDBShow, error) 
 		}
 		response.Seasons = seasons
 		go u.localTmdbRepo.InsertDetails(int(response.ID), "show", response)
-	} else {
-		fmt.Println("Found show in db")
 	}
 
 	ids := []int{}

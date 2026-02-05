@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -31,20 +32,17 @@ class ShowView extends StatefulWidget {
 
 class _ShowViewState extends State<ShowView> {
   late final SeriesViewModel vm;
-  late final TextEditingController searchController;
   final episodeDF = DateFormat('MMM dd, yyyy');
 
   @override
   void initState() {
     super.initState();
     vm = context.read<SeriesViewModel>();
-    searchController = TextEditingController();
     vm.initialise(widget.id);
   }
 
   @override
   void dispose() {
-    searchController.dispose();
     super.dispose();
   }
 
@@ -175,6 +173,7 @@ class _ShowViewState extends State<ShowView> {
                                         ? AppTheme.boxHeightM
                                         : AppTheme.boxHeightL,
                                     EpisodesList(
+                                      id: widget.id,
                                       color: color,
                                       renderMobile:
                                           screenInfo.shouldRenderMobile,
@@ -282,9 +281,11 @@ class EpisodesList extends StatelessWidget {
     required this.episodeHeight,
     required this.renderMobile,
     required this.color,
+    required this.id,
   });
 
   final Season season;
+  final int id;
   final SeriesViewModel vm;
   final double episodeWidth;
   final double episodeHeight;
@@ -293,199 +294,266 @@ class EpisodesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Visibility(
-      replacement: Column(
-        spacing: AppTheme.spacingM,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(season.episodes.length, (index) {
-          final episode = season.episodes[index];
-          return InkWell(
-            onTap: () {
-              // showStreamSelectionDialog(
-              //   context,
-              //   color,
-              //   vm.episodeStreamsState,
-              //   vm.onStreamSelect,
-              //   vm.selectedStream.value,
-              // );
-              vm.onEpisodeSelect(index);
-            },
-            child: SizedBox(
-              height: episodeHeight,
-              child: Stack(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    return ValueListenableBuilder(
+      valueListenable: vm.progress,
+      builder: (_, progressMap, _) {
+        return Visibility(
+          replacement: Column(
+            spacing: AppTheme.spacingM,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: List.generate(season.episodes.length, (index) {
+              final episode = season.episodes[index];
+              final mapKey =
+                  "$id:${season.seasonNumber}:${episode.episodeNumber}";
+              return InkWell(
+                onTap: () {
+                  vm.onEpisodeSelect(index);
+                },
+                child: SizedBox(
+                  height: episodeHeight,
+                  child: Stack(
                     children: [
-                      ZxyImage(
-                        radius: AppTheme.roundedSmall,
-                        enableShadow: true,
-                        animate: false,
-                        width: episodeWidth,
-                        height: episodeHeight,
-                        path: episode.stillPath ?? "",
-                        size: "w185",
-                      ),
-                      AppTheme.boxWidthS,
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "${episode.episodeNumber}. ${episode.name}",
-                              maxLines: 2,
-                              style: Theme.of(context).textTheme.bodyMedium!
-                                  .copyWith(color: AppTheme.textPrimary),
-                            ),
-                            Expanded(
-                              child: Text(
-                                episode.overview,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.labelSmall!.copyWith(fontSize: 10),
-                              ),
-                            ),
-                            if (episode.runtime != null)
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.av_timer_outlined,
-                                    color: AppTheme.textSecondary,
-                                    size: 16,
-                                  ),
-                                  Text(
-                                    "${episode.runtime} min",
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          EpisodeImage(
+                            episode: episode,
+                            progress: progressMap[mapKey],
+                            // radius: AppTheme.roundedSmall,
+                            // enableShadow: true,
+                            // animate: false,
+                            episodeWidth: episodeWidth,
+                            episodeHeight: episodeHeight,
+                            size: "w185",
+                          ),
+                          AppTheme.boxWidthS,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "${episode.episodeNumber}. ${episode.name}",
+                                  maxLines: 2,
+                                  style: Theme.of(context).textTheme.bodyMedium!
+                                      .copyWith(color: AppTheme.textPrimary),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    episode.overview,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                     style: Theme.of(context)
                                         .textTheme
                                         .labelSmall!
                                         .copyWith(fontSize: 10),
                                   ),
-                                ],
+                                ),
+                                if (episode.runtime != null)
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.av_timer_outlined,
+                                        color: AppTheme.textSecondary,
+                                        size: 16,
+                                      ),
+                                      Text(
+                                        "${episode.runtime} min",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall!
+                                            .copyWith(fontSize: 10),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (episode.airDate == null ||
+                          episode.airDate!.isAfter(DateTime.now()))
+                        Positioned(
+                          right: 15,
+                          top: 15,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: AppTheme.roundedSmall,
+                            ),
+                            padding: const EdgeInsets.all(AppTheme.spacingS),
+                            child: Text(
+                              "Upcoming",
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleLarge!.copyWith(fontSize: 8),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+          visible: !renderMobile,
+          child: Wrap(
+            spacing: AppTheme.spacingL,
+            runSpacing: AppTheme.spacingL,
+            direction: Axis.horizontal,
+            children: List.generate(season.episodes.length, (index) {
+              final episode = season.episodes[index];
+              final mapKey =
+                  "$id:${season.seasonNumber}:${episode.episodeNumber}";
+              return InkWell(
+                onTap: () {
+                  // showStreamSelectionDialog(
+                  //   context,
+                  //   color,
+                  //   vm.episodeStreamsState,
+                  //   vm.onStreamSelect,
+                  //   vm.selectedStream.value,
+                  // );
+                  vm.onEpisodeSelect(index);
+                },
+                child: SizedBox(
+                  width: episodeWidth,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: episodeWidth,
+                        height: episodeHeight,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: EpisodeImage(
+                                progress: progressMap[mapKey],
+                                size: "w300",
+                                episodeWidth: episodeWidth,
+                                episodeHeight: episodeHeight,
+                                episode: episode,
+                              ),
+                            ),
+                            if (episode.airDate == null ||
+                                episode.airDate!.isAfter(DateTime.now()))
+                              Positioned(
+                                right: 20,
+                                top: 20,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: AppTheme.roundedSmall,
+                                  ),
+                                  padding: const EdgeInsets.all(
+                                    AppTheme.spacingS,
+                                  ),
+                                  child: Text(
+                                    "Upcoming",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge!
+                                        .copyWith(fontSize: 10),
+                                  ),
+                                ),
                               ),
                           ],
                         ),
                       ),
+                      AppTheme.boxHeightS,
+                      Text(
+                        "${episode.episodeNumber}. ${episode.name}",
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      Text(
+                        episode.overview,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                      if (episode.runtime != null)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.av_timer_outlined,
+                              color: AppTheme.textSecondary,
+                              size: 18,
+                            ),
+                            Text(
+                              " ${episode.runtime} min",
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
+                          ],
+                        ),
                     ],
                   ),
-                  if (episode.airDate == null ||
-                      episode.airDate!.isAfter(DateTime.now()))
-                    Positioned(
-                      right: 15,
-                      top: 15,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: AppTheme.roundedSmall,
-                        ),
-                        padding: const EdgeInsets.all(AppTheme.spacingS),
-                        child: Text(
-                          "Upcoming",
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleLarge!.copyWith(fontSize: 8),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        }),
-      ),
-      visible: !renderMobile,
-      child: Wrap(
-        spacing: AppTheme.spacingL,
-        runSpacing: AppTheme.spacingL,
-        direction: Axis.horizontal,
-        children: List.generate(season.episodes.length, (index) {
-          final episode = season.episodes[index];
-          return InkWell(
-            onTap: () {
-              // showStreamSelectionDialog(
-              //   context,
-              //   color,
-              //   vm.episodeStreamsState,
-              //   vm.onStreamSelect,
-              //   vm.selectedStream.value,
-              // );
-              vm.onEpisodeSelect(index);
-            },
-            child: SizedBox(
+                ),
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class EpisodeImage extends StatelessWidget {
+  const EpisodeImage({
+    super.key,
+    required this.episodeWidth,
+    required this.episodeHeight,
+    required this.episode,
+    required this.progress,
+    required this.size,
+  });
+
+  final double episodeWidth;
+  final double episodeHeight;
+  final Episode episode;
+  final String size;
+  final ValueNotifier<double>? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: episodeHeight,
+      width: episodeWidth,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(borderRadius: AppTheme.roundedSmall),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: ZxyImage(
+              radius: AppTheme.roundedSmall,
+              enableShadow: false,
+              animate: false,
               width: episodeWidth,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: episodeWidth,
-                    height: episodeHeight,
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: ZxyImage(
-                            radius: AppTheme.roundedSmall,
-                            enableShadow: true,
-                            animate: false,
-                            width: episodeWidth,
-                            height: episodeHeight,
-                            path: episode.stillPath ?? "",
-                            size: "w300",
-                          ),
-                        ),
-                        if (episode.airDate == null ||
-                            episode.airDate!.isAfter(DateTime.now()))
-                          Positioned(
-                            right: 20,
-                            top: 20,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                borderRadius: AppTheme.roundedSmall,
-                              ),
-                              padding: const EdgeInsets.all(AppTheme.spacingS),
-                              child: Text(
-                                "Upcoming",
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleLarge!.copyWith(fontSize: 10),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  AppTheme.boxHeightS,
-                  Text(
-                    "${episode.episodeNumber}. ${episode.name}",
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  Text(
-                    episode.overview,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                  if (episode.runtime != null)
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.av_timer_outlined,
-                          color: AppTheme.textSecondary,
-                          size: 18,
-                        ),
-                        Text(
-                          " ${episode.runtime} min",
-                          style: Theme.of(context).textTheme.labelSmall,
-                        ),
-                      ],
-                    ),
-                ],
+              height: episodeHeight,
+              path: episode.stillPath ?? "",
+              size: size,
+            ),
+          ),
+          if (progress != null)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: ValueListenableBuilder(
+                valueListenable: progress!,
+                builder: (_, progress, _) {
+                  if (progress == 0) {
+                    return SizedBox.shrink();
+                  }
+                  return LinearProgressIndicator(
+                    value: progress / 100,
+                    backgroundColor: AppTheme.surfaceLight,
+                    color: AppTheme.textPrimary,
+                    minHeight: 4,
+                  );
+                },
               ),
             ),
-          );
-        }),
+        ],
       ),
     );
   }
