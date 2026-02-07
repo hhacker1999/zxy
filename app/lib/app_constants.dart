@@ -32,6 +32,7 @@ class FilterValue {
 
 class AppConstants {
   static const String baseUrl = "http://192.168.1.14:6969";
+  // static const String baseUrl = "http://10.8.0.1:6969";
   static late final Map<int, Genre> movieGenre;
   static late final Map<int, Genre> showGenre;
 

@@ -12,6 +12,12 @@ class SettingsBloc {
   late final ValueNotifier<SubtitleFontStyle> subFontStyle;
 
   set isAmoled(bool amoled) {
+    if (amoled) {
+      AppTheme.backgroundDark = AppTheme.backgroundBlack;
+    } else {
+      AppTheme.backgroundDark = AppTheme.darkColor;
+    }
+
     isAmoled.value = amoled;
     _storage.write(key: "amoled", value: amoled.toString());
   }
@@ -69,7 +75,7 @@ class SettingsBloc {
     }
 
     if (poster != null) {
-      showPosterRatings.value = amoled == "true";
+      showPosterRatings.value = poster == "true";
     }
 
     if (res != null) {

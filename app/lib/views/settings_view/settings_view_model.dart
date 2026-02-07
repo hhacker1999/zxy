@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
+import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 
 class SettingsViewModel extends ChangeNotifier {
@@ -78,16 +79,22 @@ class SettingsViewModel extends ChangeNotifier {
     final item = _libraryItems.removeAt(oldIndex);
     _libraryItems.insert(newIndex, item);
     _hasLibraryChanges = true;
-    notifyListeners();
+    // Future.microtask(() {
+    //   notifyListeners();
+    // });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   Future<void> saveLibraryItems() async {
     try {
       _isLoading = true;
       notifyListeners();
-
       await _authUc.updateProfileList(_libraryItems);
-
+      final profile = await _authUc.getUserProfile();
+      _context.read<UserBloc>().profile = profile;
+      _context.read<HomeViewModel>().reload(_context);
       _hasLibraryChanges = false;
       showToast(_context, false, "Home page lists saved", "");
     } catch (e) {

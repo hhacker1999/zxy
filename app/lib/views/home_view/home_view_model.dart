@@ -68,25 +68,25 @@ class HomeViewModel {
     //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
     // final ValueNotifier<ViewItemState<List<ZxyMedia>>> topShowsState =
     //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
-    final ValueNotifier<ViewItemState<List<ZxyMedia>>> trendingShowsState =
-        ValueNotifier(ItemLoading<List<ZxyMedia>>());
-    final ValueNotifier<ViewItemState<List<ZxyMedia>>> trendingMoviesState =
-        ValueNotifier(ItemLoading<List<ZxyMedia>>());
-    homeViewLists.value.add(
-      HomeViewListItem(
-        title: "Trending Shows",
-        type: ZxyMediaType.shows,
-        state: trendingShowsState,
-      ),
-    );
-
-    homeViewLists.value.add(
-      HomeViewListItem(
-        title: "Trending Movies",
-        type: ZxyMediaType.movie,
-        state: trendingMoviesState,
-      ),
-    );
+    // final ValueNotifier<ViewItemState<List<ZxyMedia>>> trendingShowsState =
+    //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
+    // final ValueNotifier<ViewItemState<List<ZxyMedia>>> trendingMoviesState =
+    //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
+    // homeViewLists.value.add(
+    //   HomeViewListItem(
+    //     title: "Trending Shows",
+    //     type: ZxyMediaType.shows,
+    //     state: trendingShowsState,
+    //   ),
+    // );
+    //
+    // homeViewLists.value.add(
+    //   HomeViewListItem(
+    //     title: "Trending Movies",
+    //     type: ZxyMediaType.movie,
+    //     state: trendingMoviesState,
+    //   ),
+    // );
 
     // homeViewLists.value.add(
     //   HomeViewListItem(
@@ -105,8 +105,8 @@ class HomeViewModel {
     // );
     final List<Future> futures = [
       initialiseContinueWatching(),
-      initialiseTrendingShows(trendingShowsState),
-      initialiseTrendingMovies(trendingMoviesState),
+      // initialiseTrendingShows(trendingShowsState),
+      // initialiseTrendingMovies(trendingMoviesState),
       // initialiseTopRatedShows(topShowsState),
       // initialiseTopRatedMovies(topMovieState),
     ];
@@ -304,6 +304,32 @@ class HomeViewModel {
       }
       rethrow;
     }
+  }
+
+  Future<void> reload(BuildContext context) async {
+    final List<Future> futures = [];
+    for (int i = 0; i < homeViewLists.value.length; i++) {
+      homeViewLists.value[i].state.dispose();
+    }
+    homeViewLists.value = [];
+
+    final profile = context.read<UserBloc>().profileNotifier.value;
+    if (profile != null) {
+      for (var item in profile.libraryItems) {
+        final ValueNotifier<ViewItemState<List<ZxyMedia>>> notifier =
+            ValueNotifier(ItemLoading<List<ZxyMedia>>());
+        homeViewLists.value.add(
+          HomeViewListItem(
+            title: item.name,
+            type: item.filter.isMovie ? ZxyMediaType.movie : ZxyMediaType.shows,
+            state: notifier,
+          ),
+        );
+        futures.add(initialiseLibraryItem(notifier, item.filter));
+      }
+    }
+
+    await Future.wait(futures);
   }
 
   void dispose() {

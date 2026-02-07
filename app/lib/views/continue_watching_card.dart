@@ -116,7 +116,7 @@ class ContinueWatchingCard extends StatelessWidget {
                           children: [
                             SvgPicture.asset(
                               AppIcons.play,
-                              colorFilter: const ColorFilter.mode(
+                              colorFilter: ColorFilter.mode(
                                 AppTheme.backgroundDark,
                                 BlendMode.srcIn,
                               ),

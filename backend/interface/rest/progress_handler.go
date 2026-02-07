@@ -209,7 +209,7 @@ func (i *RestInterface) handleLibrary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := i.tmdbUc.GetLibraryLocal(input)
+	data, err := i.tmdbUc.GetLibraryFromFilter(input)
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError
 		res.Error = err.Error()

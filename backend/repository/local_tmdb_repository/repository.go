@@ -228,7 +228,7 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 		} else {
 			suffix += " or "
 
-    }
+		}
 		firstDay := time.Date(v, time.January, 1, 0, 0, 0, 0, cTime.Location()).Format(format)
 		lastDay := time.Date(v, time.December, 31, 0, 0, 0, 0, cTime.Location()).Format(format)
 		if filter.IsMovie {
@@ -345,4 +345,47 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 	}
 
 	return res, count, nil
+}
+
+func (r *Repository) GetLibraryFromIds(tmdbId []int, tp string) ([]models.ZxyMedia, error) {
+	var res []models.ZxyMedia
+	query := `
+  select  data, imdb_rating from details where tmdb_id in (
+  `
+	for i, v := range tmdbId {
+		query += fmt.Sprintf("%d", v)
+		if i != len(tmdbId)-1 {
+			query += ","
+		}
+	}
+	query += ")"
+	query += fmt.Sprintf("and type = '%s'", tp)
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		fmt.Println("Error getting library from ids", err)
+		return res, err
+	}
+	for rows.Next() {
+		var jsn json.RawMessage
+		var rtg sql.NullFloat64
+		var temp models.ZxyMedia
+		err := rows.Scan(&jsn, &rtg)
+		if err != nil {
+			fmt.Println("Error scanning library from id", err)
+			return res, err
+		}
+
+		err = json.Unmarshal(jsn, &temp)
+		if err != nil {
+			fmt.Println("Error unmarshalling library from id", err)
+			return res, err
+		}
+		if rtg.Valid {
+			temp.ImdbRating = rtg.Float64
+		}
+		res = append(res, temp)
+	}
+
+	return res, nil
 }

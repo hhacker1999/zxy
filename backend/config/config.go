@@ -15,7 +15,8 @@ type Config struct {
 	AIOTemplatePath string
 	AIOInstances    string
 	LocalTmdbUrl    string
-  ZxyUrl string
+	ZxyUrl          string
+	TraktKey        string
 }
 
 func GetConfig(filePath string) (Config, error) {
@@ -35,6 +36,7 @@ func GetConfig(filePath string) (Config, error) {
 	config.AIOInstances = configMap["AIO_INSTANCES"]
 	config.TmdbAT = configMap["TMDB_AT"]
 	config.ZxyUrl = configMap["ZXY_URL"]
+	config.TraktKey = configMap["TRAKT_KEY"]
 
 	return config, nil
 }

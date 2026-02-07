@@ -99,6 +99,7 @@ class ProfileLibraryItem {
 
 class LibraryFilter {
   final bool isMovie;
+  final bool isTrending;
   final bool thisWeek;
   final bool thisMonth;
   final List<int> years;
@@ -114,6 +115,7 @@ class LibraryFilter {
 
   LibraryFilter({
     required this.isMovie,
+    required this.isTrending,
     required this.thisWeek,
     required this.thisMonth,
     required this.years,
@@ -130,6 +132,7 @@ class LibraryFilter {
 
   factory LibraryFilter.fromJson(Map<String, dynamic> json) => LibraryFilter(
     isMovie: json["is_movie"],
+    isTrending: json["is_trending"],
     thisWeek: json["this_week"],
     thisMonth: json["this_month"],
     years: List<int>.from(json["years"].map((x) => x)),
@@ -146,6 +149,7 @@ class LibraryFilter {
 
   Map<String, dynamic> toJson() => {
     "is_movie": isMovie,
+    "is_trending": isTrending,
     "this_week": thisWeek,
     "this_month": thisMonth,
     "years": List<dynamic>.from(years.map((x) => x)),
@@ -173,11 +177,13 @@ class LibraryFilter {
     items: 20,
     includedGenres: [],
     excludedGenres: [],
+    isTrending: false,
     page: 1,
   );
 
   LibraryFilter copyWith({
     bool? isMovie,
+    bool? isTrending,
     bool? thisWeek,
     bool? thisMonth,
     List<int>? years,
@@ -191,6 +197,7 @@ class LibraryFilter {
     List<int>? excludedGenres,
     int? page,
   }) => LibraryFilter(
+    isTrending: isTrending ?? this.isTrending,
     isMovie: isMovie ?? this.isMovie,
     thisWeek: thisWeek ?? this.thisWeek,
     thisMonth: thisMonth ?? this.thisMonth,

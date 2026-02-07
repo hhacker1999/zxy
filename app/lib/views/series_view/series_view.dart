@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
+import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/screen.dart';
@@ -14,6 +15,7 @@ import 'package:zxy_app/views/shared/drop_down.dart';
 import 'package:zxy_app/views/shared/library_list.dart';
 import 'package:zxy_app/views/shared/ratings_tag.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
+import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
@@ -307,6 +309,15 @@ class EpisodesList extends StatelessWidget {
               return InkWell(
                 onTap: () {
                   vm.onEpisodeSelect(index);
+                  if (context
+                      .read<UserBloc>()
+                      .profileNotifier
+                      .value!
+                      .debridType
+                      .isEmpty) {
+                    showToast(context, true, "Setup debrid service first", "");
+                    return;
+                  }
                   Navigator.pushNamed(
                     context,
                     AppRoutes.videoPlayerView,
@@ -412,6 +423,15 @@ class EpisodesList extends StatelessWidget {
               return InkWell(
                 onTap: () {
                   vm.onEpisodeSelect(index);
+                  if (context
+                      .read<UserBloc>()
+                      .profileNotifier
+                      .value!
+                      .debridType
+                      .isEmpty) {
+                    showToast(context, true, "Setup debrid service first", "");
+                    return;
+                  }
                   Navigator.pushNamed(
                     context,
                     AppRoutes.videoPlayerView,
@@ -679,9 +699,7 @@ class PosterItemSeries extends StatelessWidget {
               Positioned(
                 left: AppTheme.spacingM,
                 top: MediaQuery.of(context).viewPadding.top + AppTheme.spacingM,
-                child: MediaBackButton(
-                  radius: 17.5,
-                ),
+                child: MediaBackButton(radius: 17.5),
               ),
             ],
           ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
+import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
@@ -30,29 +31,35 @@ class LibraryListItem extends StatelessWidget {
         imageHeight + (screenData.shouldRenderMobile ? 42 : 50);
     return SizedBox(
       height: itemHeight,
-      child: ListView.separated(
-        separatorBuilder: (_, _) {
-          return SizedBox(
-            width: screenData.shouldRenderMobile
-                ? AppTheme.spacingM
-                : AppTheme.spacingXL,
+      child: ValueListenableBuilder(
+        valueListenable: context.read<SettingsBloc>().showPosterRatings,
+        builder: (_, posterRatings, _) {
+          return ListView.separated(
+            separatorBuilder: (_, _) {
+              return SizedBox(
+                width: screenData.shouldRenderMobile
+                    ? AppTheme.spacingM
+                    : AppTheme.spacingXL,
+              );
+            },
+            scrollDirection: Axis.horizontal,
+            itemBuilder: (_, index) {
+              return Align(
+                alignment: Alignment.topCenter,
+                child: LibraryCard(
+                  updateColorOnHover: updateColorOnHover,
+                  resource: resource[index],
+                  onTap: onTap,
+                  height: itemHeight,
+                  imageHeight: imageHeight,
+                  width: width,
+                  showRatings: posterRatings,
+                ),
+              );
+            },
+            itemCount: resource.length,
           );
         },
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (_, index) {
-          return Align(
-            alignment: Alignment.topCenter,
-            child: LibraryCard(
-              updateColorOnHover: updateColorOnHover,
-              resource: resource[index],
-              onTap: onTap,
-              height: itemHeight,
-              imageHeight: imageHeight,
-              width: width,
-            ),
-          );
-        },
-        itemCount: resource.length,
       ),
     );
   }

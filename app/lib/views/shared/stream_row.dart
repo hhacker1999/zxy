@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:lottie/lottie.dart';
+import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
+import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/toast.dart';
@@ -57,6 +59,15 @@ class StreamRow extends StatelessWidget {
                     return;
                   }
                 }
+                if (context
+                    .read<UserBloc>()
+                    .profileNotifier
+                    .value!
+                    .debridType
+                    .isEmpty) {
+                  showToast(context, true, "Setup debrid service first", "");
+                  return;
+                }
                 Navigator.pushNamed(
                   context,
                   AppRoutes.videoPlayerView,
@@ -82,9 +93,9 @@ class StreamRow extends StatelessWidget {
                         : handler.isMovie()
                         ? "Resume"
                         : handler.shortTitle(),
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      color: AppTheme.textBlack,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium!.copyWith(color: AppTheme.textBlack),
                   ),
                   if (progress != 0) ...[
                     AppTheme.boxWidthXS,
@@ -101,13 +112,6 @@ class StreamRow extends StatelessWidget {
                 ],
               ),
             ),
-            if (streams is ItemLoading)
-              LottieBuilder.asset(
-                AppIcons.loading,
-                height: 40,
-                width: 100,
-                fit: BoxFit.contain,
-              ),
             if (streams is ItemLoaded<ZxyStreamResponse>)
               Builder(
                 builder: (_) {

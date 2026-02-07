@@ -82,6 +82,11 @@ class SettingsView extends StatelessWidget {
                             const SizedBox(height: AppTheme.spacingM),
                             _buildGeneralSection(context, settingsBloc),
                             const SizedBox(height: AppTheme.spacingXL),
+                            _buildHomePageCustomizationSection(
+                              context,
+                              settingsVm,
+                            ),
+                            const SizedBox(height: AppTheme.spacingXL),
                             Text(
                               "Debrid Integration",
                               style: Theme.of(context).textTheme.headlineMedium
@@ -89,11 +94,6 @@ class SettingsView extends StatelessWidget {
                             ),
                             const SizedBox(height: AppTheme.spacingM),
                             _buildDebridSection(context, profile),
-                            const SizedBox(height: AppTheme.spacingXL),
-                            _buildHomePageCustomizationSection(
-                              context,
-                              settingsVm,
-                            ),
                           ],
                         );
                       },
@@ -126,7 +126,7 @@ class SettingsView extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(AppTheme.spacingM),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: AppTheme.surfaceColor.withOpacity(0.4),
           borderRadius: AppTheme.roundedMedium,
           border: Border.all(color: AppTheme.accentColor.withOpacity(0.3)),
         ),
@@ -215,6 +215,8 @@ class SettingsView extends StatelessWidget {
           TextField(
             controller: viewModel.apiKeyController,
             decoration: InputDecoration(
+              filled: true,
+              fillColor: AppTheme.surfaceColor.withOpacity(0.5),
               labelText:
                   "${viewModel.selectedDebridType == 'rd' ? 'Real Debrid' : 'Torbox'} API Key",
               hintText: "Enter your API key here",
@@ -229,7 +231,10 @@ class SettingsView extends StatelessWidget {
               onTap: () {
                 viewModel.storeDebridKey();
               },
-              child: const Text("Add API Key"),
+              child: const Text(
+                "Add API Key",
+                style: TextStyle(color: AppTheme.textBlack),
+              ),
             ),
           ),
         ],
@@ -243,14 +248,15 @@ class SettingsView extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(isMobile ? AppTheme.spacingM : AppTheme.spacingL),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.surfaceColor,
-            AppTheme.surfaceColor.withOpacity(0.8),
-          ],
-        ),
+        // gradient: LinearGradient(
+        //   begin: Alignment.topLeft,
+        //   end: Alignment.bottomRight,
+        //   colors: [
+        //     AppTheme.surfaceColor,
+        //     AppTheme.surfaceColor.withOpacity(0.8),
+        //   ],
+        // ),
+        color: AppTheme.backgroundDark,
         borderRadius: AppTheme.roundedLarge,
         border: Border.all(
           color: AppTheme.accentColor.withOpacity(0.1),
@@ -312,11 +318,13 @@ class SettingsView extends StatelessWidget {
               [
                 _ProfileChip(
                   profile: currentProfile,
-                  onEdit: () => _showProfileDialog(
-                    context,
-                    profileToEdit: currentProfile,
-                    currentProfile: currentProfile,
-                  ),
+                  onEdit: () {
+                    _showProfileDialog(
+                      context,
+                      profileToEdit: currentProfile,
+                      currentProfile: currentProfile,
+                    );
+                  },
                   onDelete: () => viewModel.deleteProfile(currentProfile.id),
                   isCurrent: true,
                 ),
@@ -478,33 +486,18 @@ class _ProfileChipState extends State<_ProfileChip> {
                     top: 4,
                     right: 4,
                     child: PopupMenuButton<String>(
-                      icon: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          Icons.more_horiz,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                      ),
+                      padding: EdgeInsets.zero,
                       offset: const Offset(0, 30),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          widget.onEdit();
-                        } else if (value == 'delete') {
-                          widget.onDelete();
-                        }
-                      },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(
+                        PopupMenuItem<String>(
                           value: 'edit',
-                          child: Row(
+                          onTap: () {
+                            widget.onEdit();
+                          },
+                          child: const Row(
                             children: [
                               Icon(Icons.edit, size: 18),
                               SizedBox(width: 12),
@@ -513,9 +506,12 @@ class _ProfileChipState extends State<_ProfileChip> {
                           ),
                         ),
                         if (!widget.isCurrent)
-                          const PopupMenuItem(
+                          PopupMenuItem<String>(
                             value: 'delete',
-                            child: Row(
+                            onTap: () {
+                              widget.onDelete();
+                            },
+                            child: const Row(
                               children: [
                                 Icon(
                                   Icons.delete,
@@ -531,6 +527,18 @@ class _ProfileChipState extends State<_ProfileChip> {
                             ),
                           ),
                       ],
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(
+                          Icons.more_horiz,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -669,7 +677,10 @@ class _ProfileDialogState extends State<_ProfileDialog> {
             }
             Navigator.pop(context);
           },
-          child: Text(isEditing ? "Save" : "Create"),
+          child: Text(
+            isEditing ? "Save" : "Create",
+            style: TextStyle(color: AppTheme.textBlack),
+          ),
         ),
       ],
     );
@@ -689,43 +700,22 @@ class _DebridSelectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(
-          vertical: AppTheme.spacingL,
+          vertical: AppTheme.spacingS,
           horizontal: AppTheme.spacingM,
         ),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppTheme.accentColor.withOpacity(0.2),
-                    AppTheme.accentColor.withOpacity(0.1),
-                  ],
-                )
-              : null,
-          color: isSelected ? null : AppTheme.surfaceColor,
+          color: AppTheme.surfaceColor.withOpacity(0.3),
           borderRadius: AppTheme.roundedLarge,
           border: Border.all(
-            color: isSelected
-                ? AppTheme.accentColor
-                : AppTheme.surfaceLight.withOpacity(0.3),
+            color: isSelected ? AppTheme.accentColor : AppTheme.surfaceLight,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.accentColor.withOpacity(0.2),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
         ),
         child: Column(
           children: [
@@ -734,7 +724,7 @@ class _DebridSelectionCard extends StatelessWidget {
               size: 40,
               color: isSelected ? AppTheme.accentColor : AppTheme.textSecondary,
             ),
-            const SizedBox(height: AppTheme.spacingM),
+            const SizedBox(height: AppTheme.spacingS),
             Text(
               title,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -774,6 +764,7 @@ class _ModernSettingTile extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(AppTheme.spacingM),
           decoration: BoxDecoration(
+            // color: AppTheme.surfaceLight.withOpacity(0.3),
             color: AppTheme.surfaceLight.withOpacity(0.3),
             borderRadius: AppTheme.roundedMedium,
             border: Border.all(
@@ -879,7 +870,8 @@ Widget _buildHomePageCustomizationSection(
         Container(
           padding: const EdgeInsets.all(AppTheme.spacingL),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
+            color: AppTheme.backgroundDark,
+            // color: Colors.red,
             borderRadius: AppTheme.roundedMedium,
             border: Border.all(color: AppTheme.surfaceLight.withOpacity(0.3)),
           ),
@@ -911,8 +903,9 @@ Widget _buildHomePageCustomizationSection(
         )
       else
         Container(
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
+            color: AppTheme.surfaceColor.withOpacity(0.4),
             borderRadius: AppTheme.roundedMedium,
             border: Border.all(color: AppTheme.surfaceLight.withOpacity(0.3)),
           ),
@@ -1040,10 +1033,6 @@ class _LibraryItemTile extends StatelessWidget {
         ),
       ),
       child: ListTile(
-        // leading: ReorderableDragStartListener(
-        //   index: index,
-        //   child: const Icon(Icons.drag_handle, color: AppTheme.textSecondary),
-        // ),
         title: Text(
           item.name,
           style: Theme.of(
@@ -1056,26 +1045,29 @@ class _LibraryItemTile extends StatelessWidget {
             context,
           ).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: AppTheme.spacingS,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20),
-              onPressed: onEdit,
-              tooltip: "Edit",
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.delete_outline,
-                size: 20,
-                color: AppTheme.errorColor,
+        trailing: Visibility(
+          visible: !item.filter.isTrending,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: AppTheme.spacingS,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                onPressed: onEdit,
+                tooltip: "Edit",
               ),
-              onPressed: onDelete,
-              tooltip: "Delete",
-            ),
-            AppTheme.boxWidthS,
-          ],
+              IconButton(
+                icon: Icon(
+                  Icons.delete_outline,
+                  size: 20,
+                  color: AppTheme.errorColor,
+                ),
+                onPressed: onDelete,
+                tooltip: "Delete",
+              ),
+              AppTheme.boxWidthS,
+            ],
+          ),
         ),
       ),
     );
