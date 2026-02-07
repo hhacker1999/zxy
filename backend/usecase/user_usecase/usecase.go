@@ -436,3 +436,16 @@ func (u *Usecase) DeleteUserProfile(userId int, profileIdToDelete int, profileId
 
 	return nil
 }
+
+func (u *Usecase) UpdateProfileList(
+	userId int,
+	profileId int,
+	list []models.ProfileLibraryItem,
+) error {
+	err := u.userRepo.StoreLibraryItems(context.Background(), userId, profileId, list)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	return nil
+}

@@ -222,24 +222,33 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 			}
 		}
 	}
-	for _, v := range filter.Years {
+	for i, v := range filter.Years {
+		if i == 0 {
+			suffix += " and ( "
+		} else {
+			suffix += " or "
+
+    }
 		firstDay := time.Date(v, time.January, 1, 0, 0, 0, 0, cTime.Location()).Format(format)
 		lastDay := time.Date(v, time.December, 31, 0, 0, 0, 0, cTime.Location()).Format(format)
 		if filter.IsMovie {
 			suffix += fmt.Sprintf(
-				" and release_date >= $%d and release_date <= $%d",
+				" (release_date >= $%d and release_date <= $%d) ",
 				len(params)+1,
 				len(params)+2,
 			)
 			params = append(params, firstDay, lastDay)
 		} else {
 			if filter.IsFirstAir {
-				suffix += fmt.Sprintf(" and first_air_date >= $%d and first_air_date <= $%d", len(params)+1, len(params)+2)
+				suffix += fmt.Sprintf(" (first_air_date >= $%d and first_air_date <= $%d) ", len(params)+1, len(params)+2)
 				params = append(params, firstDay, lastDay)
 			} else {
-				suffix += fmt.Sprintf(" and last_air_date >= $%d and last_air_date <= $%d", len(params)+1, len(params)+2)
+				suffix += fmt.Sprintf(" (last_air_date >= $%d and last_air_date <= $%d) ", len(params)+1, len(params)+2)
 				params = append(params, firstDay, lastDay)
 			}
+		}
+		if i == len(filter.Years)-1 {
+			suffix += " ) "
 		}
 	}
 

@@ -21,7 +21,9 @@ class ZxyPaginatedResponse<T> {
       page: json["page"],
       totalPages: json["total_pages"],
       totalResults: json["total_results"],
-      results: resultParser(List<Map<String, dynamic>>.from(json["results"])),
+      results: json["results"] != null
+          ? resultParser(List<Map<String, dynamic>>.from(json["results"]))
+          : [],
     );
   }
 }

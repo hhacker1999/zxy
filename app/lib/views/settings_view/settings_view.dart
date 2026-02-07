@@ -1120,14 +1120,23 @@ class _LibraryFilterFormDialogState extends State<_LibraryFilterFormDialog> {
       title: Text(widget.existingItem != null ? "Edit List" : "Create List"),
       content: SizedBox(
         width: 500,
-        child: SingleChildScrollView(child: _buildFormContent()),
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: SingleChildScrollView(child: _buildFormContent()),
+        ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text("Cancel"),
         ),
-        ElevatedButton(onPressed: _onSave, child: const Text("Save")),
+        ElevatedButton(
+          onPressed: _onSave,
+          child: const Text(
+            "Save",
+            style: TextStyle(color: AppTheme.textBlack),
+          ),
+        ),
       ],
     );
   }
@@ -1137,6 +1146,7 @@ class _LibraryFilterFormDialogState extends State<_LibraryFilterFormDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        AppTheme.boxHeightS,
         TextField(
           controller: _nameController,
           decoration: const InputDecoration(

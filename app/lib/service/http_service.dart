@@ -129,7 +129,7 @@ class HttpService {
 
   Future<HttpResponse> put(
     Uri uri, {
-    Map<String, dynamic>? body,
+    Object? body,
     RequestAuth auth = RequestAuth.none,
   }) async {
     try {

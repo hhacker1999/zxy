@@ -86,8 +86,7 @@ class SettingsViewModel extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(milliseconds: 500));
+      await _authUc.updateProfileList(_libraryItems);
 
       _hasLibraryChanges = false;
       showToast(_context, false, "Home page lists saved", "");

@@ -138,6 +138,14 @@ class AuthUsecase {
     );
   }
 
+  Future<void> updateProfileList(List<ProfileLibraryItem> list) async {
+    await _httpService.put(
+      Uri.parse("${AppConstants.baseUrl}/user/profile/list"),
+      auth: RequestAuth.profile,
+      body: list.map((e) => e.toJson()).toList(),
+    );
+  }
+
   Future<void> deleteProfile(int profileId) async {
     await _httpService.delete(
       Uri.parse("${AppConstants.baseUrl}/user/profile?profile_id=$profileId"),

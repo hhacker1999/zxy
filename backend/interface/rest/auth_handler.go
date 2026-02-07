@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"zxy/models"
 	userusecase "zxy/usecase/user_usecase"
 )
 
@@ -247,6 +248,40 @@ func (i *RestInterface) handleDeleteUserProfile(w http.ResponseWriter, r *http.R
 	}
 
 	err = i.userUC.DeleteUserProfile(userId, profileToDelete, profileId)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = err.Error()
+		return
+	}
+	res.StatusCode = http.StatusOK
+}
+
+func (i *RestInterface) handleUpdateUserProfileLists(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("Error reading request body", err)
+		res.Error = "Something went wrong"
+		res.StatusCode = http.StatusInternalServerError
+		return
+	}
+	defer r.Body.Close()
+
+	var input []models.ProfileLibraryItem
+
+	err = json.Unmarshal(body, &input)
+	if err != nil {
+		fmt.Println("Error unmarshalling req body", err)
+		res.Error = "Invalid body"
+		res.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	err = i.userUC.UpdateProfileList(userId, profileId, input)
 	if err != nil {
 		res.StatusCode = http.StatusBadRequest
 		res.Error = err.Error()
