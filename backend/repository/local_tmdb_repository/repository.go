@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 	"zxy/models"
 )
 
@@ -21,7 +22,7 @@ func (r *Repository) GetMovie(tmdbId int) (models.TMDBMovie, error) {
 	var res models.TMDBMovie
 	query := `
      select
-      data || jsonb_build_object('imdb_ratings', r.average_rating)
+      data || jsonb_build_object('imdb_rating', r.average_rating)
     from
       details
       left join imdb_ratings r on (r.tconst = (data -> 'external_ids' ->> 'imdb_id'))
@@ -50,7 +51,7 @@ func (r *Repository) GetShow(tmdbId int) (models.TMDBShow, error) {
 	var res models.TMDBShow
 	query := `
      select
-      data || jsonb_build_object('imdb_ratings', r.average_rating)
+      data || jsonb_build_object('imdb_rating', r.average_rating)
     from
       details
       left join imdb_ratings r on (r.tconst = (data -> 'external_ids' ->> 'imdb_id'))
@@ -139,7 +140,7 @@ func (r *Repository) InsertDetails(tmdbId int, tp string, details any) error {
 
 	return err
 }
- 
+
 func (r *Repository) GetImdbRatingsFromTmdb(tmdbIds []int, tp string) (map[int]float64, error) {
 	if len(tmdbIds) == 0 {
 		return nil, nil
@@ -182,4 +183,157 @@ func (r *Repository) GetImdbRatingsFromTmdb(tmdbIds []int, tp string) (map[int]f
 	}
 
 	return res, nil
+}
+
+func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia, int, error) {
+	var res []models.ZxyMedia
+	var count int
+	format := "2006-01-02"
+	query := `
+  select data,imdb_rating from details
+  `
+	countQuery := `
+  select count(*) from details
+  `
+	suffix := " where type = $1 and is_adult = false "
+
+	tp := "show"
+	if filter.IsMovie {
+		tp = "movie"
+	}
+
+	var params []any
+	var countParams []any
+
+	params = append(params, tp)
+	cTime := time.Now()
+	if filter.ThisWeek {
+		startTime := cTime.AddDate(0, 0, -int(cTime.Weekday())).Format(format)
+		if filter.IsMovie {
+			suffix += fmt.Sprintf(" and release_date >= $%d", len(params)+1)
+			params = append(params, startTime)
+		} else {
+			if filter.IsFirstAir {
+				suffix += fmt.Sprintf(" and first_air_date >= $%d", len(params)+1)
+				params = append(params, startTime)
+			} else {
+				suffix += fmt.Sprintf(" and last_air_date >= $%d", len(params)+1)
+				params = append(params, startTime)
+			}
+		}
+	}
+	for _, v := range filter.Years {
+		firstDay := time.Date(v, time.January, 1, 0, 0, 0, 0, cTime.Location()).Format(format)
+		lastDay := time.Date(v, time.December, 31, 0, 0, 0, 0, cTime.Location()).Format(format)
+		if filter.IsMovie {
+			suffix += fmt.Sprintf(
+				" and release_date >= $%d and release_date <= $%d",
+				len(params)+1,
+				len(params)+2,
+			)
+			params = append(params, firstDay, lastDay)
+		} else {
+			if filter.IsFirstAir {
+				suffix += fmt.Sprintf(" and first_air_date >= $%d and first_air_date <= $%d", len(params)+1, len(params)+2)
+				params = append(params, firstDay, lastDay)
+			} else {
+				suffix += fmt.Sprintf(" and last_air_date >= $%d and last_air_date <= $%d", len(params)+1, len(params)+2)
+				params = append(params, firstDay, lastDay)
+			}
+		}
+	}
+
+	if len(filter.Language) != 0 {
+		suffix += fmt.Sprintf(" and language = $%d", len(params)+1)
+		params = append(params, filter.Language)
+	}
+
+	if filter.ImdbRating > 0 {
+		suffix += fmt.Sprintf(" and imdb_rating >= $%d", len(params)+1)
+		params = append(params, filter.ImdbRating)
+	}
+
+	// suffix += " and imdb_votes > 100000"
+
+	countQuery += suffix
+	countParams = append(countParams, params...)
+
+	order := "asc"
+	if !filter.IsAsc {
+		order = "desc"
+	}
+
+	sort := filter.Sort
+
+	if sort == "date" {
+		if filter.IsMovie {
+			sort = "release_date"
+		} else {
+			if filter.IsFirstAir {
+				sort = "first_air_date"
+			} else {
+				sort = "last_air_date"
+			}
+		}
+	}
+	suffix += fmt.Sprintf(" order by %s %s", sort, order)
+	// params = append(params, sort, order)
+
+	items := filter.Items
+	if items == 0 {
+		items = 10
+	}
+	suffix += fmt.Sprintf(" limit $%d", len(params)+1)
+	params = append(params, items)
+
+	page := filter.Page
+	if page == 0 {
+		page = 1
+	}
+	suffix += fmt.Sprintf(" offset $%d", len(params)+1)
+	params = append(params, (page-1)*items)
+
+	query += suffix
+	fmt.Println(query)
+	fmt.Println(countQuery)
+
+	row := r.db.QueryRow(countQuery, countParams...)
+	err := row.Scan(&count)
+	if err != nil {
+		fmt.Println("Error scanning count in movies query", err)
+		return res, count, err
+	}
+
+	fmt.Println(params...)
+
+	rows, err := r.db.Query(query, params...)
+	if err != nil {
+		fmt.Println("Error in movies query", err)
+		return res, count, err
+	}
+	for rows.Next() {
+		var temp models.ZxyMedia
+		var jsn json.RawMessage
+		var rating float64
+		var rtg sql.NullFloat64
+		err := rows.Scan(&jsn, &rtg)
+		if err != nil {
+			fmt.Println("Error scanning movies", err)
+			return res, count, err
+		}
+
+		err = json.Unmarshal(jsn, &temp)
+		if err != nil {
+			fmt.Println("Error unmarshalling movies", err)
+			return res, count, err
+		}
+		if rtg.Valid {
+			rating = rtg.Float64
+		}
+		temp.ImdbRating = rating
+
+		res = append(res, temp)
+	}
+
+	return res, count, nil
 }

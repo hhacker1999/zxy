@@ -39,34 +39,115 @@ class User {
 class Profile {
   final int id;
   final String name;
-  final String debridType;
   final bool isPinProtected;
+  final String debridType;
   final bool isAdmin;
-  // final DateTime createdAt;
-  // final DateTime updatedAt;
+  final List<ProfileLibraryItem> libraryItems;
 
   Profile({
     required this.id,
     required this.name,
-    required this.debridType,
     required this.isPinProtected,
-    this.isAdmin = false,
-    // required this.createdAt,
-    // required this.updatedAt,
+    required this.debridType,
+    required this.isAdmin,
+    required this.libraryItems,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
     id: json["id"],
     name: json["name"],
-    debridType: json["debrid_type"] ?? "",
-    isPinProtected: json["is_pin_protected"] ?? false,
-    isAdmin: json["is_admin"] ?? false,
+    isPinProtected: json["is_pin_protected"],
+    debridType: json["debrid_type"],
+    isAdmin: json["is_admin"],
+    libraryItems: json["library_items"] != null
+        ? List<ProfileLibraryItem>.from(
+            json["library_items"].map((x) => ProfileLibraryItem.fromJson(x)),
+          )
+        : [],
   );
 
   Map<String, dynamic> toJson() => {
     "id": id,
     "name": name,
-    // "created_at": createdAt.toIso8601String(),
-    // "updated_at": updatedAt.toIso8601String(),
+    "is_pin_protected": isPinProtected,
+    "debrid_type": debridType,
+    "is_admin": isAdmin,
+    "library_items": List<dynamic>.from(libraryItems.map((x) => x.toJson())),
+  };
+}
+
+class ProfileLibraryItem {
+  final String name;
+  final LibraryFilter filter;
+
+  ProfileLibraryItem({required this.name, required this.filter});
+
+  factory ProfileLibraryItem.fromJson(Map<String, dynamic> json) =>
+      ProfileLibraryItem(name: json["name"], filter: LibraryFilter.fromJson(json["filter"]));
+
+  Map<String, dynamic> toJson() => {"name": name, "filter": filter.toJson()};
+}
+
+class LibraryFilter {
+  final bool isMovie;
+  final bool thisWeek;
+  final bool thisMonth;
+  final List<int> years;
+  final bool isFirstAir;
+  final int imdbRating;
+  final String language;
+  final String sort;
+  final bool isAsc;
+  final int items;
+  final List<int> includedGenres;
+  final List<int> excludedGenres;
+  final int page;
+
+  LibraryFilter({
+    required this.isMovie,
+    required this.thisWeek,
+    required this.thisMonth,
+    required this.years,
+    required this.isFirstAir,
+    required this.imdbRating,
+    required this.language,
+    required this.sort,
+    required this.isAsc,
+    required this.items,
+    required this.includedGenres,
+    required this.excludedGenres,
+    required this.page,
+  });
+
+  factory LibraryFilter.fromJson(Map<String, dynamic> json) => LibraryFilter(
+    isMovie: json["is_movie"],
+    thisWeek: json["this_week"],
+    thisMonth: json["this_month"],
+    years: List<int>.from(json["years"].map((x) => x)),
+    isFirstAir: json["is_first_air"],
+    imdbRating: json["imdb_rating"],
+    language: json["language"],
+    sort: json["sort"],
+    isAsc: json["is_asc"],
+    items: json["items"],
+    includedGenres: List<int>.from(json["included_genres"].map((x) => x)),
+    excludedGenres: List<int>.from(json["excluded_genres"].map((x) => x)),
+    page: json["page"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "is_movie": isMovie,
+    "this_week": thisWeek,
+    "this_month": thisMonth,
+    "years": List<dynamic>.from(years.map((x) => x)),
+    "is_first_air": isFirstAir,
+    "imdb_rating": imdbRating,
+    "language": language,
+    "sort": sort,
+    "is_asc": isAsc,
+    "items": items,
+    "included_genres": List<dynamic>.from(includedGenres.map((x) => x)),
+    "excluded_genres": List<dynamic>.from(excludedGenres.map((x) => x)),
+    "page": page,
   };
 }

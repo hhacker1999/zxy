@@ -143,6 +143,7 @@ class _ProfileCard extends StatefulWidget {
 class _ProfileCardState extends State<_ProfileCard> {
   bool _isHovered = false;
 
+  @override
   Widget build(BuildContext context) {
     final screen = Screen.of(context);
     final size = screen.shouldRenderMobile ? 120.0 : 160.0;

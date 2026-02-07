@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/service/http_service.dart';
+import 'package:zxy_app/usecase/auth/user.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
@@ -9,6 +10,7 @@ import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 
 const _baseUrl = AppConstants.baseUrl;
 const _movie = "/discover/movies";
+const _library = "/discover/library";
 const _trendingMovie = "/trending/movies";
 const _trendingShow = "/trending/shows";
 const _tv = "/discover/shows";
@@ -251,6 +253,29 @@ class MediaUsecase {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
         temp.add(ZxyMedia.fromJson(item, ZxyMediaType.shows));
+      }
+      return temp;
+    });
+
+    return finalResult;
+  }
+
+  Future<ZxyPaginatedResponse<ZxyMedia>> discoverLibrary({
+    required LibraryFilter filter,
+  }) async {
+    var url = _baseUrl + _library;
+    final response = await _httpService.post(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+      body: filter.toJson(),
+    );
+    final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
+    final finalResult = ZxyPaginatedResponse<ZxyMedia>.fromJson(responseMap, (
+      results,
+    ) {
+      final List<ZxyMedia> temp = [];
+      for (var item in results) {
+        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.movie));
       }
       return temp;
     });

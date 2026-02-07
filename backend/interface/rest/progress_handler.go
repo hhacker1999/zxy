@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"zxy/models"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -184,4 +185,37 @@ func (i *RestInterface) HandleGetMovieProgress(w http.ResponseWriter, r *http.Re
 
 	response.StatusCode = http.StatusOK
 	response.Data = data
+}
+
+func (i *RestInterface) handleLibrary(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("Error reading body")
+		res.StatusCode = http.StatusInternalServerError
+		res.Error = "Something went wrong"
+		return
+	}
+
+	defer r.Body.Close()
+	var input models.LibraryFilter
+	err = json.Unmarshal(body, &input)
+	if err != nil {
+		fmt.Println("Error unmarshlling body", err)
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid body"
+		return
+	}
+
+	data, err := i.tmdbUc.GetLibraryLocal(input)
+	if err != nil {
+		res.StatusCode = http.StatusInternalServerError
+		res.Error = err.Error()
+		return
+	}
+
+	res.StatusCode = http.StatusOK
+	res.Data = data
 }

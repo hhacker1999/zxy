@@ -1,5 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/bloc/user_bloc.dart';
+import 'package:zxy_app/usecase/auth/user.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
@@ -47,7 +51,7 @@ class HomeViewModel {
   // final ValueNotifier<ViewItemState<List<ZxyMedia>>> topBannerState =
   //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
 
-  Future<void> initialise() async {
+  Future<void> initialise(BuildContext context) async {
     if (_initialised) {
       dispose();
     }
@@ -60,10 +64,10 @@ class HomeViewModel {
     //   return;
     // }
 
-    final ValueNotifier<ViewItemState<List<ZxyMedia>>> topMovieState =
-        ValueNotifier(ItemLoading<List<ZxyMedia>>());
-    final ValueNotifier<ViewItemState<List<ZxyMedia>>> topShowsState =
-        ValueNotifier(ItemLoading<List<ZxyMedia>>());
+    // final ValueNotifier<ViewItemState<List<ZxyMedia>>> topMovieState =
+    //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
+    // final ValueNotifier<ViewItemState<List<ZxyMedia>>> topShowsState =
+    //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
     final ValueNotifier<ViewItemState<List<ZxyMedia>>> trendingShowsState =
         ValueNotifier(ItemLoading<List<ZxyMedia>>());
     final ValueNotifier<ViewItemState<List<ZxyMedia>>> trendingMoviesState =
@@ -84,28 +88,46 @@ class HomeViewModel {
       ),
     );
 
-    homeViewLists.value.add(
-      HomeViewListItem(
-        title: "Top Rated Shows",
-        type: ZxyMediaType.shows,
-        state: topShowsState,
-      ),
-    );
-
-    homeViewLists.value.add(
-      HomeViewListItem(
-        title: "Top Rated Movies",
-        type: ZxyMediaType.movie,
-        state: topMovieState,
-      ),
-    );
-    await Future.wait([
+    // homeViewLists.value.add(
+    //   HomeViewListItem(
+    //     title: "Top Rated Shows",
+    //     type: ZxyMediaType.shows,
+    //     state: topShowsState,
+    //   ),
+    // );
+    //
+    // homeViewLists.value.add(
+    //   HomeViewListItem(
+    //     title: "Top Rated Movies",
+    //     type: ZxyMediaType.movie,
+    //     state: topMovieState,
+    //   ),
+    // );
+    final List<Future> futures = [
+      initialiseContinueWatching(),
       initialiseTrendingShows(trendingShowsState),
       initialiseTrendingMovies(trendingMoviesState),
-      initialiseTopRatedShows(topShowsState),
-      initialiseTopRatedMovies(topMovieState),
-      initialiseContinueWatching(),
-    ]);
+      // initialiseTopRatedShows(topShowsState),
+      // initialiseTopRatedMovies(topMovieState),
+    ];
+
+    final profile = context.read<UserBloc>().profileNotifier.value;
+    if (profile != null) {
+      for (var item in profile.libraryItems) {
+        final ValueNotifier<ViewItemState<List<ZxyMedia>>> notifier =
+            ValueNotifier(ItemLoading<List<ZxyMedia>>());
+        homeViewLists.value.add(
+          HomeViewListItem(
+            title: item.name,
+            type: item.filter.isMovie ? ZxyMediaType.movie : ZxyMediaType.shows,
+            state: notifier,
+          ),
+        );
+        futures.add(initialiseLibraryItem(notifier, item.filter));
+      }
+    }
+
+    await Future.wait(futures);
 
     // final shows = (trendingMoviesState.value as ItemLoaded<List<ZxyMedia>>).data
     //     .take(4);
@@ -181,6 +203,23 @@ class HomeViewModel {
     } catch (e) {
       if (kDebugMode) {
         print("Error getting image config $e");
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> initialiseLibraryItem(
+    ValueNotifier<ViewItemState> notifier,
+    LibraryFilter filter,
+  ) async {
+    try {
+      final response = await _mediaUc.discoverLibrary(filter: filter);
+      final results = response.results;
+      notifier.value = ItemLoaded<List<ZxyMedia>>(data: results);
+    } catch (e) {
+      if (kDebugMode) {
+        notifier.value = ItemError<List<ZxyMedia>>(error: e.toString());
+        print(e);
       }
       rethrow;
     }

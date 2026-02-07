@@ -89,9 +89,10 @@ func (u *Usecase) Signup(name string, email string, password string) error {
 	}
 
 	_, err = u.userRepo.CreateUserProfile(ctx, models.UserProfile{
-		UserId:  id,
-		Name:    name,
-		IsAdmin: true,
+		UserId:       id,
+		Name:         name,
+		IsAdmin:      true,
+		LibraryItems: models.DefaultLibraryItems,
 	})
 	if err != nil {
 		return apperrors.SomethingWentWrongError{}
@@ -282,10 +283,11 @@ func (u *Usecase) CreateUserProfile(profileInput CreateProfileInput) error {
 
 	ctx := context.WithValue(context.Background(), "txn", txn)
 	profileId, err := u.userRepo.CreateUserProfile(ctx, models.UserProfile{
-		UserId:  profileInput.UserId,
-		Name:    profileInput.Name,
-		PinHash: string(pinHash),
-		IsAdmin: profileInput.IsAdmin,
+		UserId:       profileInput.UserId,
+		Name:         profileInput.Name,
+		PinHash:      string(pinHash),
+		IsAdmin:      profileInput.IsAdmin,
+		LibraryItems: models.DefaultLibraryItems,
 	})
 
 	if profileInput.UseDefaultProfileKey {

@@ -26,7 +26,7 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
-    homeViewModel = context.read<HomeViewModel>()..initialise();
+    homeViewModel = context.read<HomeViewModel>()..initialise(context);
   }
 
   @override

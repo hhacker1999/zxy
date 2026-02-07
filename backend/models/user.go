@@ -14,15 +14,16 @@ type User struct {
 }
 
 type UserProfile struct {
-	Id             int       `json:"id"`
-	UserIdStr      string    `json:"user_id_str,omitempty"`
-	UserId         int       `json:"user_id,omitempty"`
-	Name           string    `json:"name,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
-	PinHash        string    `json:"pin_hash,omitempty"`
-	IsPinProtected bool      `json:"is_pin_protected"`
-	DebridType     string    `json:"debrid_type"`
-	DebridKey      string    `json:"-"`
-	IsAdmin        bool      `json:"is_admin"`
+	Id             int                  `json:"id"`
+	UserIdStr      string               `json:"user_id_str,omitempty"`
+	UserId         int                  `json:"user_id,omitempty"`
+	Name           string               `json:"name,omitempty"`
+	CreatedAt      time.Time            `json:"created_at"`
+	UpdatedAt      time.Time            `json:"updated_at"`
+	PinHash        string               `json:"pin_hash,omitempty"`
+	IsPinProtected bool                 `json:"is_pin_protected"`
+	DebridType     string               `json:"debrid_type"`
+	DebridKey      string               `json:"-"`
+	IsAdmin        bool                 `json:"is_admin"`
+	LibraryItems   []ProfileLibraryItem `json:"library_items"`
 }

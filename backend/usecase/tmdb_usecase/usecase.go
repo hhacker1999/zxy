@@ -395,9 +395,7 @@ func (u *Usecase) GetMovieDetails(id string, at string) (models.TMDBMovie, error
 			response.Collection = collection
 		}
 		go u.localTmdbRepo.InsertDetails(int(response.ID), "movie", response)
-	} else {
-    fmt.Println("Found movie in database")
-  }
+	}
 
 	ids := []int{}
 	if response.ImdbRating == 0 {
@@ -996,4 +994,28 @@ func (u *Usecase) GetConfiguration(at string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+func (u *Usecase) GetLibraryLocal(
+	filter models.LibraryFilter,
+) (models.MediaPaginatedResponse, error) {
+	var res models.MediaPaginatedResponse
+	cTime := time.Now()
+	if filter.Sort != "popularity" && filter.Sort != "imdb_rating" && filter.Sort != "date" {
+		return res, apperrors.InvalidInput{Err: "Invalid sort"}
+	}
+	movies, items, err := u.localTmdbRepo.GetLibrary(filter)
+	if err != nil {
+		return res, apperrors.SomethingWentWrongError{}
+	}
+	fmt.Println(time.Now().Sub(cTime).Seconds())
+	res.Results = movies
+	res.TotalResults = items
+	res.TotalPages = (items + filter.Items - 1) / (filter.Items)
+	res.Page = filter.Page
+	if res.Page == 0 {
+		res.Page = 1
+	}
+
+	return res, nil
 }

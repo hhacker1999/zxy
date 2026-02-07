@@ -198,14 +198,27 @@ func (r *Repository) CreateUserProfile(
 	profile models.UserProfile,
 ) (int, error) {
 	query :=
-		`insert into user_profiles (user_id, name, pin_hash, is_admin) values($1, $2, $3, $4) returning id`
+		`insert into user_profiles (user_id, name, pin_hash, is_admin, library_items) values($1, $2, $3, $4, $5) returning id`
 	txn, ok := ctx.Value("txn").(*sql.Tx)
-	var err error
 	var row *sql.Row
+	var err error
+	items, err := json.Marshal(profile.LibraryItems)
+	if err != nil {
+		fmt.Println("Error marshalling library items", err)
+		return 0, err
+	}
+
 	if ok {
-		row = txn.QueryRow(query, profile.UserId, profile.Name, profile.PinHash, profile.IsAdmin)
+		row = txn.QueryRow(
+			query,
+			profile.UserId,
+			profile.Name,
+			profile.PinHash,
+			profile.IsAdmin,
+			items,
+		)
 	} else {
-		row = r.db.QueryRow(query, profile.UserId, profile.Name, profile.PinHash, profile.IsAdmin)
+		row = r.db.QueryRow(query, profile.UserId, profile.Name, profile.PinHash, profile.IsAdmin, items)
 	}
 	var id int
 	err = row.Scan(&id)
@@ -284,15 +297,25 @@ func (r *Repository) GetUserProfile(
 ) (models.UserProfile, error) {
 	var res models.UserProfile
 	row := r.db.QueryRow(
-		`select id, user_id, debrid_type, debrid_key, name, is_admin,pin_hash from user_profiles where user_id = $1 and id = $2`,
+		`select id, user_id, debrid_type, debrid_key, name, is_admin,pin_hash,library_items from user_profiles where user_id = $1 and id = $2`,
 		userId,
 		profileId,
 	)
 
 	var typSql sql.NullString
 	var keySql sql.NullString
+	var items *json.RawMessage
 
-	err := row.Scan(&res.Id, &res.UserId, &typSql, &keySql, &res.Name, &res.IsAdmin, &res.PinHash)
+	err := row.Scan(
+		&res.Id,
+		&res.UserId,
+		&typSql,
+		&keySql,
+		&res.Name,
+		&res.IsAdmin,
+		&res.PinHash,
+		&items,
+	)
 	if err != nil {
 		fmt.Println("Error getting user profile", err)
 	}
@@ -303,6 +326,15 @@ func (r *Repository) GetUserProfile(
 	if keySql.Valid {
 		res.DebridKey = keySql.String
 	}
+  if items != nil {
+    var lItems []models.ProfileLibraryItem
+    err = json.Unmarshal(*items, &lItems)
+    if err != nil {
+      fmt.Println("Error unmarshalling library items", err)
+      return res, err
+    }
+    res.LibraryItems = lItems
+  }
 
 	return res, err
 }
@@ -390,6 +422,42 @@ func (r *Repository) DeleteUserProfile(
 	}
 	if err != nil {
 		fmt.Println("Error deleting profile info", err)
+	}
+
+	return err
+}
+
+func (r *Repository) StoreLibraryItems(
+	ctx context.Context,
+	userId int,
+	profileId int,
+	items []models.ProfileLibraryItem,
+) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	itemsB, err := json.Marshal(items)
+	if err != nil {
+		fmt.Println("Error unmarshalling library items", err)
+		return err
+	}
+	if ok {
+		_, err = txn.Exec(
+			`update user_profiles set library_items = $1 where user_id = $2 and id = $3`,
+      itemsB,
+			userId,
+			profileId,
+		)
+	} else {
+
+		_, err = r.db.Exec(
+			`update user_profiles set library_items = $1 where user_id = $2 and id = $3`,
+      itemsB,
+			userId,
+			profileId,
+		)
+	}
+	if err != nil {
+		fmt.Println("Error storing library items", err)
 	}
 
 	return err

@@ -6,8 +6,6 @@ import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
-import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
-import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 
 class ProfileSelectionViewModel extends ChangeNotifier {
@@ -63,7 +61,7 @@ class ProfileSelectionViewModel extends ChangeNotifier {
       await _authUc.loginProfile(profileId, pin: pin);
       final user = context.read<UserBloc>().userNotifier.value;
       if (user != null) {
-        final profile = user.profiles.firstWhere((p) => p.id == profileId);
+        final profile = await _authUc.getUserProfile();
         context.read<UserBloc>().profile = profile;
       }
       Navigator.of(
