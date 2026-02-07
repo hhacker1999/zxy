@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
@@ -34,6 +35,8 @@ class SettingsView extends StatelessWidget {
                       valueListenable: userBloc.userNotifier,
                       builder: (_, user, _) {
                         final settingsBloc = context.read<SettingsBloc>();
+                        // Initialize library items from profile
+                        settingsVm.init(profile);
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -86,6 +89,11 @@ class SettingsView extends StatelessWidget {
                             ),
                             const SizedBox(height: AppTheme.spacingM),
                             _buildDebridSection(context, profile),
+                            const SizedBox(height: AppTheme.spacingXL),
+                            _buildHomePageCustomizationSection(
+                              context,
+                              settingsVm,
+                            ),
                           ],
                         );
                       },
@@ -822,5 +830,1045 @@ class _ModernSettingTile extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+Widget _buildHomePageCustomizationSection(
+  BuildContext context,
+  SettingsViewModel viewModel,
+) {
+  final isMobile = Screen.of(context).shouldRenderMobile;
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Library customization",
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          Row(
+            children: [
+              if (viewModel.hasLibraryChanges)
+                Padding(
+                  padding: const EdgeInsets.only(right: AppTheme.spacingS),
+                  child: ZxyButton(
+                    color: AppTheme.accentColor,
+                    onTap: viewModel.saveLibraryItems,
+                    child: const Text(
+                      "Save Changes",
+                      style: TextStyle(color: AppTheme.textBlack),
+                    ),
+                  ),
+                ),
+              IconButton(
+                onPressed: () =>
+                    _showLibraryItemForm(context, viewModel, null, -1),
+                icon: const Icon(Icons.add),
+                tooltip: "Add List",
+              ),
+            ],
+          ),
+        ],
+      ),
+      const SizedBox(height: AppTheme.spacingM),
+      if (viewModel.libraryItems.isEmpty)
+        Container(
+          padding: const EdgeInsets.all(AppTheme.spacingL),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceColor,
+            borderRadius: AppTheme.roundedMedium,
+            border: Border.all(color: AppTheme.surfaceLight.withOpacity(0.3)),
+          ),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.playlist_add,
+                  size: 48,
+                  color: AppTheme.textSecondary,
+                ),
+                const SizedBox(height: AppTheme.spacingM),
+                Text(
+                  "No custom lists yet",
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacingS),
+                Text(
+                  "Tap the + button to create your first custom list",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
+      else
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceColor,
+            borderRadius: AppTheme.roundedMedium,
+            border: Border.all(color: AppTheme.surfaceLight.withOpacity(0.3)),
+          ),
+          child: ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: viewModel.libraryItems.length,
+            onReorder: viewModel.reorderLibraryItems,
+            itemBuilder: (context, index) {
+              final item = viewModel.libraryItems[index];
+              return _LibraryItemTile(
+                key: ValueKey('library_item_$index'),
+                item: item,
+                index: index,
+                onEdit: () =>
+                    _showLibraryItemForm(context, viewModel, item, index),
+                onDelete: () =>
+                    _showDeleteConfirmation(context, viewModel, index),
+                isMobile: isMobile,
+              );
+            },
+          ),
+        ),
+    ],
+  );
+}
+
+void _showLibraryItemForm(
+  BuildContext context,
+  SettingsViewModel viewModel,
+  ProfileLibraryItem? existingItem,
+  int index,
+) {
+  final isMobile = Screen.of(context).shouldRenderMobile;
+
+  if (isMobile) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _LibraryFilterFormSheet(
+        existingItem: existingItem,
+        onSave: (item) {
+          if (index >= 0) {
+            viewModel.updateLibraryItem(index, item);
+          } else {
+            viewModel.addLibraryItem(item);
+          }
+        },
+      ),
+    );
+  } else {
+    showDialog(
+      context: context,
+      builder: (_) => _LibraryFilterFormDialog(
+        existingItem: existingItem,
+        onSave: (item) {
+          if (index >= 0) {
+            viewModel.updateLibraryItem(index, item);
+          } else {
+            viewModel.addLibraryItem(item);
+          }
+        },
+      ),
+    );
+  }
+}
+
+void _showDeleteConfirmation(
+  BuildContext context,
+  SettingsViewModel viewModel,
+  int index,
+) {
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      backgroundColor: AppTheme.surfaceColor,
+      title: const Text("Delete List"),
+      content: Text(
+        "Are you sure you want to delete '${viewModel.libraryItems[index].name}'?",
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            viewModel.deleteLibraryItem(index);
+            Navigator.pop(context);
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
+          child: const Text("Delete"),
+        ),
+      ],
+    ),
+  );
+}
+
+class _LibraryItemTile extends StatelessWidget {
+  final ProfileLibraryItem item;
+  final int index;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final bool isMobile;
+
+  const _LibraryItemTile({
+    super.key,
+    required this.item,
+    required this.index,
+    required this.onEdit,
+    required this.onDelete,
+    required this.isMobile,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppTheme.surfaceLight.withOpacity(0.2)),
+        ),
+      ),
+      child: ListTile(
+        // leading: ReorderableDragStartListener(
+        //   index: index,
+        //   child: const Icon(Icons.drag_handle, color: AppTheme.textSecondary),
+        // ),
+        title: Text(
+          item.name,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+        ),
+        subtitle: Text(
+          item.filter.isMovie ? "Movies" : "TV Shows",
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: AppTheme.spacingS,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              onPressed: onEdit,
+              tooltip: "Edit",
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.delete_outline,
+                size: 20,
+                color: AppTheme.errorColor,
+              ),
+              onPressed: onDelete,
+              tooltip: "Delete",
+            ),
+            AppTheme.boxWidthS,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Desktop Dialog for Library Filter Form
+class _LibraryFilterFormDialog extends StatefulWidget {
+  final ProfileLibraryItem? existingItem;
+  final void Function(ProfileLibraryItem) onSave;
+
+  const _LibraryFilterFormDialog({this.existingItem, required this.onSave});
+
+  @override
+  State<_LibraryFilterFormDialog> createState() =>
+      _LibraryFilterFormDialogState();
+}
+
+class _LibraryFilterFormDialogState extends State<_LibraryFilterFormDialog> {
+  late TextEditingController _nameController;
+  late LibraryFilter _filter;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(
+      text: widget.existingItem?.name ?? "",
+    );
+    _filter = widget.existingItem?.filter ?? LibraryFilter.defaultFilter();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppTheme.surfaceColor,
+      title: Text(widget.existingItem != null ? "Edit List" : "Create List"),
+      content: SizedBox(
+        width: 500,
+        child: SingleChildScrollView(child: _buildFormContent()),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(onPressed: _onSave, child: const Text("Save")),
+      ],
+    );
+  }
+
+  Widget _buildFormContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _nameController,
+          decoration: const InputDecoration(
+            labelText: "List Name",
+            hintText: "e.g. Top Rated Action Movies",
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacingL),
+        // Media Type
+        _buildSwitchField(
+          label: "Media Type",
+          value: _filter.isMovie,
+          trueLabel: "Movies",
+          falseLabel: "TV Shows",
+          onChanged: (val) =>
+              setState(() => _filter = _filter.copyWith(isMovie: val)),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        // Time Period
+        _buildTimePeriodSelector(),
+        const SizedBox(height: AppTheme.spacingM),
+        // Date Type (for shows only)
+        if (!_filter.isMovie)
+          _buildDropdownField(
+            label: "Date Type",
+            value: _filter.isFirstAir ? "first" : "last",
+            items: const [
+              DropdownMenuItem(value: "first", child: Text("First Air Date")),
+              DropdownMenuItem(value: "last", child: Text("Last Air Date")),
+            ],
+            onChanged: (val) => setState(
+              () => _filter = _filter.copyWith(isFirstAir: val == "first"),
+            ),
+          ),
+        if (!_filter.isMovie) const SizedBox(height: AppTheme.spacingM),
+        // IMDB Rating
+        _buildDropdownField(
+          label: "Min IMDB Rating",
+          value: _filter.imdbRating,
+          items: List.generate(
+            10,
+            (i) =>
+                DropdownMenuItem(value: i, child: Text(i == 0 ? "Any" : "$i+")),
+          ),
+          onChanged: (val) =>
+              setState(() => _filter = _filter.copyWith(imdbRating: val ?? 0)),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        // Language
+        _buildDropdownField(
+          label: "Language",
+          value: _filter.language.isEmpty ? null : _filter.language,
+          items: [
+            const DropdownMenuItem(value: null, child: Text("Any Language")),
+            ...AppConstants.isoLanguages.entries.map(
+              (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
+            ),
+          ],
+          onChanged: (val) =>
+              setState(() => _filter = _filter.copyWith(language: val ?? "")),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        // Included Genres
+        _buildGenreSelector(
+          label: "Include Genres",
+          selectedGenres: _filter.includedGenres,
+          onChanged: (genres) => setState(
+            () => _filter = _filter.copyWith(includedGenres: genres),
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        // Excluded Genres
+        _buildGenreSelector(
+          label: "Exclude Genres",
+          selectedGenres: _filter.excludedGenres,
+          onChanged: (genres) => setState(
+            () => _filter = _filter.copyWith(excludedGenres: genres),
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        // Items Count
+        _buildDropdownField(
+          label: "Items in List",
+          value: _filter.items,
+          items: const [
+            DropdownMenuItem(value: 10, child: Text("10")),
+            DropdownMenuItem(value: 20, child: Text("20")),
+            DropdownMenuItem(value: 30, child: Text("30")),
+            DropdownMenuItem(value: 50, child: Text("50")),
+          ],
+          onChanged: (val) =>
+              setState(() => _filter = _filter.copyWith(items: val ?? 20)),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        // Sort Type
+        _buildDropdownField(
+          label: "Sort By",
+          value: _filter.sort,
+          items: const [
+            DropdownMenuItem(value: "popularity", child: Text("Popularity")),
+            DropdownMenuItem(value: "imdb_rating", child: Text("IMDB Rating")),
+            DropdownMenuItem(value: "date", child: Text("Release Date")),
+          ],
+          onChanged: (val) => setState(
+            () => _filter = _filter.copyWith(sort: val ?? "popularity"),
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        // Sort Order
+        _buildSwitchField(
+          label: "Sort Order",
+          value: _filter.isAsc,
+          trueLabel: "Ascending",
+          falseLabel: "Descending",
+          onChanged: (val) =>
+              setState(() => _filter = _filter.copyWith(isAsc: val)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSwitchField({
+    required String label,
+    required bool value,
+    required String trueLabel,
+    required String falseLabel,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        ),
+        SegmentedButton<bool>(
+          segments: [
+            ButtonSegment(value: true, label: Text(trueLabel)),
+            ButtonSegment(value: false, label: Text(falseLabel)),
+          ],
+          selected: {value},
+          onSelectionChanged: (set) => onChanged(set.first),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdownField<T>({
+    required String label,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        ),
+        Expanded(
+          flex: 3,
+          child: DropdownButtonFormField<T>(
+            value: value,
+            items: items,
+            onChanged: onChanged,
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimePeriodSelector() {
+    String currentPeriod = "all";
+    if (_filter.thisWeek) {
+      currentPeriod = "week";
+    } else if (_filter.thisMonth) {
+      currentPeriod = "month";
+    } else if (_filter.years.isNotEmpty) {
+      if (_filter.years.length == 1) {
+        currentPeriod = _filter.years.first.toString();
+      } else {
+        // It's a decade
+        final decade = (_filter.years.first ~/ 10) * 10;
+        currentPeriod = "${decade}s";
+      }
+    }
+
+    final currentYear = DateTime.now().year;
+    final currentDecade = (currentYear ~/ 10) * 10;
+
+    final List<DropdownMenuItem<String>> items = [
+      const DropdownMenuItem(value: "all", child: Text("All Time")),
+      const DropdownMenuItem(value: "week", child: Text("This Week")),
+      const DropdownMenuItem(value: "month", child: Text("This Month")),
+      // Current decade years
+      ...List.generate(currentYear - currentDecade + 1, (i) {
+        final year = currentYear - i;
+        return DropdownMenuItem(
+          value: year.toString(),
+          child: Text(year.toString()),
+        );
+      }),
+      // Previous decades
+      ...List.generate(4, (i) {
+        final decade = currentDecade - ((i + 1) * 10);
+        return DropdownMenuItem(value: "${decade}s", child: Text("${decade}s"));
+      }),
+    ];
+
+    return _buildDropdownField(
+      label: "Time Period",
+      value: currentPeriod,
+      items: items,
+      onChanged: (val) {
+        setState(() {
+          if (val == "week") {
+            _filter = _filter.copyWith(
+              thisWeek: true,
+              thisMonth: false,
+              years: [],
+            );
+          } else if (val == "month") {
+            _filter = _filter.copyWith(
+              thisWeek: false,
+              thisMonth: true,
+              years: [],
+            );
+          } else if (val == "all") {
+            _filter = _filter.copyWith(
+              thisWeek: false,
+              thisMonth: false,
+              years: [],
+            );
+          } else if (val != null && val.endsWith("s")) {
+            // Decade
+            final decade = int.parse(val.replaceAll("s", ""));
+            final years = List.generate(10, (i) => decade + i);
+            _filter = _filter.copyWith(
+              thisWeek: false,
+              thisMonth: false,
+              years: years,
+            );
+          } else if (val != null) {
+            // Single year
+            _filter = _filter.copyWith(
+              thisWeek: false,
+              thisMonth: false,
+              years: [int.parse(val)],
+            );
+          }
+        });
+      },
+    );
+  }
+
+  Widget _buildGenreSelector({
+    required String label,
+    required List<int> selectedGenres,
+    required ValueChanged<List<int>> onChanged,
+  }) {
+    final genres = _filter.isMovie
+        ? AppConstants.movieGenre
+        : AppConstants.showGenre;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: AppTheme.spacingS),
+        Wrap(
+          spacing: AppTheme.spacingS,
+          runSpacing: AppTheme.spacingS,
+          children: genres.entries.map((entry) {
+            final isSelected = selectedGenres.contains(entry.key);
+            return FilterChip(
+              label: Text(entry.value.name),
+              selected: isSelected,
+              onSelected: (selected) {
+                final newList = List<int>.from(selectedGenres);
+                if (selected) {
+                  newList.add(entry.key);
+                } else {
+                  newList.remove(entry.key);
+                }
+                onChanged(newList);
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  void _onSave() {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please enter a list name")));
+      return;
+    }
+
+    final item = ProfileLibraryItem(
+      name: _nameController.text,
+      filter: _filter,
+    );
+    widget.onSave(item);
+    Navigator.pop(context);
+  }
+}
+
+// Mobile Bottom Sheet for Library Filter Form
+class _LibraryFilterFormSheet extends StatefulWidget {
+  final ProfileLibraryItem? existingItem;
+  final void Function(ProfileLibraryItem) onSave;
+
+  const _LibraryFilterFormSheet({this.existingItem, required this.onSave});
+
+  @override
+  State<_LibraryFilterFormSheet> createState() =>
+      _LibraryFilterFormSheetState();
+}
+
+class _LibraryFilterFormSheetState extends State<_LibraryFilterFormSheet> {
+  late TextEditingController _nameController;
+  late LibraryFilter _filter;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(
+      text: widget.existingItem?.name ?? "",
+    );
+    _filter = widget.existingItem?.filter ?? LibraryFilter.defaultFilter();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (_, scrollController) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: AppTheme.spacingM,
+            right: AppTheme.spacingM,
+            top: AppTheme.spacingM,
+            bottom:
+                MediaQuery.of(context).viewInsets.bottom + AppTheme.spacingM,
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.textSecondary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: AppTheme.spacingM),
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.existingItem != null ? "Edit List" : "Create List",
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppTheme.spacingM),
+              // Form content
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [_buildMobileFormContent()],
+                ),
+              ),
+              // Save button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _onSave,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text("Save"),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMobileFormContent() {
+    final genres = _filter.isMovie
+        ? AppConstants.movieGenre
+        : AppConstants.showGenre;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _nameController,
+          decoration: const InputDecoration(
+            labelText: "List Name",
+            hintText: "e.g. Top Rated Action Movies",
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacingL),
+        // Media Type
+        Text("Media Type", style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: AppTheme.spacingS),
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(value: true, label: Text("Movies")),
+            ButtonSegment(value: false, label: Text("TV Shows")),
+          ],
+          selected: {_filter.isMovie},
+          onSelectionChanged: (set) =>
+              setState(() => _filter = _filter.copyWith(isMovie: set.first)),
+        ),
+        const SizedBox(height: AppTheme.spacingL),
+        // Time Period
+        _buildMobileDropdown(
+          label: "Time Period",
+          child: _buildTimePeriodDropdown(),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        // Date Type (for shows)
+        if (!_filter.isMovie) ...[
+          _buildMobileDropdown(
+            label: "Date Type",
+            child: DropdownButtonFormField<String>(
+              value: _filter.isFirstAir ? "first" : "last",
+              items: const [
+                DropdownMenuItem(value: "first", child: Text("First Air Date")),
+                DropdownMenuItem(value: "last", child: Text("Last Air Date")),
+              ],
+              onChanged: (val) => setState(
+                () => _filter = _filter.copyWith(isFirstAir: val == "first"),
+              ),
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spacingM),
+        ],
+        // IMDB Rating
+        _buildMobileDropdown(
+          label: "Min IMDB Rating",
+          child: DropdownButtonFormField<int>(
+            value: _filter.imdbRating,
+            items: List.generate(
+              10,
+              (i) => DropdownMenuItem(
+                value: i,
+                child: Text(i == 0 ? "Any" : "$i+"),
+              ),
+            ),
+            onChanged: (val) => setState(
+              () => _filter = _filter.copyWith(imdbRating: val ?? 0),
+            ),
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        // Language
+        _buildMobileDropdown(
+          label: "Language",
+          child: DropdownButtonFormField<String?>(
+            value: _filter.language.isEmpty ? null : _filter.language,
+            items: [
+              const DropdownMenuItem(value: null, child: Text("Any Language")),
+              ...AppConstants.isoLanguages.entries.map(
+                (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
+              ),
+            ],
+            onChanged: (val) =>
+                setState(() => _filter = _filter.copyWith(language: val ?? "")),
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacingL),
+        // Included Genres
+        Text("Include Genres", style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: AppTheme.spacingS),
+        Wrap(
+          spacing: AppTheme.spacingS,
+          runSpacing: AppTheme.spacingS,
+          children: genres.entries.map((entry) {
+            final isSelected = _filter.includedGenres.contains(entry.key);
+            return FilterChip(
+              label: Text(entry.value.name),
+              selected: isSelected,
+              onSelected: (selected) {
+                final newList = List<int>.from(_filter.includedGenres);
+                if (selected) {
+                  newList.add(entry.key);
+                } else {
+                  newList.remove(entry.key);
+                }
+                setState(
+                  () => _filter = _filter.copyWith(includedGenres: newList),
+                );
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: AppTheme.spacingL),
+        // Excluded Genres
+        Text("Exclude Genres", style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: AppTheme.spacingS),
+        Wrap(
+          spacing: AppTheme.spacingS,
+          runSpacing: AppTheme.spacingS,
+          children: genres.entries.map((entry) {
+            final isSelected = _filter.excludedGenres.contains(entry.key);
+            return FilterChip(
+              label: Text(entry.value.name),
+              selected: isSelected,
+              onSelected: (selected) {
+                final newList = List<int>.from(_filter.excludedGenres);
+                if (selected) {
+                  newList.add(entry.key);
+                } else {
+                  newList.remove(entry.key);
+                }
+                setState(
+                  () => _filter = _filter.copyWith(excludedGenres: newList),
+                );
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: AppTheme.spacingL),
+        // Items Count
+        _buildMobileDropdown(
+          label: "Items in List",
+          child: DropdownButtonFormField<int>(
+            value: _filter.items,
+            items: const [
+              DropdownMenuItem(value: 10, child: Text("10")),
+              DropdownMenuItem(value: 20, child: Text("20")),
+              DropdownMenuItem(value: 30, child: Text("30")),
+              DropdownMenuItem(value: 50, child: Text("50")),
+            ],
+            onChanged: (val) =>
+                setState(() => _filter = _filter.copyWith(items: val ?? 20)),
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        // Sort Type
+        _buildMobileDropdown(
+          label: "Sort By",
+          child: DropdownButtonFormField<String>(
+            value: _filter.sort,
+            items: const [
+              DropdownMenuItem(value: "popularity", child: Text("Popularity")),
+              DropdownMenuItem(
+                value: "imdb_rating",
+                child: Text("IMDB Rating"),
+              ),
+              DropdownMenuItem(value: "date", child: Text("Release Date")),
+            ],
+            onChanged: (val) => setState(
+              () => _filter = _filter.copyWith(sort: val ?? "popularity"),
+            ),
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacingL),
+        // Sort Order
+        Text("Sort Order", style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: AppTheme.spacingS),
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(value: false, label: Text("Descending")),
+            ButtonSegment(value: true, label: Text("Ascending")),
+          ],
+          selected: {_filter.isAsc},
+          onSelectionChanged: (set) =>
+              setState(() => _filter = _filter.copyWith(isAsc: set.first)),
+        ),
+        const SizedBox(height: AppTheme.spacingXL),
+      ],
+    );
+  }
+
+  Widget _buildMobileDropdown({required String label, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: AppTheme.spacingS),
+        child,
+      ],
+    );
+  }
+
+  Widget _buildTimePeriodDropdown() {
+    String currentPeriod = "all";
+    if (_filter.thisWeek) {
+      currentPeriod = "week";
+    } else if (_filter.thisMonth) {
+      currentPeriod = "month";
+    } else if (_filter.years.isNotEmpty) {
+      if (_filter.years.length == 1) {
+        currentPeriod = _filter.years.first.toString();
+      } else {
+        final decade = (_filter.years.first ~/ 10) * 10;
+        currentPeriod = "${decade}s";
+      }
+    }
+
+    final currentYear = DateTime.now().year;
+    final currentDecade = (currentYear ~/ 10) * 10;
+
+    final List<DropdownMenuItem<String>> items = [
+      const DropdownMenuItem(value: "all", child: Text("All Time")),
+      const DropdownMenuItem(value: "week", child: Text("This Week")),
+      const DropdownMenuItem(value: "month", child: Text("This Month")),
+      ...List.generate(currentYear - currentDecade + 1, (i) {
+        final year = currentYear - i;
+        return DropdownMenuItem(
+          value: year.toString(),
+          child: Text(year.toString()),
+        );
+      }),
+      ...List.generate(4, (i) {
+        final decade = currentDecade - ((i + 1) * 10);
+        return DropdownMenuItem(value: "${decade}s", child: Text("${decade}s"));
+      }),
+    ];
+
+    return DropdownButtonFormField<String>(
+      value: currentPeriod,
+      items: items,
+      onChanged: (val) {
+        setState(() {
+          if (val == "week") {
+            _filter = _filter.copyWith(
+              thisWeek: true,
+              thisMonth: false,
+              years: [],
+            );
+          } else if (val == "month") {
+            _filter = _filter.copyWith(
+              thisWeek: false,
+              thisMonth: true,
+              years: [],
+            );
+          } else if (val == "all") {
+            _filter = _filter.copyWith(
+              thisWeek: false,
+              thisMonth: false,
+              years: [],
+            );
+          } else if (val != null && val.endsWith("s")) {
+            final decade = int.parse(val.replaceAll("s", ""));
+            final years = List.generate(10, (i) => decade + i);
+            _filter = _filter.copyWith(
+              thisWeek: false,
+              thisMonth: false,
+              years: years,
+            );
+          } else if (val != null) {
+            _filter = _filter.copyWith(
+              thisWeek: false,
+              thisMonth: false,
+              years: [int.parse(val)],
+            );
+          }
+        });
+      },
+      decoration: const InputDecoration(
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+    );
+  }
+
+  void _onSave() {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please enter a list name")));
+      return;
+    }
+
+    final item = ProfileLibraryItem(
+      name: _nameController.text,
+      filter: _filter,
+    );
+    widget.onSave(item);
+    Navigator.pop(context);
   }
 }

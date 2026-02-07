@@ -18,15 +18,86 @@ class SettingsViewModel extends ChangeNotifier {
 
   final TextEditingController apiKeyController = TextEditingController();
 
+  // Library items state management
+  List<ProfileLibraryItem> _libraryItems = [];
+  List<ProfileLibraryItem> get libraryItems => _libraryItems;
+
+  bool _hasLibraryChanges = false;
+  bool get hasLibraryChanges => _hasLibraryChanges;
+
+  int? _initializedProfileId;
+
   SettingsViewModel(this._authUc);
 
   void init(Profile? currentProfile) {
-    if (currentProfile != null && currentProfile.debridType.isNotEmpty) {
+    if (currentProfile == null) return;
+
+    // Only initialize if we haven't initialized for this profile yet
+    if (_initializedProfileId == currentProfile.id) return;
+
+    _initializedProfileId = currentProfile.id;
+
+    if (currentProfile.debridType.isNotEmpty) {
       _selectedDebridType = currentProfile.debridType;
     }
+    // Initialize library items from profile
+    _libraryItems = List.from(currentProfile.libraryItems);
+    _hasLibraryChanges = false;
+    // notifyListeners();
   }
 
   set context(BuildContext context) => _context = context;
+
+  // Library Items CRUD Methods
+  void addLibraryItem(ProfileLibraryItem item) {
+    _libraryItems.add(item);
+    _hasLibraryChanges = true;
+    notifyListeners();
+  }
+
+  void updateLibraryItem(int index, ProfileLibraryItem item) {
+    if (index >= 0 && index < _libraryItems.length) {
+      _libraryItems[index] = item;
+      _hasLibraryChanges = true;
+      notifyListeners();
+    }
+  }
+
+  void deleteLibraryItem(int index) {
+    if (index >= 0 && index < _libraryItems.length) {
+      _libraryItems.removeAt(index);
+      _hasLibraryChanges = true;
+      notifyListeners();
+    }
+  }
+
+  void reorderLibraryItems(int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+    final item = _libraryItems.removeAt(oldIndex);
+    _libraryItems.insert(newIndex, item);
+    _hasLibraryChanges = true;
+    notifyListeners();
+  }
+
+  Future<void> saveLibraryItems() async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // TODO: Replace with actual API call
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      _hasLibraryChanges = false;
+      showToast(_context, false, "Home page lists saved", "");
+    } catch (e) {
+      showToast(_context, true, e.toString(), "");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> storeDebridKey() async {
     try {

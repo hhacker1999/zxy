@@ -83,9 +83,18 @@ class ProfileLibraryItem {
   ProfileLibraryItem({required this.name, required this.filter});
 
   factory ProfileLibraryItem.fromJson(Map<String, dynamic> json) =>
-      ProfileLibraryItem(name: json["name"], filter: LibraryFilter.fromJson(json["filter"]));
+      ProfileLibraryItem(
+        name: json["name"],
+        filter: LibraryFilter.fromJson(json["filter"]),
+      );
 
   Map<String, dynamic> toJson() => {"name": name, "filter": filter.toJson()};
+
+  ProfileLibraryItem copyWith({String? name, LibraryFilter? filter}) =>
+      ProfileLibraryItem(
+        name: name ?? this.name,
+        filter: filter ?? this.filter,
+      );
 }
 
 class LibraryFilter {
@@ -150,4 +159,50 @@ class LibraryFilter {
     "excluded_genres": List<dynamic>.from(excludedGenres.map((x) => x)),
     "page": page,
   };
+
+  factory LibraryFilter.defaultFilter() => LibraryFilter(
+    isMovie: true,
+    thisWeek: false,
+    thisMonth: false,
+    years: [],
+    isFirstAir: true,
+    imdbRating: 0,
+    language: '',
+    sort: 'popularity',
+    isAsc: false,
+    items: 20,
+    includedGenres: [],
+    excludedGenres: [],
+    page: 1,
+  );
+
+  LibraryFilter copyWith({
+    bool? isMovie,
+    bool? thisWeek,
+    bool? thisMonth,
+    List<int>? years,
+    bool? isFirstAir,
+    int? imdbRating,
+    String? language,
+    String? sort,
+    bool? isAsc,
+    int? items,
+    List<int>? includedGenres,
+    List<int>? excludedGenres,
+    int? page,
+  }) => LibraryFilter(
+    isMovie: isMovie ?? this.isMovie,
+    thisWeek: thisWeek ?? this.thisWeek,
+    thisMonth: thisMonth ?? this.thisMonth,
+    years: years ?? this.years,
+    isFirstAir: isFirstAir ?? this.isFirstAir,
+    imdbRating: imdbRating ?? this.imdbRating,
+    language: language ?? this.language,
+    sort: sort ?? this.sort,
+    isAsc: isAsc ?? this.isAsc,
+    items: items ?? this.items,
+    includedGenres: includedGenres ?? this.includedGenres,
+    excludedGenres: excludedGenres ?? this.excludedGenres,
+    page: page ?? this.page,
+  );
 }
