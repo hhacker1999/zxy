@@ -45,8 +45,9 @@ class ZxyMedia {
   final String? name;
   final double? voteAverage;
   final int? voteCount;
-  final ZxyMediaType type;
+  ZxyMediaType type;
   final double imdbRatings;
+  final Images? images;
 
   ZxyMedia({
     required this.adult,
@@ -58,6 +59,7 @@ class ZxyMedia {
     this.originalTitle,
     required this.overview,
     required this.popularity,
+    this.images,
     required this.posterPath,
     this.releaseDate,
     this.firstAirDate,
@@ -72,6 +74,7 @@ class ZxyMedia {
   @override
   factory ZxyMedia.fromJson(Map<String, dynamic> json, ZxyMediaType type) =>
       ZxyMedia(
+        images: json["images"] != null ? Images.fromJson(json["images"]) : null,
         adult: json["adult"],
         backdropPath: json["backdrop_path"],
         genreIds: json["genre_ids"] != null

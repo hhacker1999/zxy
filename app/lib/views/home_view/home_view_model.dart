@@ -48,8 +48,7 @@ class HomeViewModel {
   late ValueNotifier<ViewItemState<List<ContinueWatchingCardInfo>>>
   continueWatchingState;
 
-  // final ValueNotifier<ViewItemState<List<ZxyMedia>>> topBannerState =
-  //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
+  late final ValueNotifier<ViewItemState<List<ZxyMedia>>> topBannerState;
 
   Future<void> initialise(BuildContext context) async {
     if (_initialised) {
@@ -60,55 +59,10 @@ class HomeViewModel {
     continueWatchingState = ValueNotifier(
       ItemLoading<List<ContinueWatchingCardInfo>>(),
     );
-    // if (homeViewLists.value.isNotEmpty) {
-    //   return;
-    // }
-
-    // final ValueNotifier<ViewItemState<List<ZxyMedia>>> topMovieState =
-    //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
-    // final ValueNotifier<ViewItemState<List<ZxyMedia>>> topShowsState =
-    //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
-    // final ValueNotifier<ViewItemState<List<ZxyMedia>>> trendingShowsState =
-    //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
-    // final ValueNotifier<ViewItemState<List<ZxyMedia>>> trendingMoviesState =
-    //     ValueNotifier(ItemLoading<List<ZxyMedia>>());
-    // homeViewLists.value.add(
-    //   HomeViewListItem(
-    //     title: "Trending Shows",
-    //     type: ZxyMediaType.shows,
-    //     state: trendingShowsState,
-    //   ),
-    // );
-    //
-    // homeViewLists.value.add(
-    //   HomeViewListItem(
-    //     title: "Trending Movies",
-    //     type: ZxyMediaType.movie,
-    //     state: trendingMoviesState,
-    //   ),
-    // );
-
-    // homeViewLists.value.add(
-    //   HomeViewListItem(
-    //     title: "Top Rated Shows",
-    //     type: ZxyMediaType.shows,
-    //     state: topShowsState,
-    //   ),
-    // );
-    //
-    // homeViewLists.value.add(
-    //   HomeViewListItem(
-    //     title: "Top Rated Movies",
-    //     type: ZxyMediaType.movie,
-    //     state: topMovieState,
-    //   ),
-    // );
+    topBannerState = ValueNotifier(ItemLoading<List<ZxyMedia>>());
     final List<Future> futures = [
       initialiseContinueWatching(),
-      // initialiseTrendingShows(trendingShowsState),
-      // initialiseTrendingMovies(trendingMoviesState),
-      // initialiseTopRatedShows(topShowsState),
-      // initialiseTopRatedMovies(topMovieState),
+      _getMediaForBanner(topBannerState),
     ];
 
     final profile = context.read<UserBloc>().profileNotifier.value;
@@ -128,15 +82,50 @@ class HomeViewModel {
     }
 
     await Future.wait(futures);
+  }
 
-    // final shows = (trendingMoviesState.value as ItemLoaded<List<ZxyMedia>>).data
-    //     .take(4);
-    // final movies = (trendingShowsState.value as ItemLoaded<List<ZxyMedia>>).data
-    //     .take(5);
-    // final combined = List<ZxyMedia>.from(shows)
-    //   ..addAll(movies)
-    //   ..shuffle();
-    // topBannerState.value = ItemLoaded(data: combined);
+  Future<void> _getMediaForBanner(
+    ValueNotifier<ViewItemState<List<ZxyMedia>>> notifier,
+  ) async {
+    try {
+      const items = 3;
+      var movieFilter = LibraryFilter.defaultFilter();
+      movieFilter = movieFilter.copyWith(
+        sort: "",
+        isTrending: true,
+        items: items,
+        isMovie: true,
+      );
+      var showFilter = LibraryFilter.defaultFilter();
+      showFilter = movieFilter.copyWith(
+        sort: "",
+        isTrending: true,
+        items: items,
+        isMovie: false,
+      );
+      final res = await Future.wait([
+        _mediaUc.discoverLibrary(filter: movieFilter),
+        _mediaUc.discoverLibrary(filter: showFilter),
+      ]);
+      final movies = res[0].results;
+      final shows = res[1].results;
+      final List<ZxyMedia> jumbled = List.empty(growable: true);
+      for (int i = 0; i < items; i++) {
+        final tempMovie = movies[i];
+        tempMovie.type = ZxyMediaType.movie;
+        jumbled.add(tempMovie);
+        final tempShow = shows[i];
+        tempShow.type = ZxyMediaType.shows;
+        jumbled.add(tempShow);
+      }
+      notifier.value = ItemLoaded(data: jumbled);
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error getting top banner items ${e.toString()}");
+      }
+      notifier.value = ItemError(error: e.toString());
+      rethrow;
+    }
   }
 
   Future<void> initialiseContinueWatching() async {
@@ -338,6 +327,6 @@ class HomeViewModel {
     }
     homeViewLists.dispose();
     continueWatchingState.dispose();
-    // topBannerState.dispose();
+    topBannerState.dispose();
   }
 }
