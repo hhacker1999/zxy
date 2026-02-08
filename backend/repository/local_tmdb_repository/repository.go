@@ -208,20 +208,45 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 	params = append(params, tp)
 	cTime := time.Now()
 	if filter.ThisWeek {
-		startTime := cTime.AddDate(0, 0, -int(cTime.Weekday())).Format(format)
+		startTime := cTime.AddDate(0, 0, -7).Format(format)
 		if filter.IsMovie {
-			suffix += fmt.Sprintf(" and release_date >= $%d", len(params)+1)
-			params = append(params, startTime)
+			suffix += fmt.Sprintf(
+				" and release_date >= $%d and release_date <= $%d",
+				len(params)+1,
+				len(params)+2,
+			)
+			params = append(params, startTime, cTime.Format(format))
 		} else {
 			if filter.IsFirstAir {
-				suffix += fmt.Sprintf(" and first_air_date >= $%d", len(params)+1)
-				params = append(params, startTime)
+				suffix += fmt.Sprintf(" and first_air_date >= $%d and first_air_date <= $%d", len(params)+1, len(params)+2)
+				params = append(params, startTime, cTime.Format(format))
 			} else {
-				suffix += fmt.Sprintf(" and last_air_date >= $%d", len(params)+1)
-				params = append(params, startTime)
+				suffix += fmt.Sprintf(" and last_air_date >= $%d and last_air_date <= $%d", len(params)+1, len(params)+2)
+				params = append(params, startTime, cTime.Format(format))
 			}
 		}
 	}
+
+	if filter.ThisMonth {
+		startTime := cTime.AddDate(0, 0, -30).Format(format)
+		if filter.IsMovie {
+			suffix += fmt.Sprintf(
+				" and release_date >= $%d and release_date <= $%d",
+				len(params)+1,
+				len(params)+2,
+			)
+			params = append(params, startTime, cTime.Format(format))
+		} else {
+			if filter.IsFirstAir {
+				suffix += fmt.Sprintf(" and first_air_date >= $%d and first_air_date <= $%d", len(params)+1, len(params)+2)
+				params = append(params, startTime, cTime.Format(format))
+			} else {
+				suffix += fmt.Sprintf(" and last_air_date >= $%d and last_air_date <= $%d", len(params)+1, len(params)+2)
+				params = append(params, startTime, cTime.Format(format))
+			}
+		}
+	}
+
 	for i, v := range filter.Years {
 		if i == 0 {
 			suffix += " and ( "
@@ -260,6 +285,43 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 	if filter.ImdbRating > 0 {
 		suffix += fmt.Sprintf(" and imdb_rating >= $%d", len(params)+1)
 		params = append(params, filter.ImdbRating)
+	}
+
+	var excludeGenre string
+	var includeGenre string
+
+	for i, v := range filter.IncludedGenres {
+		if i == 0 {
+			includeGenre += "array["
+		}
+		if i > 0 && i < len(includeGenre)-1 {
+			includeGenre += ","
+		}
+		includeGenre += fmt.Sprintf("%d", v)
+		if i == len(filter.IncludedGenres)-1 {
+			includeGenre += "]"
+		}
+	}
+
+	for i, v := range filter.ExcludedGenres {
+		if i == 0 {
+			excludeGenre += "array["
+		}
+		if i > 0 && i < len(excludeGenre)-1 {
+			excludeGenre += ","
+		}
+		excludeGenre += fmt.Sprintf("%d", v)
+		if i == len(filter.ExcludedGenres)-1 {
+			excludeGenre += "]"
+		}
+	}
+
+	if len(includeGenre) != 0 {
+		suffix += fmt.Sprintf(" and genre_ids && %s", includeGenre)
+	}
+
+	if len(excludeGenre) != 0 {
+		suffix += fmt.Sprintf(" and not genre_ids && %s", excludeGenre)
 	}
 
 	// suffix += " and imdb_votes > 100000"
