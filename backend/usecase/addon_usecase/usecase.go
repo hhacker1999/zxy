@@ -2,7 +2,11 @@ package addonusecase
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -26,6 +30,7 @@ type Usecase struct {
 	db        *sql.DB
 	userRepo  *userrepository.Repository
 	zxyUrl    string
+	encrKey   string
 }
 
 func New(
@@ -37,6 +42,7 @@ func New(
 	db *sql.DB,
 	userRepo *userrepository.Repository,
 	zxyUrl string,
+	encrKey string,
 ) (*Usecase, error) {
 
 	byte, err := os.ReadFile(templatePath)
@@ -60,6 +66,7 @@ func New(
 		db:        db,
 		userRepo:  userRepo,
 		zxyUrl:    zxyUrl,
+		encrKey:   encrKey,
 	}, nil
 }
 
@@ -361,97 +368,9 @@ func (u *Usecase) GetMovieStreamProfile(id string, profileId int) (models.ZxyStr
 		return res, apperrors.SomethingWentWrongError{}
 	}
 
-	uhd := []models.ZxyResolutionResponse{}
-	fhd := []models.ZxyResolutionResponse{}
-	hd := []models.ZxyResolutionResponse{}
-
-	for _, v := range aioRes.Streams {
-		if v.URL == "" {
-			continue
-		}
-		mp := make(map[string]any)
-		err = json.Unmarshal([]byte(v.Name), &mp)
-		if err != nil {
-			fmt.Println("Error unmarshalling stream name", err)
-			return res, apperrors.SomethingWentWrongError{}
-		}
-
-		var temp models.ZxyResolutionResponse
-		dataMap, ok := mp["stream"].(map[string]any)
-		if !ok {
-			fmt.Println("stream is not a map")
-			continue
-		}
-
-		vTags, ok := dataMap["visualTags"].([]any)
-		if ok {
-			tmp := []string{}
-			for _, a := range vTags {
-				tg, ok := a.(string)
-				if ok {
-					tmp = append(tmp, tg)
-				}
-			}
-			temp.VisualTags = tmp
-		}
-		aTags, ok := dataMap["audioTags"].([]any)
-		if ok {
-			tmp := []string{}
-			for _, a := range aTags {
-				tg, ok := a.(string)
-				if ok {
-					tmp = append(tmp, tg)
-				}
-			}
-			temp.AudioTags = tmp
-		}
-		lCodes, ok := dataMap["languageCodes"].([]any)
-		if ok {
-			tmp := []string{}
-			for _, a := range lCodes {
-				tg, ok := a.(string)
-				if ok {
-					tmp = append(tmp, tg)
-				}
-			}
-			temp.LanguageCodes = tmp
-		}
-		fName, ok := dataMap["filename"].(string)
-		if ok {
-			temp.FileName = fName
-		}
-		quality, ok := dataMap["quality"].(string)
-		if ok {
-			temp.Quality = quality
-		}
-		size, ok := dataMap["size"].(float64)
-		if ok {
-			temp.Size = size
-		}
-		temp.Url = fmt.Sprintf("%s/stream?internal=%s", u.zxyUrl, v.URL)
-		res, ok := dataMap["resolution"].(string)
-		if ok {
-			temp.Resolution = res
-			if res == "2160p" {
-				uhd = append(uhd, temp)
-			}
-			if res == "1080p" {
-				fhd = append(fhd, temp)
-			}
-			if res == "720p" {
-				hd = append(hd, temp)
-			}
-		} else {
-			fmt.Println("resolution not found")
-		}
-	}
-
-	res.UHD = uhd
-	res.FHD = fhd
-	res.HD = hd
-
-	return res, nil
+	return u.getStreamUrlCommon(aioRes)
 }
+
 func (u *Usecase) GetSeriesStreamProfile(
 	id string,
 	season int,
@@ -499,95 +418,7 @@ func (u *Usecase) GetSeriesStreamProfile(
 		return res, apperrors.SomethingWentWrongError{}
 	}
 
-	uhd := []models.ZxyResolutionResponse{}
-	fhd := []models.ZxyResolutionResponse{}
-	hd := []models.ZxyResolutionResponse{}
-
-	for _, v := range aioRes.Streams {
-		if v.URL == "" {
-			continue
-		}
-		mp := make(map[string]any)
-		err = json.Unmarshal([]byte(v.Name), &mp)
-		if err != nil {
-			fmt.Println("Error unmarshalling stream name", err)
-		}
-
-		var temp models.ZxyResolutionResponse
-		dataMap, ok := mp["stream"].(map[string]any)
-		if !ok {
-			fmt.Println("stream is not a map")
-			continue
-		}
-
-		vTags, ok := dataMap["visualTags"].([]any)
-		if ok {
-			tmp := []string{}
-			for _, a := range vTags {
-				tg, ok := a.(string)
-				if ok {
-					tmp = append(tmp, tg)
-				}
-			}
-			temp.VisualTags = tmp
-		}
-		aTags, ok := dataMap["audioTags"].([]any)
-		if ok {
-			tmp := []string{}
-			for _, a := range aTags {
-				tg, ok := a.(string)
-				if ok {
-					tmp = append(tmp, tg)
-				}
-			}
-			temp.AudioTags = tmp
-		}
-		lCodes, ok := dataMap["languageCodes"].([]any)
-		if ok {
-			tmp := []string{}
-			for _, a := range lCodes {
-				tg, ok := a.(string)
-				if ok {
-					tmp = append(tmp, tg)
-				}
-			}
-			temp.LanguageCodes = tmp
-		}
-		fName, ok := dataMap["filename"].(string)
-		if ok {
-			temp.FileName = fName
-		}
-		quality, ok := dataMap["quality"].(string)
-		if ok {
-			temp.Quality = quality
-		}
-		size, ok := dataMap["size"].(float64)
-		if ok {
-			temp.Size = size
-		}
-		temp.Url = fmt.Sprintf("%s/stream?internal=%s", u.zxyUrl, v.URL)
-		res, ok := dataMap["resolution"].(string)
-		if ok {
-			temp.Resolution = res
-			if res == "2160p" {
-				uhd = append(uhd, temp)
-			}
-			if res == "1080p" {
-				fhd = append(fhd, temp)
-			}
-			if res == "720p" {
-				hd = append(hd, temp)
-			}
-		} else {
-			fmt.Println("resolution not found")
-		}
-	}
-
-	res.UHD = uhd
-	res.FHD = fhd
-	res.HD = hd
-
-	return res, nil
+	return u.getStreamUrlCommon(aioRes)
 }
 
 func (u *Usecase) getUserAddonUrl(profileId int) (string, error) {
@@ -697,4 +528,132 @@ func (u *Usecase) StoreAddonFromApiKeyContext(
 	}
 
 	return nil
+}
+
+func (u *Usecase) encryptURL(url string) (string, error) {
+	key, err := hex.DecodeString(u.encrKey)
+	if err != nil {
+    return "",err
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	io.ReadFull(rand.Reader, nonce)
+
+	ciphertext := gcm.Seal(nonce, nonce, []byte(url), nil)
+	return hex.EncodeToString(ciphertext), nil
+}
+
+func (u *Usecase) getStreamUrlCommon(
+	aioRes models.AddonStreamResponse,
+) (models.ZxyStreamsRes, error) {
+	var res models.ZxyStreamsRes
+
+	uhd := []models.ZxyResolutionResponse{}
+	fhd := []models.ZxyResolutionResponse{}
+	hd := []models.ZxyResolutionResponse{}
+
+	for _, v := range aioRes.Streams {
+		if v.URL == "" {
+			continue
+		}
+		mp := make(map[string]any)
+		err := json.Unmarshal([]byte(v.Name), &mp)
+		if err != nil {
+			fmt.Println("Error unmarshalling stream name", err)
+		}
+
+		var temp models.ZxyResolutionResponse
+		dataMap, ok := mp["stream"].(map[string]any)
+		if !ok {
+			fmt.Println("stream is not a map")
+			continue
+		}
+
+		vTags, ok := dataMap["visualTags"].([]any)
+		if ok {
+			tmp := []string{}
+			for _, a := range vTags {
+				tg, ok := a.(string)
+				if ok {
+					tmp = append(tmp, tg)
+				}
+			}
+			temp.VisualTags = tmp
+		}
+		aTags, ok := dataMap["audioTags"].([]any)
+		if ok {
+			tmp := []string{}
+			for _, a := range aTags {
+				tg, ok := a.(string)
+				if ok {
+					tmp = append(tmp, tg)
+				}
+			}
+			temp.AudioTags = tmp
+		}
+		lCodes, ok := dataMap["languageCodes"].([]any)
+		if ok {
+			tmp := []string{}
+			for _, a := range lCodes {
+				tg, ok := a.(string)
+				if ok {
+					tmp = append(tmp, tg)
+				}
+			}
+			temp.LanguageCodes = tmp
+		}
+		fName, ok := dataMap["filename"].(string)
+		if ok {
+			temp.FileName = fName
+		}
+		quality, ok := dataMap["quality"].(string)
+		if ok {
+			temp.Quality = quality
+		}
+		size, ok := dataMap["size"].(float64)
+		if ok {
+			temp.Size = size
+		}
+		encrypted, err := u.encryptURL(v.URL)
+		if err != nil {
+			fmt.Println("Error getting encrypted url", err)
+			return res, apperrors.SomethingWentWrongError{}
+		}
+		temp.Url = fmt.Sprintf(
+			"%s/proxy?internal=%s",
+			u.zxyUrl,
+			encrypted,
+		) // NOTE: This is for proxy
+		// temp.Url = fmt.Sprintf("%s/stream?internal=%s", u.zxyUrl, encrypted) // NOTE: This is for normal streaming
+		res, ok := dataMap["resolution"].(string)
+		if ok {
+			temp.Resolution = res
+			if res == "2160p" {
+				uhd = append(uhd, temp)
+			}
+			if res == "1080p" {
+				fhd = append(fhd, temp)
+			}
+			if res == "720p" {
+				hd = append(hd, temp)
+			}
+		} else {
+			fmt.Println("resolution not found")
+		}
+	}
+
+	res.UHD = uhd
+	res.FHD = fhd
+	res.HD = hd
+
+	return res, nil
 }

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 	"zxy/models"
+
+	"github.com/lib/pq"
 )
 
 type Repository struct {
@@ -412,7 +414,7 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 func (r *Repository) GetLibraryFromIds(tmdbId []int, tp string) ([]models.ZxyMedia, error) {
 	var res []models.ZxyMedia
 	query := `
-  select  data, imdb_rating from details where tmdb_id in (
+  select  data, imdb_rating, genre_ids from details where tmdb_id in (
   `
 	for i, v := range tmdbId {
 		query += fmt.Sprintf("%d", v)
@@ -430,9 +432,10 @@ func (r *Repository) GetLibraryFromIds(tmdbId []int, tp string) ([]models.ZxyMed
 	}
 	for rows.Next() {
 		var jsn json.RawMessage
+		var genreId []int64
 		var rtg sql.NullFloat64
 		var temp models.ZxyMedia
-		err := rows.Scan(&jsn, &rtg)
+		err := rows.Scan(&jsn, &rtg, pq.Array(&genreId))
 		if err != nil {
 			fmt.Println("Error scanning library from id", err)
 			return res, err
@@ -446,6 +449,7 @@ func (r *Repository) GetLibraryFromIds(tmdbId []int, tp string) ([]models.ZxyMed
 		if rtg.Valid {
 			temp.ImdbRating = rtg.Float64
 		}
+		temp.GenreIDS = genreId
 		res = append(res, temp)
 	}
 

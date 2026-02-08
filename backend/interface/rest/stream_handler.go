@@ -1,10 +1,16 @@
 package rest
 
 import (
+	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"zxy/models"
 )
@@ -149,8 +155,16 @@ func (i *RestInterface) HandleRemoveDebridKey(w http.ResponseWriter, r *http.Req
 
 func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 	var res ApiResponse
-	initialUrl := r.URL.Query().Get("internal")
-	if len(initialUrl) == 0 {
+	initial := r.URL.Query().Get("internal")
+	if len(initial) == 0 {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid url"
+		res.SendResponse(w)
+		return
+	}
+
+	plainText, err := i.resolveInternalURL(initial)
+	if err != nil {
 		res.StatusCode = http.StatusBadRequest
 		res.Error = "Invalid url"
 		res.SendResponse(w)
@@ -161,7 +175,7 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		Timeout: 5 * time.Second,
 	}
 
-	resp, err := client.Head(initialUrl)
+	resp, err := client.Head(plainText)
 	if err != nil {
 		res.StatusCode = http.StatusBadGateway
 		res.Error = "Source resolution failed"
@@ -173,4 +187,70 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 	finalURL := resp.Request.URL.String()
 
 	http.Redirect(w, r, finalURL, http.StatusFound)
+}
+
+func (i *RestInterface) handleProxy(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	initial := r.URL.Query().Get("internal")
+	if len(initial) == 0 {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid url"
+		res.SendResponse(w)
+		return
+	}
+
+	url, err := i.resolveInternalURL(initial)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid url"
+		res.SendResponse(w)
+		return
+	}
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	resp, err := client.Head(url)
+	if err != nil {
+		res.StatusCode = http.StatusBadGateway
+		res.Error = "Source resolution failed"
+		res.SendResponse(w)
+		return
+	}
+	defer resp.Body.Close()
+	finalURL := resp.Request.URL.String()
+	ctx := context.WithValue(r.Context(), "url", finalURL)
+
+	i.proxy.ServeHTTP(w, r.WithContext(ctx))
+}
+
+func (i *RestInterface) resolveInternalURL(initial string) (string, error) {
+	ciphertext, err := hex.DecodeString(initial)
+	if err != nil {
+		fmt.Println("Error decoding hex", err)
+		return "", err
+	}
+	key, err := hex.DecodeString(i.encrKey)
+	if err != nil {
+		return "", err
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		fmt.Println("Error creating new cipher", err)
+		return "", err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		fmt.Println("Error in new gcm", err)
+		return "", err
+	}
+
+	nonceSize := gcm.NonceSize()
+	nonce, actualCiphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+
+	plainText, err := gcm.Open(nil, nonce, actualCiphertext, nil)
+	if err != nil {
+		return "", err
+	}
+	return string(plainText), nil
 }

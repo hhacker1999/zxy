@@ -96,6 +96,7 @@ func main() {
 		db,
 		userRepo,
     cfg.ZxyUrl,
+    cfg.EncrKey,
 	)
 	if err != nil {
 		return
@@ -103,7 +104,7 @@ func main() {
 
 	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo, addonuc)
 	progressUc := progressusecase.New(db, tmdbUc, playbackRepo)
-	restInterface := rest.New(addonuc, tmdbUc, userUc, userRepo, sessionRepo, progressUc)
+	restInterface := rest.New(addonuc, tmdbUc, userUc, userRepo, sessionRepo, progressUc, cfg.EncrKey)
 	router := restInterface.SetupRoutes()
 	err = http.ListenAndServe(":6969", router)
 	if err != nil {

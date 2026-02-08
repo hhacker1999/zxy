@@ -3,7 +3,10 @@ package rest
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"zxy/models"
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
@@ -15,6 +18,19 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type AnonymizerTransport struct {
+	RoundTripper http.RoundTripper
+}
+
+func (t *AnonymizerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Del("X-Forwarded-For")
+	req.Header.Del("X-Real-Ip")
+	req.Header.Del("Forwarded")
+	req.Header.Del("User-Agent")
+
+	return t.RoundTripper.RoundTrip(req)
+}
+
 type RestInterface struct {
 	addonuc     *addonusecase.Usecase
 	tmdbUc      *tmdbusecase.Usecase
@@ -22,6 +38,8 @@ type RestInterface struct {
 	userRepo    *userrepository.Repository
 	sessionRepo *sessionrepository.Repository
 	progressUC  *progressusecase.Usecase
+	encrKey     string
+	proxy       *httputil.ReverseProxy
 }
 
 func New(
@@ -31,6 +49,7 @@ func New(
 	userRepo *userrepository.Repository,
 	sessionRepo *sessionrepository.Repository,
 	progressUC *progressusecase.Usecase,
+	encrKey string,
 ) *RestInterface {
 	return &RestInterface{
 		addonuc:     addonuc,
@@ -39,14 +58,43 @@ func New(
 		userRepo:    userRepo,
 		sessionRepo: sessionRepo,
 		progressUC:  progressUC,
+		encrKey:     encrKey,
 	}
 }
 
 func (i *RestInterface) SetupRoutes() *chi.Mux {
+	proxy := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			rawUrl, ok := req.Context().Value("url").(string)
+			if !ok {
+				fmt.Println("Invalid url")
+				return
+			}
+
+			target, err := url.Parse(rawUrl)
+			if err != nil {
+				fmt.Println("Error parsing url", err)
+				return
+			}
+
+			req.Header.Del("X-Forwarded-For")
+			req.Header.Del("X-Real-Ip")
+			req.Header.Del("Forwarded")
+
+			req.URL.Scheme = target.Scheme
+			req.URL.Host = target.Host
+			req.URL.Path = target.Path
+			req.Host = target.Host
+		},
+		Transport: &AnonymizerTransport{RoundTripper: http.DefaultTransport},
+	}
+	i.proxy = proxy
+
 	router := chi.NewRouter()
 	router.Post("/signup", i.handleSignup)
 	router.Post("/login", i.handleLogin)
 	router.Get("/stream", i.handleStream)
+	router.Get("/proxy", i.handleProxy)
 	router.Post("/profile/login", i.SessionHandler(i.handleProfileLogin, false))
 	router.Get("/user", i.SessionHandler(i.handleGetUser, false))
 	router.Get("/user/profile", i.SessionHandler(i.handleGetUserProfile, true))

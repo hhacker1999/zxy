@@ -88,7 +88,7 @@ class ZxyMedia {
         overview: json["overview"],
         popularity: json["popularity"]?.toDouble() ?? 0,
         posterPath: json["poster_path"] ?? "",
-        releaseDate: json["releaseDate"] != null
+        releaseDate: json["release_date"] != null
             ? DateTime.parse(json["release_date"])
             : null,
         firstAirDate: json["first_air_date"] != null
@@ -187,13 +187,13 @@ class Images {
 
 class Backdrop {
   final double? aspectRatio;
-  final int? height;
+  int? height;
   final String? iso31661;
   final String? iso6391;
   final String? filePath;
   final double? voteAverage;
   final int? voteCount;
-  final int? width;
+  int? width;
 
   Backdrop({
     this.aspectRatio,

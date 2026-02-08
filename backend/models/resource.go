@@ -339,4 +339,5 @@ type ZxyMedia struct {
 	FirstAirDate     *string  `json:"first_air_date,omitempty"`
 	OriginCountry    []string `json:"origin_country,omitempty"`
 	ImdbRating       float64  `json:"imdb_rating"`
+	Images           Images   `json:"images"`
 }
