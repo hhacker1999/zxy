@@ -112,6 +112,7 @@ class LibraryFilter {
   final List<int> includedGenres;
   final List<int> excludedGenres;
   final int page;
+  final int minVotes;
 
   LibraryFilter({
     required this.isMovie,
@@ -120,6 +121,7 @@ class LibraryFilter {
     required this.thisMonth,
     required this.years,
     required this.isFirstAir,
+    required this.minVotes,
     required this.imdbRating,
     required this.language,
     required this.sort,
@@ -145,6 +147,7 @@ class LibraryFilter {
     includedGenres: List<int>.from(json["included_genres"].map((x) => x)),
     excludedGenres: List<int>.from(json["excluded_genres"].map((x) => x)),
     page: json["page"],
+    minVotes: json["min_votes"] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -162,6 +165,7 @@ class LibraryFilter {
     "included_genres": List<dynamic>.from(includedGenres.map((x) => x)),
     "excluded_genres": List<dynamic>.from(excludedGenres.map((x) => x)),
     "page": page,
+    "min_votes": minVotes,
   };
 
   factory LibraryFilter.defaultFilter() => LibraryFilter(
@@ -179,6 +183,7 @@ class LibraryFilter {
     excludedGenres: [],
     isTrending: false,
     page: 1,
+    minVotes: 0,
   );
 
   LibraryFilter copyWith({
@@ -196,6 +201,7 @@ class LibraryFilter {
     List<int>? includedGenres,
     List<int>? excludedGenres,
     int? page,
+    int? minVotes,
   }) => LibraryFilter(
     isTrending: isTrending ?? this.isTrending,
     isMovie: isMovie ?? this.isMovie,
@@ -211,5 +217,6 @@ class LibraryFilter {
     includedGenres: includedGenres ?? this.includedGenres,
     excludedGenres: excludedGenres ?? this.excludedGenres,
     page: page ?? this.page,
+    minVotes: minVotes ?? this.minVotes,
   );
 }

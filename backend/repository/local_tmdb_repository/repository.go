@@ -328,6 +328,11 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 
 	// suffix += " and imdb_votes > 100000"
 
+  if filter.MinVotes > 0 {
+    suffix += fmt.Sprintf(" and imdb_votes > $%d", len(params) + 1)
+    params = append(params, filter.MinVotes)
+  }
+
 	countQuery += suffix
 	countParams = append(countParams, params...)
 
@@ -349,7 +354,7 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 			}
 		}
 	}
-	suffix += fmt.Sprintf(" order by %s %s", sort, order)
+	suffix += fmt.Sprintf(" order by %s %s NULLS LAST", sort, order)
 	// params = append(params, sort, order)
 
 	items := filter.Items

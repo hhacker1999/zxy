@@ -20,6 +20,7 @@ type LibraryFilter struct {
 	IncludedGenres []int   `json:"included_genres"`
 	ExcludedGenres []int   `json:"excluded_genres"`
 	Page           int     `json:"page"`
+	MinVotes       int     `json:"min_votes"`
 }
 
 var DefaultLibraryItems = []ProfileLibraryItem{

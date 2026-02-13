@@ -1206,10 +1206,38 @@ class _LibraryFilterFormDialogState extends State<_LibraryFilterFormDialog> {
             (i) =>
                 DropdownMenuItem(value: i, child: Text(i == 0 ? "Any" : "$i+")),
           ),
-          onChanged: (val) =>
-              setState(() => _filter = _filter.copyWith(imdbRating: val ?? 0)),
+          onChanged: (val) => setState(
+            () => _filter = _filter.copyWith(
+              imdbRating: val ?? 0,
+              minVotes: (val ?? 0) == 0 ? 0 : null,
+            ),
+          ),
         ),
         const SizedBox(height: AppTheme.spacingM),
+        // Min Votes (visible only when IMDB rating is set)
+        if (_filter.imdbRating > 0)
+          _buildDropdownField(
+            label: "Min Votes",
+            value: _filter.minVotes,
+            items: const [
+              DropdownMenuItem(value: 0, child: Text("Any")),
+              DropdownMenuItem(
+                value: 1000,
+                child: Text("1,000+  ·  Indie / Niche"),
+              ),
+              DropdownMenuItem(
+                value: 10000,
+                child: Text("10,000+  ·  Regional Hits"),
+              ),
+              DropdownMenuItem(
+                value: 50000,
+                child: Text("50,000+  ·  Blockbusters"),
+              ),
+            ],
+            onChanged: (val) =>
+                setState(() => _filter = _filter.copyWith(minVotes: val ?? 0)),
+          ),
+        if (_filter.imdbRating > 0) const SizedBox(height: AppTheme.spacingM),
         // Language
         _buildDropdownField(
           label: "Language",
@@ -1659,6 +1687,41 @@ class _LibraryFilterFormSheetState extends State<_LibraryFilterFormSheet> {
           ),
         ),
         const SizedBox(height: AppTheme.spacingM),
+        // Min Votes (visible only when IMDB rating is set)
+        if (_filter.imdbRating > 0) ...[
+          _buildMobileDropdown(
+            label: "Min Votes",
+            child: DropdownButtonFormField<int>(
+              value: _filter.minVotes,
+              items: const [
+                DropdownMenuItem(value: 0, child: Text("Any")),
+                DropdownMenuItem(
+                  value: 1000,
+                  child: Text("1,000+  ·  Indie / Niche"),
+                ),
+                DropdownMenuItem(
+                  value: 10000,
+                  child: Text("10,000+  ·  Regional Hits"),
+                ),
+                DropdownMenuItem(
+                  value: 50000,
+                  child: Text("50,000+  ·  Blockbusters"),
+                ),
+              ],
+              onChanged: (val) => setState(
+                () => _filter = _filter.copyWith(minVotes: val ?? 0),
+              ),
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spacingM),
+        ],
         // Language
         _buildMobileDropdown(
           label: "Language",
