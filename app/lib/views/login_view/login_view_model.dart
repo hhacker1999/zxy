@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
+import 'package:zxy_app/views/shared/toast.dart';
 
 class LoginViewModel {
   final AuthUsecase authUC;
@@ -81,6 +82,12 @@ class LoginViewModel {
       error.value = null;
       await authUC.signup(name, email, password);
       isLoading.value = false;
+      showToast(
+        context,
+        false,
+        "Sign Up successfull",
+        "Please go back to login",
+      );
     } catch (e) {
       isLoading.value = false;
       error.value = e.toString();

@@ -629,7 +629,7 @@ func (u *Usecase) getStreamUrlCommon(
 			return res, apperrors.SomethingWentWrongError{}
 		}
 		temp.Url = fmt.Sprintf(
-			"%s/proxy?internal=%s",
+			"%s/stream?internal=%s",
 			u.zxyUrl,
 			encrypted,
 		) // NOTE: This is for proxy

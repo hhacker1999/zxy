@@ -50,17 +50,38 @@ class SettingsView extends StatelessWidget {
                                       .headlineMedium
                                       ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
-                                FilledButton.tonalIcon(
-                                  onPressed: () {
-                                    Navigator.of(
-                                      context,
-                                    ).pushNamed(AppRoutes.profileSelectionView);
-                                  },
-                                  icon: const Icon(
-                                    Icons.people_outline,
-                                    size: 18,
-                                  ),
-                                  label: const Text("Switch Profile"),
+                                Wrap(
+                                  spacing: AppTheme.spacingS,
+                                  runSpacing: AppTheme.spacingS,
+                                  children: [
+                                    FilledButton.tonalIcon(
+                                      onPressed: () {
+                                        Navigator.of(context).pushNamed(
+                                          AppRoutes.profileSelectionView,
+                                        );
+                                      },
+                                      icon: const Icon(
+                                        Icons.people_outline,
+                                        size: 18,
+                                      ),
+                                      label: const Text("Switch Profile"),
+                                    ),
+                                    FilledButton.icon(
+                                      onPressed: () {
+                                        settingsVm.logout();
+                                      },
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: AppTheme.errorColor
+                                            .withOpacity(0.15),
+                                        foregroundColor: AppTheme.errorColor,
+                                      ),
+                                      icon: const Icon(
+                                        Icons.logout_rounded,
+                                        size: 18,
+                                      ),
+                                      label: const Text("Log Out"),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

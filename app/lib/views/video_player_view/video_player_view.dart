@@ -13,8 +13,12 @@ import 'package:window_manager/window_manager.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
+import 'package:zxy_app/usecase/resource/movie_details.dart';
+import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
+import 'package:zxy_app/views/movie_view/movie_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
+import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/glass_container.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/video_handler.dart';
@@ -120,6 +124,8 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   late final StreamSubscription<bool> _playingSub;
   late final ZxyPlayerState _state;
   late final SettingsBloc _settingBloc;
+  late final MovieViewModel mVm;
+  late final SeriesViewModel sVm;
   DateTime? lastTap;
   bool updateLayoutToNormal = false;
   Timer? _hoverTimer;
@@ -142,6 +148,14 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
         enableHardwareAcceleration: true,
       ),
     );
+
+    if (widget.handler.isMovie()) {
+      mVm = widget.handler as MovieViewModel;
+    } else {
+      sVm = widget.handler as SeriesViewModel;
+    }
+
+    _player.setPlaylistMode(PlaylistMode.none);
     var player = _player.platform as NativePlayer;
     Future.wait([
       player.setProperty('icc-profile-auto', 'yes'),
@@ -385,9 +399,13 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   void onSkipPressOrTap(bool isRight) {
     final currDur = _state.seekInfo.value.current;
     if (isRight) {
-      _player.seek(currDur + Duration(seconds: 15));
+      _player.seek(
+        currDur + Duration(seconds: _settingBloc.skipDuration.value),
+      );
     } else {
-      _player.seek(currDur - Duration(seconds: 15));
+      _player.seek(
+        currDur - Duration(seconds: _settingBloc.skipDuration.value),
+      );
     }
     // onHover();
   }
@@ -540,7 +558,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                   wordSpacing: 0.0,
                                   color: style.color,
                                   fontWeight: FontWeight.normal,
-                                  backgroundColor: style.bgColor,
+                                  backgroundColor: Colors.transparent,
                                 ),
                                 textAlign: TextAlign.center,
                                 padding: EdgeInsets.only(
@@ -608,6 +626,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                         ),
                       ),
                       VideoSettingsSidebar(
+                        handler: widget.handler,
                         settingsBloc: _settingBloc,
                         onVideoStreamChanged: onVideoStreamChanged,
                         streamNotifier: widget.handler
@@ -644,9 +663,10 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   }
 }
 
-class VideoSettingsSidebar extends StatelessWidget {
+class VideoSettingsSidebar extends StatefulWidget {
   final double height;
   final Player player;
+  final VideoHandler handler;
   final VoidCallback updateAudioDelay;
   final VoidCallback updateSubDelay;
   final ValueListenable<ViewItemState<ZxyStreamResponse>> streamNotifier;
@@ -658,6 +678,7 @@ class VideoSettingsSidebar extends StatelessWidget {
     required ZxyPlayerState state,
     required this.height,
     required this.updateAudioDelay,
+    required this.handler,
     required this.updateSubDelay,
     required this.onVideoStreamChanged,
     required this.streamNotifier,
@@ -669,9 +690,28 @@ class VideoSettingsSidebar extends StatelessWidget {
   final ZxyPlayerState _state;
 
   @override
+  State<VideoSettingsSidebar> createState() => _VideoSettingsSidebarState();
+}
+
+class _VideoSettingsSidebarState extends State<VideoSettingsSidebar> {
+  late final MovieViewModel mVm;
+  late final SeriesViewModel sVm;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.handler.isMovie()) {
+      mVm = widget.handler as MovieViewModel;
+    } else {
+      sVm = widget.handler as SeriesViewModel;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final ScreenData screenData = Screen.of(context);
     return ValueListenableBuilder(
-      valueListenable: _state.settingsVisible,
+      valueListenable: widget._state.settingsVisible,
       builder: (_, settingsVisible, child) {
         return AnimatedPositioned(
           curve: Curves.elasticOut,
@@ -684,12 +724,12 @@ class VideoSettingsSidebar extends StatelessWidget {
       },
       child: GlassContainer(
         containerOpacity: 0.7,
-        height: height,
+        height: widget.height,
         width: 400,
         padding: const EdgeInsets.all(20),
         radius: AppTheme.roundedMedium,
         child: ValueListenableBuilder(
-          valueListenable: streamNotifier,
+          valueListenable: widget.streamNotifier,
           builder: (_, streamState, _) {
             late final List<ZxyResolutionItem> streams;
             if (streamState is ItemLoaded<ZxyStreamResponse>) {
@@ -701,19 +741,74 @@ class VideoSettingsSidebar extends StatelessWidget {
             }
             return MultiValueListenableBuilder(
               notifiers: [
-                _state.audioDetails,
-                _state.videoDetails,
-                _state.subtitleDetails,
-                _state.subtitleDelay,
-                _state.audioDelay,
-                settingsBloc.subFontStyle,
-                selectedStreamNotifier,
+                widget._state.audioDetails,
+                widget._state.videoDetails,
+                widget._state.subtitleDetails,
+                widget._state.subtitleDelay,
+                widget._state.audioDelay,
+                widget.settingsBloc.subFontStyle,
+                widget.settingsBloc.skipDuration,
+                widget.selectedStreamNotifier,
+                if (!widget.handler.isMovie()) sVm.activeSeasonEpisode,
               ],
               builder: (_) {
                 return SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        widget.handler.isMovie()
+                            ? (mVm.movieDetailState.value
+                                      as ItemLoaded<MovieDetails>)
+                                  .data
+                                  .title
+                            : (sVm.seriesDetailState.value
+                                      as ItemLoaded<SeriesDetails>)
+                                  .data
+                                  .name,
+                        style: TextStyle(
+                          fontSize: screenData.shouldRenderMobile ? 24 : 32,
+                        ),
+                      ),
+                      if (!widget.handler.isMovie()) ...[
+                        SideBarToggleList(
+                          items:
+                              (sVm.seriesDetailState.value
+                                      as ItemLoaded<SeriesDetails>)
+                                  .data
+                                  .seasons
+                                  .map((e) {
+                                    return "Season ${e.seasonNumber.toString().padLeft(2, '0')}";
+                                  })
+                                  .toList(),
+                          onChanged: (index) {
+                            widget.player.stop();
+                            sVm.onSeasonSelect(index);
+                          },
+                          title: "Seasons",
+                          selected: sVm.activeSeasonEpisode.value.$1,
+                        ),
+                        AppTheme.boxHeightM,
+                        SideBarToggleList(
+                          items:
+                              (sVm.seriesDetailState.value
+                                      as ItemLoaded<SeriesDetails>)
+                                  .data
+                                  .seasons[sVm.activeSeasonEpisode.value.$1]
+                                  .episodes
+                                  .map((e) {
+                                    return "Episodes ${e.episodeNumber.toString().padLeft(2, '0')}: ${e.name}";
+                                  })
+                                  .toList(),
+                          onChanged: (index) async {
+                            widget.player.stop();
+                            sVm.onEpisodeSelect(index);
+                          },
+                          title: "Episodes",
+                          selected: sVm.activeSeasonEpisode.value.$2,
+                        ),
+                      ],
+                      AppTheme.boxHeightM,
                       if (streams.isNotEmpty)
                         SideBarToggleList(
                           items: streams.map((e) {
@@ -732,243 +827,218 @@ class VideoSettingsSidebar extends StatelessWidget {
                             return streamString;
                           }).toList(),
                           onChanged: (index) {
-                            selectedStreamNotifier.value = index;
-                            onVideoStreamChanged(streams[index]);
+                            widget.selectedStreamNotifier.value = index;
+                            widget.onVideoStreamChanged(streams[index]);
                           },
                           title: "Video Streams",
-                          selected: selectedStreamNotifier.value,
+                          selected: widget.selectedStreamNotifier.value,
                         ),
                       if (streams.isNotEmpty) AppTheme.boxHeightM,
-                      if (_state.audioDetails.value != null &&
-                          _state.audioDetails.value!.$1.isNotEmpty)
+                      if (widget._state.audioDetails.value != null &&
+                          widget._state.audioDetails.value!.$1.isNotEmpty)
                         SideBarToggleList(
                           items: List.empty(growable: true)
                             ..add("None")
                             ..addAll(
-                              _state.audioDetails.value!.$1.map((e) {
+                              widget._state.audioDetails.value!.$1.map((e) {
                                 return "[${e.language!.length == 3 ? AppConstants.iso6392Languages[e.language] ?? e.language : AppConstants.isoLanguages[e.language] ?? e.language}] ${e.codec ?? ''} ${e.title ?? ''} ${e.channelscount ?? 0}ch";
                               }),
                             ),
                           onChanged: (index) {
                             if (index == 0) {
-                              player.setAudioTrack(AudioTrack.no());
-                              _state.audioDetails.value = (
-                                _state.audioDetails.value!.$1,
+                              widget.player.setAudioTrack(AudioTrack.no());
+                              widget._state.audioDetails.value = (
+                                widget._state.audioDetails.value!.$1,
                                 -1,
                               );
                               return;
                             }
 
-                            final currentBuildAudioInfo = _state
+                            final currentBuildAudioInfo = widget
+                                ._state
                                 .audioDetails
                                 .value!
                                 .$1[index != 0 ? index - 1 : 0];
-                            player.setAudioTrack(currentBuildAudioInfo);
-                            _state.audioDetails.value = (
-                              _state.audioDetails.value!.$1,
+                            widget.player.setAudioTrack(currentBuildAudioInfo);
+                            widget._state.audioDetails.value = (
+                              widget._state.audioDetails.value!.$1,
                               index - 1,
                             );
                           },
                           title: "Audio Tracks",
-                          selected: _state.audioDetails.value != null
-                              ? _state.audioDetails.value!.$2 + 1
+                          selected: widget._state.audioDetails.value != null
+                              ? widget._state.audioDetails.value!.$2 + 1
                               : 0,
                         ),
-                      if (_state.audioDetails.value != null &&
-                          _state.audioDetails.value!.$1.isNotEmpty)
+                      if (widget._state.audioDetails.value != null &&
+                          widget._state.audioDetails.value!.$1.isNotEmpty)
                         AppTheme.boxHeightM,
-                      if (_state.subtitleDetails.value != null &&
-                          _state.subtitleDetails.value!.$1.isNotEmpty)
+                      if (widget._state.subtitleDetails.value != null &&
+                          widget._state.subtitleDetails.value!.$1.isNotEmpty)
                         SideBarToggleList(
                           items: List.empty(growable: true)
                             ..add("None")
                             ..addAll(
-                              _state.subtitleDetails.value!.$1.map((e) {
+                              widget._state.subtitleDetails.value!.$1.map((e) {
                                 return "[${e.language!.length == 3 ? AppConstants.iso6392Languages[e.language] ?? e.language : AppConstants.isoLanguages[e.language] ?? e.language}] ${e.title ?? 0}";
                               }),
                             ),
                           onChanged: (index) {
                             if (index == 0) {
-                              player.setSubtitleTrack(SubtitleTrack.no());
-                              _state.subtitleDetails.value = (
-                                _state.subtitleDetails.value!.$1,
+                              widget.player.setSubtitleTrack(
+                                SubtitleTrack.no(),
+                              );
+                              widget._state.subtitleDetails.value = (
+                                widget._state.subtitleDetails.value!.$1,
                                 -1,
                               );
                               return;
                             }
 
                             final currentBuildsubtitleInfo =
-                                _state.subtitleDetails.value!.$1.isNotEmpty
-                                ? _state.subtitleDetails.value!.$1[index != 0
-                                      ? index - 1
-                                      : 0]
+                                widget
+                                    ._state
+                                    .subtitleDetails
+                                    .value!
+                                    .$1
+                                    .isNotEmpty
+                                ? widget
+                                      ._state
+                                      .subtitleDetails
+                                      .value!
+                                      .$1[index != 0 ? index - 1 : 0]
                                 : null;
-                            player.setSubtitleTrack(currentBuildsubtitleInfo!);
-                            _state.subtitleDetails.value = (
-                              _state.subtitleDetails.value!.$1,
+                            widget.player.setSubtitleTrack(
+                              currentBuildsubtitleInfo!,
+                            );
+                            widget._state.subtitleDetails.value = (
+                              widget._state.subtitleDetails.value!.$1,
                               index - 1,
                             );
                           },
                           title: "Subtitle Tracks",
-                          selected: _state.subtitleDetails.value != null
-                              ? _state.subtitleDetails.value!.$2 + 1
+                          selected: widget._state.subtitleDetails.value != null
+                              ? widget._state.subtitleDetails.value!.$2 + 1
                               : 0,
                         ),
                       AppTheme.boxHeightM,
-                      Text("Audio delay"),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              _state.audioDelay.value -= 10;
-                              updateAudioDelay();
-                            },
-                            icon: Icon(
-                              Icons.remove,
-                              color: AppTheme.textSecondary,
-                              size: 16,
-                            ),
-                          ),
-                          Text("${_state.audioDelay.value}ms"),
-                          IconButton(
-                            onPressed: () {
-                              _state.audioDelay.value += 10;
-                              updateAudioDelay();
-                            },
-                            icon: Icon(
-                              Icons.add,
-                              color: AppTheme.textSecondary,
-                              size: 16,
-                            ),
-                          ),
-                        ],
+                      SettingsPlusMinusWidget(
+                        text: "Audio delay",
+                        value: "${widget._state.audioDelay.value}ms",
+                        onPlus: () {
+                          widget._state.audioDelay.value += 10;
+                          widget.updateAudioDelay();
+                        },
+                        onMinus: () {
+                          widget._state.audioDelay.value -= 10;
+                          widget.updateAudioDelay();
+                        },
                       ),
                       AppTheme.boxHeightM,
-                      Text("Subtitle delay"),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              _state.subtitleDelay.value -= 10;
-                              updateSubDelay();
-                            },
-                            icon: Icon(
-                              Icons.remove,
-                              color: AppTheme.textSecondary,
-                              size: 16,
-                            ),
-                          ),
-                          Text("${_state.subtitleDelay.value}ms"),
-                          IconButton(
-                            onPressed: () {
-                              _state.subtitleDelay.value += 10;
-                              updateSubDelay();
-                            },
-                            icon: Icon(
-                              Icons.add,
-                              color: AppTheme.textSecondary,
-                              size: 16,
-                            ),
-                          ),
-                        ],
+                      SettingsPlusMinusWidget(
+                        text: "Subtitle delay",
+                        value: "${widget._state.subtitleDelay.value}ms",
+                        onPlus: () {
+                          widget._state.subtitleDelay.value += 10;
+                          widget.updateSubDelay();
+                        },
+                        onMinus: () {
+                          widget._state.subtitleDelay.value -= 10;
+                          widget.updateSubDelay();
+                        },
                       ),
-
                       AppTheme.boxHeightM,
-                      Text("Subtitle font size"),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              settingsBloc.subStyle = settingsBloc
-                                  .subFontStyle
-                                  .value
-                                  .copyWith(
-                                    fontSize: max(
-                                      settingsBloc.subFontStyle.value.fontSize -
-                                          6,
-                                      0,
-                                    ),
-                                  );
-                            },
-                            icon: Icon(
-                              Icons.remove,
-                              color: AppTheme.textSecondary,
-                              size: 16,
-                            ),
-                          ),
-                          Text("${settingsBloc.subFontStyle.value.fontSize}"),
-                          IconButton(
-                            onPressed: () {
-                              settingsBloc.subStyle = settingsBloc
-                                  .subFontStyle
-                                  .value
-                                  .copyWith(
-                                    fontSize: min(
-                                      settingsBloc.subFontStyle.value.fontSize +
-                                          6,
-                                      150,
-                                    ),
-                                  );
-                            },
-                            icon: Icon(
-                              Icons.add,
-                              color: AppTheme.textSecondary,
-                              size: 16,
-                            ),
-                          ),
-                        ],
+                      SettingsPlusMinusWidget(
+                        text: "Subtitle font size",
+                        value:
+                            "${widget.settingsBloc.subFontStyle.value.fontSize}",
+                        onPlus: () {
+                          widget.settingsBloc.subStyle = widget
+                              .settingsBloc
+                              .subFontStyle
+                              .value
+                              .copyWith(
+                                fontSize: min(
+                                  widget
+                                          .settingsBloc
+                                          .subFontStyle
+                                          .value
+                                          .fontSize +
+                                      2,
+                                  150,
+                                ),
+                              );
+                        },
+                        onMinus: () {
+                          widget.settingsBloc.subStyle = widget
+                              .settingsBloc
+                              .subFontStyle
+                              .value
+                              .copyWith(
+                                fontSize: max(
+                                  widget
+                                          .settingsBloc
+                                          .subFontStyle
+                                          .value
+                                          .fontSize -
+                                      2,
+                                  0,
+                                ),
+                              );
+                        },
                       ),
-                      Text("Subtitle padding"),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              settingsBloc.subStyle = settingsBloc
-                                  .subFontStyle
-                                  .value
-                                  .copyWith(
-                                    fontPadding: max(
-                                      settingsBloc
-                                              .subFontStyle
-                                              .value
-                                              .fontPadding -
-                                          6,
-                                      0,
-                                    ),
-                                  );
-                            },
-                            icon: Icon(
-                              Icons.remove,
-                              color: AppTheme.textSecondary,
-                              size: 16,
-                            ),
-                          ),
-                          Text(
-                            "${settingsBloc.subFontStyle.value.fontPadding}",
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              settingsBloc.subStyle = settingsBloc
-                                  .subFontStyle
-                                  .value
-                                  .copyWith(
-                                    fontPadding: min(
-                                      settingsBloc
-                                              .subFontStyle
-                                              .value
-                                              .fontPadding +
-                                          6,
-                                      150,
-                                    ),
-                                  );
-                            },
-                            icon: Icon(
-                              Icons.add,
-                              color: AppTheme.textSecondary,
-                              size: 16,
-                            ),
-                          ),
-                        ],
+                      AppTheme.boxHeightM,
+                      SettingsPlusMinusWidget(
+                        text: "Subtitle padding",
+                        value:
+                            "${widget.settingsBloc.subFontStyle.value.fontPadding}",
+                        onPlus: () {
+                          widget.settingsBloc.subStyle = widget
+                              .settingsBloc
+                              .subFontStyle
+                              .value
+                              .copyWith(
+                                fontPadding: min(
+                                  widget
+                                          .settingsBloc
+                                          .subFontStyle
+                                          .value
+                                          .fontPadding +
+                                      6,
+                                  150,
+                                ),
+                              );
+                        },
+                        onMinus: () {
+                          widget.settingsBloc.subStyle = widget
+                              .settingsBloc
+                              .subFontStyle
+                              .value
+                              .copyWith(
+                                fontPadding: max(
+                                  widget
+                                          .settingsBloc
+                                          .subFontStyle
+                                          .value
+                                          .fontPadding -
+                                      6,
+                                  0,
+                                ),
+                              );
+                        },
+                      ),
+                      AppTheme.boxHeightM,
+                      SettingsPlusMinusWidget(
+                        text: "Skip Duration(seconds)",
+                        value: "${widget.settingsBloc.skipDuration.value}",
+                        onPlus: () {
+                          widget.settingsBloc.skipDuration =
+                              widget.settingsBloc.skipDuration.value + 5;
+                        },
+                        onMinus: () {
+                          widget.settingsBloc.skipDuration =
+                              widget.settingsBloc.skipDuration.value - 5;
+                        },
                       ),
                     ],
                   ),
@@ -1832,6 +1902,7 @@ class _SideBarToggleListState extends State<SideBarToggleList> {
                   },
                   child: Text(
                     widget.items[index],
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -1839,6 +1910,47 @@ class _SideBarToggleListState extends State<SideBarToggleList> {
             ],
           );
         }),
+      ],
+    );
+  }
+}
+
+class SettingsPlusMinusWidget extends StatelessWidget {
+  final String text;
+  final String value;
+  final VoidCallback onPlus;
+  final VoidCallback onMinus;
+  const SettingsPlusMinusWidget({
+    super.key,
+    required this.text,
+    required this.value,
+    required this.onPlus,
+    required this.onMinus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(text),
+        Row(
+          children: [
+            IconButton(
+              onPressed: () {
+                onMinus();
+              },
+              icon: Icon(Icons.remove, color: AppTheme.textSecondary, size: 16),
+            ),
+            Text(value),
+            IconButton(
+              onPressed: () {
+                onPlus();
+              },
+              icon: Icon(Icons.add, color: AppTheme.textSecondary, size: 16),
+            ),
+          ],
+        ),
       ],
     );
   }

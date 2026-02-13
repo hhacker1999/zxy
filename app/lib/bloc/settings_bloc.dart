@@ -10,6 +10,7 @@ class SettingsBloc {
   final ValueNotifier<String> recommendedResolution = ValueNotifier("2160p");
   final ValueNotifier<double> volume = ValueNotifier(100);
   late final ValueNotifier<SubtitleFontStyle> subFontStyle;
+  final ValueNotifier<int> skipDuration = ValueNotifier(30);
 
   set isAmoled(bool amoled) {
     if (amoled) {
@@ -35,6 +36,11 @@ class SettingsBloc {
   set volume(double vol) {
     volume.value = vol;
     _storage.write(key: "vol", value: vol.toString());
+  }
+
+  set skipDuration(int dur) {
+    skipDuration.value = dur;
+    _storage.write(key: "skipDuration", value: dur.toString());
   }
 
   set subStyle(SubtitleFontStyle style) {
@@ -70,6 +76,7 @@ class SettingsBloc {
     final fontPadding = await _storage.read(key: "padding");
     final res = await _storage.read(key: "res");
     final vol = await _storage.read(key: "vol");
+    final sd = await _storage.read(key: "skipDuration");
     if (amoled != null) {
       isAmoled.value = amoled == "true";
     }
@@ -84,6 +91,10 @@ class SettingsBloc {
 
     if (vol != null) {
       volume.value = double.tryParse(vol) ?? 100;
+    }
+
+    if (sd != null) {
+      skipDuration.value = int.tryParse(sd) ?? 30;
     }
 
     if (fontSize != null) {
@@ -102,5 +113,6 @@ class SettingsBloc {
     showPosterRatings.dispose();
     recommendedResolution.dispose();
     subFontStyle.dispose();
+    skipDuration.dispose();
   }
 }

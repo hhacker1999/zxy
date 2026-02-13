@@ -152,4 +152,9 @@ class AuthUsecase {
       auth: RequestAuth.profile,
     );
   }
+
+  Future<void> logout() async {
+    await _storage.delete(key: "st");
+    await _storage.delete(key: "pt");
+  }
 }

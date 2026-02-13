@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
@@ -204,6 +205,23 @@ class SettingsViewModel extends ChangeNotifier {
       final user = await _authUc.getUser();
       showToast(_context, false, "Profile Deleted", "");
       _context.read<UserBloc>().user = user;
+    } catch (e) {
+      showToast(_context, true, e.toString(), "");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      await _authUc.logout();
+      showToast(_context, false, "Logged out", "");
+      Navigator.pushNamedAndRemoveUntil(_context, AppRoutes.loginView, (_) {
+        return false;
+      });
     } catch (e) {
       showToast(_context, true, e.toString(), "");
     } finally {
