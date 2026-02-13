@@ -149,6 +149,7 @@ class SeriesViewModel implements VideoHandler {
 
   void _resetVideoHandler() {
     _progressTimer?.cancel();
+    _progressTimer = null;
     _totalDuration = Duration.zero;
     _currentProgress = Duration.zero;
     _isPaused = false;

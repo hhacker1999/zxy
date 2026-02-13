@@ -170,11 +170,17 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &http.Client{
-		Timeout: 5 * time.Second,
+	req, err := http.NewRequest("GET", plainText, nil)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid url"
+		res.SendResponse(w)
+		return
 	}
 
-	resp, err := client.Head(plainText)
+	req.Header.Set("Range", "bytes=0-0")
+
+	resp, err := i.client.Do(req)
 	if err != nil {
 		res.StatusCode = http.StatusBadGateway
 		res.Error = "Source resolution failed"

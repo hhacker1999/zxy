@@ -114,8 +114,8 @@ class VideoPlayerView extends StatefulWidget {
 }
 
 class _VideoPlayerViewState extends State<VideoPlayerView> {
-  late final Player _player;
-  late final VideoController _controller;
+  late Player _player;
+  late VideoController _controller;
   late final StreamSubscription<Tracks> _trackSub;
   late final StreamSubscription<Duration> _playbackSub;
   late final StreamSubscription<Duration> _currentSub;
@@ -139,6 +139,18 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     super.initState();
     _settingBloc = context.read<SettingsBloc>();
     _state = ZxyPlayerState();
+    _initialiseMpvPlayer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      initialMobileDeviceSetup();
+      setupPlayerUpdateSubscriptions();
+      _updatePlayerBasedOnStreamsUpdate();
+      widget.handler.getCurrentStreamsNotifier().addListener(
+        _onCurrentStreamsUpdate,
+      );
+    });
+  }
+
+  Future<void> _initialiseMpvPlayer() async {
     _player = Player(configuration: PlayerConfiguration());
     _controller = VideoController(
       _player,
@@ -157,7 +169,8 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
 
     _player.setPlaylistMode(PlaylistMode.none);
     var player = _player.platform as NativePlayer;
-    Future.wait([
+    player.setVolume(context.read<SettingsBloc>().volume.value);
+    await Future.wait([
       player.setProperty('icc-profile-auto', 'yes'),
       player.setProperty('tone-mapping', 'spline'),
 
@@ -174,15 +187,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       player.setProperty('scale', 'ewa_lanczossharp'),
       player.setProperty('cscale', 'ewa_lanczossharp'),
     ]);
-    player.setVolume(context.read<SettingsBloc>().volume.value);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      initialMobileDeviceSetup();
-      setupPlayerUpdateSubscriptions();
-      _updatePlayerBasedOnStreamsUpdate();
-      widget.handler.getCurrentStreamsNotifier().addListener(
-        _onCurrentStreamsUpdate,
-      );
-    });
   }
 
   void _onCurrentStreamsUpdate() {
@@ -214,10 +218,8 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       final streams = List<ZxyResolutionItem>.from(uhdStreams)
         ..addAll(fhdStreams)
         ..addAll(hdStreams);
-      _player.open(
-        Media(streams[selectedStream].url),
-        play: _state.isPlaying.value,
-      );
+      print("Playing url ${streams[selectedStream].url}");
+      _player.open(Media(streams[selectedStream].url), play: true);
     }
   }
 
@@ -348,6 +350,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   void onVideoStreamChanged(ZxyResolutionItem streamItem) {
     _player.stop();
     _state.bufferingOrLoading.value = true;
+    print("Playing url ${streamItem.url}");
     _player.open(Media(streamItem.url), play: _state.isPlaying.value);
   }
 
@@ -371,6 +374,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       ]);
       SystemChrome.setEnabledSystemUIMode(
         SystemUiMode.manual,
+
         overlays: SystemUiOverlay.values,
       );
     }
@@ -525,6 +529,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                   valueListenable: _state.playerFit,
                                   builder: (_, fit, _) {
                                     return Video(
+                                      fill: Colors.black,
                                       fit: fit,
                                       controller: _controller,
                                       controls: NoVideoControls,
@@ -783,6 +788,7 @@ class _VideoSettingsSidebarState extends State<VideoSettingsSidebar> {
                                   .toList(),
                           onChanged: (index) {
                             widget.player.stop();
+                            widget._state.bufferingOrLoading.value = true;
                             sVm.onSeasonSelect(index);
                           },
                           title: "Seasons",
@@ -802,6 +808,7 @@ class _VideoSettingsSidebarState extends State<VideoSettingsSidebar> {
                                   .toList(),
                           onChanged: (index) async {
                             widget.player.stop();
+                            widget._state.bufferingOrLoading.value = true;
                             sVm.onEpisodeSelect(index);
                           },
                           title: "Episodes",

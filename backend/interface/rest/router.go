@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 	"zxy/models"
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
@@ -40,6 +41,7 @@ type RestInterface struct {
 	progressUC  *progressusecase.Usecase
 	encrKey     string
 	proxy       *httputil.ReverseProxy
+	client      *http.Client
 }
 
 func New(
@@ -51,6 +53,9 @@ func New(
 	progressUC *progressusecase.Usecase,
 	encrKey string,
 ) *RestInterface {
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
 	return &RestInterface{
 		addonuc:     addonuc,
 		tmdbUc:      tmdbUc,
@@ -59,6 +64,7 @@ func New(
 		sessionRepo: sessionRepo,
 		progressUC:  progressUC,
 		encrKey:     encrKey,
+		client:      client,
 	}
 }
 
