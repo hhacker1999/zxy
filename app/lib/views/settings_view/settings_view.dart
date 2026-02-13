@@ -94,6 +94,7 @@ class SettingsView extends StatelessWidget {
                             ),
                             const SizedBox(height: AppTheme.spacingM),
                             _buildDebridSection(context, profile),
+                            AppTheme.boxHeightXL,
                           ],
                         );
                       },
@@ -643,6 +644,7 @@ class _ProfileDialogState extends State<_ProfileDialog> {
           if (!isEditing && hasDebrid) ...[
             const SizedBox(height: AppTheme.spacingM),
             CheckboxListTile(
+              checkColor: AppTheme.textBlack,
               title: const Text("Include Debrid Key"),
               subtitle: const Text("Copy from current profile"),
               value: _copyDebrid,
@@ -1542,7 +1544,10 @@ class _LibraryFilterFormSheetState extends State<_LibraryFilterFormSheet> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text("Save"),
+                  child: const Text(
+                    "Save",
+                    style: TextStyle(color: AppTheme.textBlack),
+                  ),
                 ),
               ),
             ],

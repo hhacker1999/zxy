@@ -146,8 +146,7 @@ class _BannerSlide extends StatelessWidget {
 
     // Get logo path - always prefer logo
     final logo = _getLogo(isMobile);
-    // print(AppConstants.imageConfig.secureBaseUrl + logoPath.toString());
-    // Use poster for mobile, backdrop for desktop
+    // final posterBanner = _getPosterOrBanner(isMobile);
     final imagePath = isMobile
         ? (media.posterPath.isNotEmpty
               ? media.posterPath
@@ -221,7 +220,7 @@ class _BannerSlide extends StatelessWidget {
                   path: logo?.filePath ?? "",
                   alignment: Alignment.bottomLeft,
                   size: isMobile ? 'w300' : 'w500',
-                  maxWidth: isMobile ? 150 : 400,
+                  maxWidth: isMobile ? 200 : 400,
                   fit: BoxFit.contain,
                   replacement: Text(
                     title,
@@ -313,8 +312,6 @@ class _BannerSlide extends StatelessWidget {
   }
 
   Backdrop? _getLogo(bool mobile) {
-    const mobileWidth = 400;
-    const desktopWidth = 700;
     final logos = media.images?.logos;
     if (logos != null && logos.isNotEmpty) {
       // Prefer English logo
@@ -322,26 +319,32 @@ class _BannerSlide extends StatelessWidget {
         (logo) => logo.iso6391 == 'en',
         orElse: () => logos.first,
       );
-      if (englishLogo.height != null && englishLogo.width != null) {
-        if (isMobile) {
-          if (englishLogo.width! > mobileWidth) {
-            final diff = englishLogo.width! - mobileWidth;
-            final diffPer = diff / englishLogo.width!;
-            englishLogo.width = mobileWidth;
-            englishLogo.height =
-                (englishLogo.height! - (englishLogo.height! * diffPer)).toInt();
-          }
-        } else {
-          if (englishLogo.width! > desktopWidth) {
-            final diff = englishLogo.width! - desktopWidth;
-            final diffPer = diff / englishLogo.width!;
-            englishLogo.width = desktopWidth;
-            englishLogo.height =
-                (englishLogo.height! - (englishLogo.height! * diffPer)).toInt();
-          }
-        }
-      }
       return englishLogo;
+    }
+    return null;
+  }
+
+  Backdrop? _getPosterOrBanner(bool mobile) {
+    final posters = media.images?.posters;
+    final backDrops = media.images?.backdrops;
+    if (mobile) {
+      if (posters != null && posters.isNotEmpty) {
+        // Prefer English logo
+        final englishLogo = posters.firstWhere(
+          (logo) => logo.iso6391 == null,
+          orElse: () => posters.first,
+        );
+        return englishLogo;
+      }
+    } else {
+      if (backDrops != null && backDrops.isNotEmpty) {
+        // Prefer English logo
+        final englishLogo = backDrops.firstWhere(
+          (logo) => logo.iso6391 == "en",
+          orElse: () => backDrops.first,
+        );
+        return englishLogo;
+      }
     }
     return null;
   }

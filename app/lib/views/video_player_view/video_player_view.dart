@@ -132,11 +132,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   void initState() {
     super.initState();
     _settingBloc = context.read<SettingsBloc>();
-    // _streams = widget.handler.getCurrentStreams();
-    // _selectedStream = widget.handler.getSelectedStreamNotifier().value;
-    // print("Link playing");
-    // print(_streams[_selectedStream].url);
-    // print("--------------------------------------------------");
     _state = ZxyPlayerState();
     _player = Player(configuration: PlayerConfiguration());
     _controller = VideoController(
@@ -165,6 +160,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       player.setProperty('scale', 'ewa_lanczossharp'),
       player.setProperty('cscale', 'ewa_lanczossharp'),
     ]);
+    player.setVolume(context.read<SettingsBloc>().volume.value);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       initialMobileDeviceSetup();
       setupPlayerUpdateSubscriptions();
@@ -750,7 +746,7 @@ class VideoSettingsSidebar extends StatelessWidget {
                             ..add("None")
                             ..addAll(
                               _state.audioDetails.value!.$1.map((e) {
-                                return "[${e.language!.length == 3 ? AppConstants.iso6392Languages[e.language] : AppConstants.isoLanguages[e.language]}] ${e.codec ?? ''} ${e.title ?? ''} ${e.channelscount ?? 0}ch";
+                                return "[${e.language!.length == 3 ? AppConstants.iso6392Languages[e.language] ?? e.language : AppConstants.isoLanguages[e.language] ?? e.language}] ${e.codec ?? ''} ${e.title ?? ''} ${e.channelscount ?? 0}ch";
                               }),
                             ),
                           onChanged: (index) {
@@ -788,7 +784,7 @@ class VideoSettingsSidebar extends StatelessWidget {
                             ..add("None")
                             ..addAll(
                               _state.subtitleDetails.value!.$1.map((e) {
-                                return "[${e.language!.length == 3 ? AppConstants.iso6392Languages[e.language] : AppConstants.isoLanguages[e.language]}] ${e.title ?? 0}";
+                                return "[${e.language!.length == 3 ? AppConstants.iso6392Languages[e.language] ?? e.language : AppConstants.isoLanguages[e.language] ?? e.language}] ${e.title ?? 0}";
                               }),
                             ),
                           onChanged: (index) {

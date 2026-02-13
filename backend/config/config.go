@@ -18,6 +18,7 @@ type Config struct {
 	ZxyUrl          string
 	TraktKey        string
 	EncrKey         string
+	TraktSecret        string
 }
 
 func GetConfig(filePath string) (Config, error) {
@@ -39,6 +40,7 @@ func GetConfig(filePath string) (Config, error) {
 	config.ZxyUrl = configMap["ZXY_URL"]
 	config.TraktKey = configMap["TRAKT_KEY"]
 	config.EncrKey = configMap["ENCR_KEY"]
+	config.TraktSecret = configMap["TRAKT_SECRET"]
 
 	return config, nil
 }

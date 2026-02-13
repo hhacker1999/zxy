@@ -48,7 +48,7 @@ class HomeViewModel {
   late ValueNotifier<ViewItemState<List<ContinueWatchingCardInfo>>>
   continueWatchingState;
 
-  late final ValueNotifier<ViewItemState<List<ZxyMedia>>> topBannerState;
+  late ValueNotifier<ViewItemState<List<ZxyMedia>>> topBannerState;
 
   Future<void> initialise(BuildContext context) async {
     if (_initialised) {

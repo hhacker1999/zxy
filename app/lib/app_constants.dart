@@ -32,6 +32,7 @@ class FilterValue {
 
 class AppConstants {
   static const String baseUrl = "http://192.168.1.14:6969";
+  // static const String baseUrl = "https://zxyapi.tooharsh.co.in";
   // static const String baseUrl = "http://10.8.0.1:6969";
   static late final Map<int, Genre> movieGenre;
   static late final Map<int, Genre> showGenre;
@@ -113,6 +114,7 @@ class AppConstants {
     'es': 'Spanish',
     'fr': 'French',
     'de': 'German',
+    'ro': 'Romanian',
     'it': 'Italian',
     'ja': 'Japanese',
     'ko': 'Korean',
@@ -136,6 +138,7 @@ class AppConstants {
     'eng': 'English',
     'fre': 'French',
     'deu': 'German',
+    'ger': 'German',
     'zho': 'Chinese',
     'spa': 'Spanish',
     'ita': 'Italian',
@@ -163,6 +166,14 @@ class AppConstants {
     'yue': 'Cantonese',
     'fil': 'Filipino',
     'ukr': 'Ukranian',
+    'rum': 'Romanian',
+    'ice': 'Interpreno',
+    'kan': 'Kannada',
+    'mar': 'Marathi',
+    'tam': 'Tamil',
+    'ben': 'Bengali',
+    'mal': 'Malyalam',
+    'tel': 'Telugu',
   };
   static late ImageConfiguation imageConfig;
 }
