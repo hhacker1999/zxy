@@ -32,7 +32,9 @@ class MovieViewModel implements VideoHandler {
   ValueListenable<ViewItemState<MovieDetails>> get movieDetailState =>
       _movieDetailsState;
 
-  late final ValueNotifier<WatchProgress> _progressNotifier;
+  final ValueNotifier<WatchProgress> _progressNotifier = ValueNotifier(
+    WatchProgress.empty(""),
+  );
   ValueListenable<WatchProgress> get progress => _progressNotifier;
 
   final ValueNotifier<ViewItemState<ZxyStreamResponse>> _movieStreamsState =

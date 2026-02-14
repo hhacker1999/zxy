@@ -106,6 +106,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
   Widget build(BuildContext context) {
     final screenData = Screen.of(context);
     return BaseScaffold(
+      loading: vm.scaffoldLoading,
       bottomNavigationBar: screenData.shouldRenderMobile
           ? ZxyNavBar(
               vm: vm,

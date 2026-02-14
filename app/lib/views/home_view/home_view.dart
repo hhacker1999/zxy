@@ -151,6 +151,40 @@ class ContinueWatchingHeader extends StatelessWidget {
                       const SizedBox(width: AppTheme.spacingM),
                   itemBuilder: (_, index) {
                     return ContinueWatchingCard(
+                      onLongPress: (details) {
+                        _showContinueWatchingMenu(
+                          context,
+                          details.globalPosition,
+                          () {
+                            homeViewModel.markMediaWatched(
+                              data[index].progress.mediaId,
+                              data[index].media is MovieDetails,
+                            );
+                          },
+                          () {
+                            homeViewModel.removeFromContinue(
+                              data[index].progress.mediaId,
+                            );
+                          },
+                        );
+                      },
+                      onRightClick: (details) {
+                        _showContinueWatchingMenu(
+                          context,
+                          details.globalPosition,
+                          () {
+                            homeViewModel.markMediaWatched(
+                              data[index].progress.mediaId,
+                              data[index].media is MovieDetails,
+                            );
+                          },
+                          () {
+                            homeViewModel.removeFromContinue(
+                              data[index].progress.mediaId,
+                            );
+                          },
+                        );
+                      },
                       info: data[index],
                       onTap: () {
                         if (data[index].isShow) {
@@ -181,4 +215,36 @@ class ContinueWatchingHeader extends StatelessWidget {
       },
     );
   }
+}
+
+void _showContinueWatchingMenu(
+  BuildContext context,
+  Offset globalPosition,
+  VoidCallback onMarkTap,
+  VoidCallback onRemoveTap,
+) {
+  final RelativeRect position = RelativeRect.fromLTRB(
+    globalPosition.dx,
+    globalPosition.dy,
+    globalPosition.dx,
+    globalPosition.dy,
+  );
+  showMenu(
+    context: context,
+    position: position,
+    items: [
+      PopupMenuItem(
+        onTap: () {
+          onMarkTap();
+        },
+        child: Text("Mark Watched"),
+      ),
+      PopupMenuItem(
+        onTap: () {
+          onRemoveTap();
+        },
+        child: Text("Remove from Continue Watching"),
+      ),
+    ],
+  );
 }

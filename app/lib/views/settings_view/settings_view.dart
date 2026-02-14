@@ -40,53 +40,33 @@ class SettingsView extends StatelessWidget {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Wrap(
-                              spacing: AppTheme.spacingS,
-                              runSpacing: AppTheme.spacingS,
-                              alignment: WrapAlignment.spaceBetween,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text(
-                                  "Account",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                Wrap(
-                                  spacing: AppTheme.spacingS,
-                                  runSpacing: AppTheme.spacingS,
-                                  children: [
-                                    FilledButton.tonalIcon(
-                                      onPressed: () {
-                                        Navigator.of(context).pushNamed(
-                                          AppRoutes.profileSelectionView,
-                                        );
-                                      },
-                                      icon: const Icon(
-                                        Icons.people_outline,
-                                        size: 18,
-                                      ),
-                                      label: const Text("Switch Profile"),
-                                    ),
-                                    FilledButton.icon(
-                                      onPressed: () {
-                                        settingsVm.logout();
-                                      },
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: AppTheme.errorColor
-                                            .withOpacity(0.15),
-                                        foregroundColor: AppTheme.errorColor,
-                                      ),
-                                      icon: const Icon(
-                                        Icons.logout_rounded,
-                                        size: 18,
-                                      ),
-                                      label: const Text("Log Out"),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                            Text(
+                              "Account",
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            AppTheme.boxHeightL,
+                            FilledButton.tonalIcon(
+                              onPressed: () {
+                                Navigator.of(
+                                  context,
+                                ).pushNamed(AppRoutes.profileSelectionView);
+                              },
+                              icon: const Icon(Icons.people_outline, size: 18),
+                              label: const Text("Switch Profile"),
+                            ),
+                            AppTheme.boxHeightL,
+                            FilledButton.icon(
+                              onPressed: () {
+                                settingsVm.logout();
+                              },
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppTheme.errorColor
+                                    .withOpacity(0.15),
+                                foregroundColor: AppTheme.errorColor,
+                              ),
+                              icon: const Icon(Icons.logout_rounded, size: 18),
+                              label: const Text("Log Out"),
                             ),
                             const SizedBox(height: AppTheme.spacingL),
                             // Profile Management Section (Admin Only)

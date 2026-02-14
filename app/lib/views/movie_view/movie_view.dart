@@ -66,7 +66,10 @@ class _MovieViewState extends State<MovieView> {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: Text("Go Back"),
+                    child: Text(
+                      "Go Back",
+                      style: TextStyle(color: AppTheme.textBlack),
+                    ),
                   ),
                   Text((state as ItemError).error),
                 ],

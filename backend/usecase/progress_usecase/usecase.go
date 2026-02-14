@@ -499,3 +499,16 @@ sess:
 	}
 	return nil
 }
+
+func (u *Usecase) RemoveFromContinueWatching(
+	userId int,
+	profileId int,
+	mediaId string,
+) error {
+	err := u.pbr.UpdateProgressVisible(context.Background(), userId, profileId, mediaId)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	return nil
+}

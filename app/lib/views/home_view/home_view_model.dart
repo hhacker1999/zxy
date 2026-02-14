@@ -9,6 +9,7 @@ import 'package:zxy_app/usecase/progress/usecase.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
+import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
@@ -40,6 +41,7 @@ class HomeViewModel {
   bool _initialised = false;
   final MediaUsecase _mediaUc;
   final ProgressUsecase _progressUc;
+  late BuildContext _context;
   HomeViewModel({required MediaUsecase tmdbUc, required ProgressUsecase pguc})
     : _mediaUc = tmdbUc,
       _progressUc = pguc;
@@ -64,6 +66,7 @@ class HomeViewModel {
       initialiseContinueWatching(),
       _getMediaForBanner(topBannerState),
     ];
+    _context = context;
 
     final profile = context.read<UserBloc>().profileNotifier.value;
     if (profile != null) {
@@ -319,6 +322,42 @@ class HomeViewModel {
     }
 
     await Future.wait(futures);
+  }
+
+  Future<void> removeFromContinue(String mediaId) async {
+    final bvm = _context.read<BaseHomeViewModel>();
+    try {
+      bvm.scaffoldLoading.value = true;
+      await _progressUc.removeContinueWatching(mediaId);
+      await initialiseContinueWatching();
+      bvm.scaffoldLoading.value = false;
+    } catch (e) {
+      bvm.scaffoldLoading.value = false;
+      if (kDebugMode) {
+        print(e);
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> markMediaWatched(String mediaId, bool isMovie) async {
+    final bvm = _context.read<BaseHomeViewModel>();
+    try {
+      bvm.scaffoldLoading.value = true;
+      if (isMovie) {
+        await _progressUc.updateMovieToWatched(mediaId);
+      } else {
+        await _progressUc.updateShowToWatched(mediaId);
+      }
+      await initialiseContinueWatching();
+      bvm.scaffoldLoading.value = false;
+    } catch (e) {
+      bvm.scaffoldLoading.value = false;
+      if (kDebugMode) {
+        print(e);
+      }
+      rethrow;
+    }
   }
 
   void dispose() {

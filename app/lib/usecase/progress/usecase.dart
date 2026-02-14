@@ -84,4 +84,11 @@ class ProgressUsecase {
       auth: RequestAuth.profile,
     );
   }
+
+  Future<void> removeContinueWatching(String mediaId) {
+    return _service.delete(
+      Uri.parse("${AppConstants.baseUrl}/continue_watching/$mediaId"),
+      auth: RequestAuth.profile,
+    );
+  }
 }

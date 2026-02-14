@@ -51,6 +51,7 @@ class _ShowViewState extends State<ShowView> {
   @override
   Widget build(BuildContext context) {
     return BaseScaffold(
+      loading: vm.scffoldLoading,
       padding: EdgeInsets.zero,
       builder: (_, color) {
         final screenInfo = Screen.of(context);
@@ -305,9 +306,44 @@ class EpisodesList extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: List.generate(season.episodes.length, (index) {
               final episode = season.episodes[index];
+              final seasonsKey = "$id:${season.seasonNumber}";
               final mapKey =
                   "$id:${season.seasonNumber}:${episode.episodeNumber}";
-              return InkWell(
+              return GestureDetector(
+                onLongPressStart: (details) {
+                  if (episode.airDate == null ||
+                      episode.airDate!.isAfter(DateTime.now())) {
+                    return;
+                  }
+                  _showWatchedContextMenu(
+                    context,
+                    details.globalPosition,
+
+                    () {
+                      vm.onMarkWatched(mapKey);
+                    },
+                    () {
+                      vm.onMarkWatched(seasonsKey);
+                    },
+                  );
+                },
+                onSecondaryTapUp: (details) {
+                  if (episode.airDate == null ||
+                      episode.airDate!.isAfter(DateTime.now())) {
+                    return;
+                  }
+                  _showWatchedContextMenu(
+                    context,
+                    details.globalPosition,
+
+                    () {
+                      vm.onMarkWatched(mapKey);
+                    },
+                    () {
+                      vm.onMarkWatched(seasonsKey);
+                    },
+                  );
+                },
                 onTap: () {
                   vm.onEpisodeSelect(index);
                   if (context
@@ -419,96 +455,137 @@ class EpisodesList extends StatelessWidget {
             direction: Axis.horizontal,
             children: List.generate(season.episodes.length, (index) {
               final episode = season.episodes[index];
+              final seasonsKey = "$id:${season.seasonNumber}";
               final mapKey =
                   "$id:${season.seasonNumber}:${episode.episodeNumber}";
-              return InkWell(
-                onTap: () {
-                  vm.onEpisodeSelect(index);
-                  if (context
-                      .read<UserBloc>()
-                      .profileNotifier
-                      .value!
-                      .debridType
-                      .isEmpty) {
-                    showToast(context, true, "Setup debrid service first", "");
-                    return;
-                  }
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.videoPlayerView,
-                    arguments: vm,
-                  );
-                },
-                child: SizedBox(
-                  width: episodeWidth,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: episodeWidth,
-                        height: episodeHeight,
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: EpisodeImage(
-                                progress: progressMap[mapKey],
-                                size: "w300",
-                                episodeWidth: episodeWidth,
-                                episodeHeight: episodeHeight,
-                                episode: episode,
-                              ),
-                            ),
-                            if (episode.airDate == null ||
-                                episode.airDate!.isAfter(DateTime.now()))
-                              Positioned(
-                                right: 20,
-                                top: 20,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    borderRadius: AppTheme.roundedSmall,
-                                  ),
-                                  padding: const EdgeInsets.all(
-                                    AppTheme.spacingS,
-                                  ),
-                                  child: Text(
-                                    "Upcoming",
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge!
-                                        .copyWith(fontSize: 10),
-                                  ),
+              return MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onLongPressStart: (details) {
+                    if (episode.airDate == null ||
+                        episode.airDate!.isAfter(DateTime.now())) {
+                      return;
+                    }
+                    _showWatchedContextMenu(
+                      context,
+                      details.globalPosition,
+                      () {
+                        vm.onMarkWatched(mapKey);
+                      },
+                      () {
+                        vm.onMarkWatched(seasonsKey);
+                      },
+                    );
+                  },
+                  onSecondaryTapUp: (details) {
+                    if (episode.airDate == null ||
+                        episode.airDate!.isAfter(DateTime.now())) {
+                      return;
+                    }
+                    _showWatchedContextMenu(
+                      context,
+                      details.globalPosition,
+                      () {
+                        vm.onMarkWatched(mapKey);
+                      },
+                      () {
+                        vm.onMarkWatched(seasonsKey);
+                      },
+                    );
+                  },
+                  onTap: () {
+                    vm.onEpisodeSelect(index);
+                    if (context
+                        .read<UserBloc>()
+                        .profileNotifier
+                        .value!
+                        .debridType
+                        .isEmpty) {
+                      showToast(
+                        context,
+                        true,
+                        "Setup debrid service first",
+                        "",
+                      );
+                      return;
+                    }
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.videoPlayerView,
+                      arguments: vm,
+                    );
+                  },
+                  child: SizedBox(
+                    width: episodeWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: episodeWidth,
+                          height: episodeHeight,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: EpisodeImage(
+                                  progress: progressMap[mapKey],
+                                  size: "w300",
+                                  episodeWidth: episodeWidth,
+                                  episodeHeight: episodeHeight,
+                                  episode: episode,
                                 ),
                               ),
-                          ],
+                              if (episode.airDate == null ||
+                                  episode.airDate!.isAfter(DateTime.now()))
+                                Positioned(
+                                  right: 20,
+                                  top: 20,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      borderRadius: AppTheme.roundedSmall,
+                                    ),
+                                    padding: const EdgeInsets.all(
+                                      AppTheme.spacingS,
+                                    ),
+                                    child: Text(
+                                      "Upcoming",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge!
+                                          .copyWith(fontSize: 10),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                      AppTheme.boxHeightS,
-                      Text(
-                        "${episode.episodeNumber}. ${episode.name}",
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      Text(
-                        episode.overview,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                      if (episode.runtime != null)
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.av_timer_outlined,
-                              color: AppTheme.textSecondary,
-                              size: 18,
-                            ),
-                            Text(
-                              " ${episode.runtime} min",
-                              style: Theme.of(context).textTheme.labelSmall,
-                            ),
-                          ],
+                        AppTheme.boxHeightS,
+                        Text(
+                          "${episode.episodeNumber}. ${episode.name}",
+                          style: Theme.of(context).textTheme.bodyLarge,
                         ),
-                    ],
+                        Text(
+                          episode.overview,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                        if (episode.runtime != null)
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.av_timer_outlined,
+                                color: AppTheme.textSecondary,
+                                size: 18,
+                              ),
+                              Text(
+                                " ${episode.runtime} min",
+                                style: Theme.of(context).textTheme.labelSmall,
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -516,6 +593,38 @@ class EpisodesList extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  void _showWatchedContextMenu(
+    BuildContext context,
+    Offset globalPosition,
+    VoidCallback onMarkTap,
+    VoidCallback onRestMarkTap,
+  ) {
+    final RelativeRect position = RelativeRect.fromLTRB(
+      globalPosition.dx,
+      globalPosition.dy,
+      globalPosition.dx,
+      globalPosition.dy,
+    );
+    showMenu(
+      context: context,
+      position: position,
+      items: [
+        PopupMenuItem(
+          onTap: () {
+            onMarkTap();
+          },
+          child: Text("Mark Watched"),
+        ),
+        PopupMenuItem(
+          onTap: () {
+            onRestMarkTap();
+          },
+          child: Text("Mark Rest as Watched"),
+        ),
+      ],
     );
   }
 }
@@ -576,19 +685,20 @@ class EpisodeImage extends StatelessWidget {
                 },
               ),
             ),
-          Positioned(
-            top: 10,
-            right: 10,
-            child: ValueListenableBuilder(
-              valueListenable: progress!,
-              builder: (_, progress, _) {
-                if (!progress.isWatched) {
-                  return SizedBox.shrink();
-                }
-                return Icon(Icons.check_circle);
-              },
+          if (progress != null)
+            Positioned(
+              top: 10,
+              right: 10,
+              child: ValueListenableBuilder(
+                valueListenable: progress!,
+                builder: (_, progress, _) {
+                  if (!progress.isWatched) {
+                    return SizedBox.shrink();
+                  }
+                  return Icon(Icons.check_circle);
+                },
+              ),
             ),
-          ),
         ],
       ),
     );

@@ -261,3 +261,27 @@ func (i *RestInterface) handleShowWatched(w http.ResponseWriter, r *http.Request
 
 	res.StatusCode = http.StatusOK
 }
+
+func (i *RestInterface) handleDeleteContinueWatching(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+
+	id := chi.URLParam(r, "id")
+	if len(id) == 0 {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid id"
+		return
+	}
+
+	err := i.progressUC.RemoveFromContinueWatching(userId, profileId, id)
+	if err != nil {
+		res.StatusCode = http.StatusInternalServerError
+		res.Error = err.Error()
+		return
+	}
+
+	res.StatusCode = http.StatusOK
+}

@@ -247,3 +247,23 @@ func (r *Repository) DeleteProfileProgress(ctx context.Context, userId int, prof
 
 	return err
 }
+
+func (r *Repository) UpdateProgressVisible(ctx context.Context, userId int, profileId int, mediaId string) error {
+
+	query := `
+  update watch_progress set visible = false where user_id = $1 and profile_id = $2 and media_id = $3
+  `
+	var err error
+	tx, ok := ctx.Value("txn").(*sql.Tx)
+	if ok {
+		_, err = tx.Exec(query,userId, profileId, mediaId )
+	} else {
+		_, err = r.db.Exec(query, userId, profileId, mediaId)
+	}
+
+	if err != nil {
+		fmt.Println("Error updating watched", err)
+	}
+
+	return err
+}

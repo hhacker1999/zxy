@@ -30,6 +30,8 @@ class SeriesViewModel implements VideoHandler {
     required this.userBloc,
   });
 
+  final ValueNotifier<bool> scffoldLoading = ValueNotifier(false);
+
   final ValueNotifier<ViewItemState<SeriesDetails>> _seriesDetailsState =
       ValueNotifier(ItemLoading());
 
@@ -138,36 +140,43 @@ class SeriesViewModel implements VideoHandler {
 
   Future<void> onMarkWatched(String mediaId) async {
     try {
+      scffoldLoading.value = true;
       await progressUc.updateShowToWatched(mediaId);
-      _disposeProgress();
-      final details = (_seriesDetailsState.value as ItemLoaded<SeriesDetails>).data;
+      _disposeAndClearEachProgress();
+      final details =
+          (_seriesDetailsState.value as ItemLoaded<SeriesDetails>).data;
       final progressRes = await progressUc.getProgressShow(
         details.id.toString(),
       );
+      final Map<String, ValueNotifier<WatchProgress>> progressMap = {};
       for (var element in progressRes) {
-        _progressNotifier.value[element.mediaId] = ValueNotifier(element);
+        progressMap[element.mediaId] = ValueNotifier(element);
       }
+      _progressNotifier.value = progressMap;
+      scffoldLoading.value = false;
     } catch (e) {
       if (kDebugMode) {
         print(e);
       }
+      scffoldLoading.value = false;
       rethrow;
     }
   }
 
-  void _disposeProgress() {
+  void _disposeAndClearEachProgress() {
     for (var item in _progressNotifier.value.values) {
       item.dispose();
     }
-    _progressNotifier.dispose();
   }
 
   void dispose() {
     _seriesDetailsState.dispose();
     _episodeStreamsState.dispose();
-    _disposeProgress();
+    _disposeAndClearEachProgress();
+    _progressNotifier.dispose();
     activeSeasonEpisode.dispose();
     _progressTimer?.cancel();
+    scffoldLoading.dispose();
   }
 
   //----------------------------------Handler Methods--------------------------------------------

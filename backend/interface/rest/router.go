@@ -129,6 +129,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/discover/library", i.SessionHandler(i.handleLibrary, true))
 	router.Post("/movie/{id}/watched", i.SessionHandler(i.handleMovieWatched, true))
 	router.Post("/show/{id}/watched", i.SessionHandler(i.handleShowWatched, true))
+	router.Delete("/continue_watching/{id}", i.SessionHandler(i.handleDeleteContinueWatching, true))
 	return router
 }
 

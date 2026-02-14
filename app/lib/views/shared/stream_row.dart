@@ -87,7 +87,7 @@ class StreamRow extends StatelessWidget {
                     height: AppTheme.spacingM,
                   ),
                   Text(
-                    progress == 0
+                    progress.progress == 0
                         ? "Play"
                         : handler.isMovie()
                         ? "Resume"
@@ -96,7 +96,7 @@ class StreamRow extends StatelessWidget {
                       context,
                     ).textTheme.bodyMedium!.copyWith(color: AppTheme.textBlack),
                   ),
-                  if (progress != 0) ...[
+                  if (progress.progress != 0) ...[
                     AppTheme.boxWidthXS,
                     SizedBox(
                       width: 60,
