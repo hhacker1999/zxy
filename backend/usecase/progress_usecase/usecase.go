@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 	apperrors "zxy/app_errors"
+	"zxy/models"
 	playbackrepository "zxy/repository/playback_repository"
 	tmdbusecase "zxy/usecase/tmdb_usecase"
 )
@@ -35,13 +37,17 @@ func (u *Usecase) GetContinueWatching(
 	profileId int,
 ) ([]playbackrepository.ProgressUpdate, error) {
 
+	watched := false
+	visible := true
 	res, err := u.pbr.GetProgressMultiple(
 		userId,
 		profileId,
 		"",
 		false,
-		continueWatchingThreshold,
 		0,
+		0,
+		&watched,
+		&visible,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -67,6 +73,8 @@ func (u *Usecase) GetShowProgress(
 		true,
 		0,
 		0,
+		nil,
+		nil,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -110,6 +118,7 @@ func (u *Usecase) UpdatePlaybackProgress(
 		return apperrors.InvalidInput{Err: "Invalid Media Id"}
 	}
 
+	watched := progress > continueWatchingThreshold
 	splitted := strings.Split(mediaId, ":")
 	if len(splitted) == 1 {
 		err := u.pbr.UpdateProgress(context.Background(), []playbackrepository.ProgressUpdate{
@@ -118,24 +127,68 @@ func (u *Usecase) UpdatePlaybackProgress(
 				MediaId:   mediaId,
 				ProfileId: profileId,
 				Progress:  progress,
-				IsWatched: progress > 85,
+				IsWatched: watched,
 			},
 		})
 		return err
 	}
 
-	// TODO: add actual watched check of shows here
 	err := u.pbr.UpdateProgress(context.Background(), []playbackrepository.ProgressUpdate{
 		{
 			UserId:    userId,
 			MediaId:   mediaId,
 			ProfileId: profileId,
 			Progress:  progress,
-			IsWatched: progress > 85,
+			IsWatched: watched,
 		},
 	})
-	return err
+	if !watched {
+		return nil
+	}
 
+	show, err := u.tmdbUC.GetShowDetails(splitted[0])
+	if err != nil {
+		fmt.Println("Unable to get show details for next episodes", err)
+		return nil
+	}
+	season, err := strconv.Atoi(splitted[1])
+	if err != nil {
+		fmt.Println("Invalid season number", splitted[1])
+		return nil
+	}
+	episode, err := strconv.Atoi(splitted[2])
+	if err != nil {
+		fmt.Println("Invalid episode number", splitted[2])
+		return nil
+	}
+
+	// showProgress, err := u.GetShowProgress(userId, profileId, splitted[0])
+	// if err != nil {
+	// 	return nil
+	// }
+	// mp := make(map[string]bool)
+	// for _, v := range showProgress {
+	// 	mp[v.MediaId] = v.IsWatched
+	// }
+
+	for si, v := range show.Seasons {
+		if v.SeasonNumber == int64(season) {
+			for ei, e := range v.Episodes {
+				if e.EpisodeNumber == int64(episode) {
+					u.setContinueWatchingForNextEpisode(
+						show,
+						splitted[0],
+						userId,
+						profileId,
+						si,
+						ei,
+					)
+				}
+			}
+		}
+	}
+
+	return err
 }
 
 func (u *Usecase) MarkMovieWatched(
@@ -150,19 +203,6 @@ func (u *Usecase) MarkMovieWatched(
 	defer tx.Rollback()
 
 	ctx := context.WithValue(context.Background(), "txn", tx)
-	err = u.pbr.UpdateProgress(ctx, []playbackrepository.ProgressUpdate{
-		{
-			UserId:    userId,
-			MediaId:   movieId,
-			ProfileId: profileId,
-			Progress:  100,
-			IsWatched: true,
-		},
-	})
-	if err != nil {
-		return apperrors.SomethingWentWrongError{}
-	}
-
 	err = u.pbr.UpdateWatched(ctx, []playbackrepository.ProgressUpdate{
 		{
 			UserId:    userId,
@@ -196,14 +236,14 @@ func (u *Usecase) MarkShowWatched(
 	}
 	defer tx.Rollback()
 
-	show, err := u.tmdbUC.GetShowDetails(showId, at)
+	show, err := u.tmdbUC.GetShowDetails(showId)
 	if err != nil {
 		return apperrors.SomethingWentWrongError{}
 	}
 
 	var progressInput []playbackrepository.ProgressUpdate
 
-	completelyWatched := true
+	// completelyWatched := true
 
 	for _, v := range show.Seasons {
 		if v.SeasonNumber == 0 {
@@ -219,14 +259,14 @@ func (u *Usecase) MarkShowWatched(
 			}
 			notReleased := date.UTC().Compare(time.Now().UTC()) == 1
 			if notReleased {
-				completelyWatched = false
+				// completelyWatched = false
 				continue
 			}
 			temp := playbackrepository.ProgressUpdate{
 				ProfileId: profileId,
 				UserId:    userId,
 				MediaId:   fmt.Sprintf("%s:%d:%d", showId, v.SeasonNumber, e.EpisodeNumber),
-				Progress:  100,
+				Progress:  0,
 				IsWatched: true,
 			}
 
@@ -235,28 +275,27 @@ func (u *Usecase) MarkShowWatched(
 	}
 
 	ctx := context.WithValue(context.Background(), "txn", tx)
-	err = u.pbr.UpdateProgress(ctx, progressInput)
+	err = u.pbr.UpdateWatched(ctx, progressInput)
 	if err != nil {
-		fmt.Println("Error comitting transaction", err)
 		return apperrors.SomethingWentWrongError{}
 	}
 
-	if completelyWatched {
-		err = u.pbr.UpdateWatched(ctx, []playbackrepository.ProgressUpdate{
-			{
-				UserId:    userId,
-				MediaId:   showId,
-				ProfileId: profileId,
-				Progress:  100,
-				IsWatched: true,
-			},
-		})
-		if err != nil {
-			fmt.Println("Error comitting transaction", err)
-			return apperrors.SomethingWentWrongError{}
-		}
-
-	}
+	// if completelyWatched {
+	// 	err = u.pbr.UpdateWatched(ctx, []playbackrepository.ProgressUpdate{
+	// 		{
+	// 			UserId:    userId,
+	// 			MediaId:   showId,
+	// 			ProfileId: profileId,
+	// 			Progress:  100,
+	// 			IsWatched: true,
+	// 		},
+	// 	})
+	// 	if err != nil {
+	// 		fmt.Println("Error comitting transaction", err)
+	// 		return apperrors.SomethingWentWrongError{}
+	// 	}
+	//
+	// }
 	err = tx.Commit()
 	if err != nil {
 		fmt.Println("Error comitting transaction", err)
@@ -278,7 +317,7 @@ func (u *Usecase) MarkSeasonWatched(
 	}
 	defer tx.Rollback()
 
-	show, err := u.tmdbUC.GetShowDetails(showId, at)
+	show, err := u.tmdbUC.GetShowDetails(showId)
 	if err != nil {
 		return apperrors.SomethingWentWrongError{}
 	}
@@ -286,13 +325,15 @@ func (u *Usecase) MarkSeasonWatched(
 	var progressInput []playbackrepository.ProgressUpdate
 
 	// TODO: Add support for season tracking so we can mark show watched based on season watched
-	completelyWatched := false
+	// completelyWatched := false
+	var si int
+	var ei int
 
-	for _, v := range show.Seasons {
-		if v.SeasonNumber == int64(season) {
+	for is, v := range show.Seasons {
+		if v.SeasonNumber != int64(season) {
 			continue
 		}
-		for _, e := range v.Episodes {
+		for ie, e := range v.Episodes {
 			if e.EpisodeNumber == 0 {
 				continue
 			}
@@ -302,19 +343,21 @@ func (u *Usecase) MarkSeasonWatched(
 			}
 			notReleased := date.UTC().Compare(time.Now().UTC()) == 1
 			if notReleased {
-				completelyWatched = false
+				// completelyWatched = false
 				continue
 			}
 			temp := playbackrepository.ProgressUpdate{
 				ProfileId: profileId,
 				UserId:    userId,
 				MediaId:   fmt.Sprintf("%s:%d:%d", showId, v.SeasonNumber, e.EpisodeNumber),
-				Progress:  100,
+				Progress:  0,
 				IsWatched: true,
 			}
 
 			progressInput = append(progressInput, temp)
+			ei = ie
 		}
+		si = is
 	}
 
 	if len(progressInput) < 0 {
@@ -323,33 +366,136 @@ func (u *Usecase) MarkSeasonWatched(
 	}
 
 	ctx := context.WithValue(context.Background(), "txn", tx)
-	err = u.pbr.UpdateProgress(ctx, progressInput)
+	err = u.pbr.UpdateWatched(ctx, progressInput)
 	if err != nil {
-		fmt.Println("Error comitting transaction", err)
 		return apperrors.SomethingWentWrongError{}
 	}
 
-	if completelyWatched {
-		err = u.pbr.UpdateWatched(ctx, []playbackrepository.ProgressUpdate{
-			{
-				UserId:    userId,
-				MediaId:   showId,
-				ProfileId: profileId,
-				Progress:  100,
-				IsWatched: true,
-			},
-		})
-		if err != nil {
-			fmt.Println("Error comitting transaction", err)
-			return apperrors.SomethingWentWrongError{}
-		}
+	u.setContinueWatchingForNextEpisode(show, showId, userId, profileId, si, ei)
 
-	}
+	// if completelyWatched {
+	// 	err = u.pbr.UpdateWatched(ctx, []playbackrepository.ProgressUpdate{
+	// 		{
+	// 			UserId:    userId,
+	// 			MediaId:   showId,
+	// 			ProfileId: profileId,
+	// 			Progress:  100,
+	// 			IsWatched: true,
+	// 		},
+	// 	})
+	// 	if err != nil {
+	// 		fmt.Println("Error comitting transaction", err)
+	// 		return apperrors.SomethingWentWrongError{}
+	// 	}
+	//
+	// }
 	err = tx.Commit()
 	if err != nil {
 		fmt.Println("Error comitting transaction", err)
 		return apperrors.SomethingWentWrongError{}
 	}
 
+	return nil
+}
+
+func (u *Usecase) MarkEpisodeWatched(
+	userId int,
+	profileId int,
+	showId string,
+	season int,
+	episode int,
+) error {
+	show, err := u.tmdbUC.GetShowDetails(showId)
+	if err != nil {
+		fmt.Println("Unable to get show details for next episodes", err)
+		return nil
+	}
+
+	key := fmt.Sprintf("%s:%d:%d", showId, season, episode)
+	err = u.pbr.UpdateWatched(context.Background(), []playbackrepository.ProgressUpdate{
+		{
+			UserId:    userId,
+			MediaId:   key,
+			ProfileId: profileId,
+			IsWatched: true,
+		},
+	})
+
+	for si, v := range show.Seasons {
+		if v.SeasonNumber == int64(season) {
+			for ei, e := range v.Episodes {
+				if e.EpisodeNumber == int64(episode) {
+					u.setContinueWatchingForNextEpisode(
+						show,
+						showId,
+						userId,
+						profileId,
+						si,
+						ei,
+					)
+				}
+			}
+		}
+	}
+
+	return err
+}
+
+func (u *Usecase) setContinueWatchingForNextEpisode(
+	show models.TMDBShow,
+	id string,
+	userId int,
+	profileId int,
+	si int,
+	ei int,
+) error {
+
+	showProgress, err := u.GetShowProgress(userId, profileId, id)
+	if err != nil {
+		return nil
+	}
+	mp := make(map[string]bool)
+	for _, v := range showProgress {
+		mp[v.MediaId] = v.IsWatched
+	}
+
+	sIndex := si
+	eIndex := ei + 1
+	// NOTE: Bound checks
+	v := show.Seasons[si]
+	if eIndex == len(v.Episodes) {
+		eIndex = 0
+		sIndex += 1
+		if sIndex == len(show.Seasons) {
+			return nil
+		}
+	}
+sess:
+	for sIndex < len(show.Seasons) {
+		ses := show.Seasons[sIndex]
+	epis:
+		for eIndex < len(ses.Episodes) {
+			epi := ses.Episodes[eIndex]
+			key := fmt.Sprintf(
+				"%s:%d:%d",
+				id,
+				ses.SeasonNumber,
+				epi.EpisodeNumber,
+			)
+			watched, ok := mp[key]
+			if ok {
+				if watched {
+					eIndex += 1
+					continue epis
+				}
+				return nil
+			} else {
+				u.UpdatePlaybackProgress(userId, profileId, key, 0)
+				return nil
+			}
+		}
+		sIndex += 1
+		continue sess
+	}
 	return nil
 }

@@ -86,7 +86,7 @@ func main() {
 	addonRepo := addonsrepository.New(db)
   localTmdbRepo:= localtmdbrepository.New(localTmdb)
 
-	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey)
+	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey, cfg.TmdbAT)
 	addonuc, err := addonusecase.New(
 		"http://192.168.1.50:3000/stremio/8f0eb1de-911b-4e0d-92c8-ece4348a7556/eyJpIjoiTUNMN0d4UnFhZjNUVW1ucjlSU2w3UT09IiwiZSI6InVDREt3Y3pEZU5FVW1CR0VLWFNqeFRuTFVkdEV0THNOaDhQbkM0a3Jud289IiwidCI6ImEifQ",
 		addonRepo,

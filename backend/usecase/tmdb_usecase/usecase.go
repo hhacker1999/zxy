@@ -19,12 +19,14 @@ type Usecase struct {
 	client         *http.Client
 	localTmdbRepo  *localtmdbrepository.Repository
 	traktKey       string
+	tmdbAt         string
 }
 
 func New(
 	tmdbApiBaseUrl string,
 	localTmdbRepo *localtmdbrepository.Repository,
 	traktKey string,
+	tmdbAt string,
 ) *Usecase {
 	var tmdbClient = &http.Client{
 		Timeout: 10 * time.Second,
@@ -40,6 +42,7 @@ func New(
 		tmdbApiBaseUrl: tmdbApiBaseUrl,
 		client:         tmdbClient,
 		localTmdbRepo:  localTmdbRepo,
+		tmdbAt:         tmdbAt,
 		traktKey:       traktKey,
 	}
 }
@@ -305,7 +308,7 @@ func (u *Usecase) GetShowsLibrary(
 
 	return resp, nil
 }
-func (u *Usecase) GetMovieDetails(id string, at string) (models.TMDBMovie, error) {
+func (u *Usecase) GetMovieDetails(id string) (models.TMDBMovie, error) {
 	var response models.TMDBMovie
 	var err error
 
@@ -328,7 +331,7 @@ func (u *Usecase) GetMovieDetails(id string, at string) (models.TMDBMovie, error
 		req.Header.Add("accept", "application/json")
 		req.Header.Add(
 			"Authorization",
-			fmt.Sprintf("Bearer %s", at),
+			fmt.Sprintf("Bearer %s", u.tmdbAt),
 		)
 
 		res, err := u.client.Do(req)
@@ -368,7 +371,7 @@ func (u *Usecase) GetMovieDetails(id string, at string) (models.TMDBMovie, error
 			req.Header.Add("accept", "application/json")
 			req.Header.Add(
 				"Authorization",
-				fmt.Sprintf("Bearer %s", at),
+				fmt.Sprintf("Bearer %s", u.tmdbAt),
 			)
 
 			res, err = u.client.Do(req)
@@ -459,7 +462,7 @@ func (u *Usecase) GetMovieDetails(id string, at string) (models.TMDBMovie, error
 	return response, nil
 }
 
-func (u *Usecase) GetShowDetails(id string, at string) (models.TMDBShow, error) {
+func (u *Usecase) GetShowDetails(id string) (models.TMDBShow, error) {
 	var response models.TMDBShow
 	var err error
 	idInt, err := strconv.Atoi(id)
@@ -479,7 +482,7 @@ func (u *Usecase) GetShowDetails(id string, at string) (models.TMDBShow, error) 
 		req.Header.Add("accept", "application/json")
 		req.Header.Add(
 			"Authorization",
-			fmt.Sprintf("Bearer %s", at),
+			fmt.Sprintf("Bearer %s", u.tmdbAt),
 		)
 
 		res, err := u.client.Do(req)
@@ -545,7 +548,7 @@ func (u *Usecase) GetShowDetails(id string, at string) (models.TMDBShow, error) 
 			req.Header.Add("accept", "application/json")
 			req.Header.Add(
 				"Authorization",
-				fmt.Sprintf("Bearer %s", at),
+				fmt.Sprintf("Bearer %s", u.tmdbAt),
 			)
 
 			res, err = u.client.Do(req)

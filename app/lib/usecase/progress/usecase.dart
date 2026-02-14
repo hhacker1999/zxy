@@ -70,4 +70,18 @@ class ProgressUsecase {
       },
     );
   }
+
+  Future<void> updateMovieToWatched(String mediaId) {
+    return _service.post(
+      Uri.parse("${AppConstants.baseUrl}/movie/$mediaId/watched"),
+      auth: RequestAuth.profile,
+    );
+  }
+
+  Future<void> updateShowToWatched(String mediaId) {
+    return _service.post(
+      Uri.parse("${AppConstants.baseUrl}/show/$mediaId/watched"),
+      auth: RequestAuth.profile,
+    );
+  }
 }

@@ -27,6 +27,17 @@ class WatchProgress {
     updatedAt: DateTime.parse(json["UpdatedAt"]),
   );
 
+  factory WatchProgress.empty(String mediaId, {double? progress}) =>
+      WatchProgress(
+        mediaId: mediaId,
+        progress: progress ?? 0,
+        userId: 0,
+        profileId: 0,
+        isWatched: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
   Map<String, dynamic> toJson() => {
     "MediaId": mediaId,
     "Progress": progress,

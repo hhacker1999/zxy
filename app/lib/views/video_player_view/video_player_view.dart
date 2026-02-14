@@ -787,6 +787,9 @@ class _VideoSettingsSidebarState extends State<VideoSettingsSidebar> {
                                   })
                                   .toList(),
                           onChanged: (index) {
+                            if (sVm.activeSeasonEpisode.value.$1 == index) {
+                              return;
+                            }
                             widget.player.stop();
                             widget._state.bufferingOrLoading.value = true;
                             sVm.onSeasonSelect(index);
@@ -807,6 +810,9 @@ class _VideoSettingsSidebarState extends State<VideoSettingsSidebar> {
                                   })
                                   .toList(),
                           onChanged: (index) async {
+                            if (sVm.activeSeasonEpisode.value.$2 == index) {
+                              return;
+                            }
                             widget.player.stop();
                             widget._state.bufferingOrLoading.value = true;
                             sVm.onEpisodeSelect(index);
@@ -834,6 +840,9 @@ class _VideoSettingsSidebarState extends State<VideoSettingsSidebar> {
                             return streamString;
                           }).toList(),
                           onChanged: (index) {
+                            if (widget.selectedStreamNotifier.value == index) {
+                              return;
+                            }
                             widget.selectedStreamNotifier.value = index;
                             widget.onVideoStreamChanged(streams[index]);
                           },
@@ -852,6 +861,13 @@ class _VideoSettingsSidebarState extends State<VideoSettingsSidebar> {
                               }),
                             ),
                           onChanged: (index) {
+                            final selected =
+                                widget._state.audioDetails.value != null
+                                ? widget._state.audioDetails.value!.$2 + 1
+                                : 0;
+                            if (selected == index) {
+                              return;
+                            }
                             if (index == 0) {
                               widget.player.setAudioTrack(AudioTrack.no());
                               widget._state.audioDetails.value = (
@@ -891,6 +907,13 @@ class _VideoSettingsSidebarState extends State<VideoSettingsSidebar> {
                               }),
                             ),
                           onChanged: (index) {
+                            final selected =
+                                widget._state.subtitleDetails.value != null
+                                ? widget._state.subtitleDetails.value!.$2 + 1
+                                : 0;
+                            if (selected == index) {
+                              return;
+                            }
                             if (index == 0) {
                               widget.player.setSubtitleTrack(
                                 SubtitleTrack.no(),

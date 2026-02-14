@@ -89,7 +89,7 @@ class ZxyMedia {
         popularity: json["popularity"]?.toDouble() ?? 0,
         posterPath: json["poster_path"] ?? "",
         releaseDate: json["release_date"] != null
-            ? DateTime.parse(json["release_date"])
+            ? DateTime.tryParse(json["release_date"])
             : null,
         firstAirDate: json["first_air_date"] != null
             ? DateTime.tryParse(json["first_air_date"])

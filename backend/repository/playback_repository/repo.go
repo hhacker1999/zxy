@@ -38,7 +38,7 @@ func (r *Repository) UpdateProgress(ctx context.Context, updates []ProgressUpdat
 
 	}
 
-	query += `on conflict (user_id, media_id, profile_id) do update set updated_at = NOW(), progress = excluded.progress`
+	query += `on conflict (user_id, media_id, profile_id) do update set updated_at = NOW(), progress = excluded.progress, is_watched = excluded.is_watched`
 
 	var err error
 	tx, ok := ctx.Value("txn").(*sql.Tx)
@@ -61,13 +61,13 @@ func (r *Repository) UpdateWatched(ctx context.Context, updates []ProgressUpdate
 	}
 
 	query := `
-  insert into watched (user_id, profile_id, media_id) values 
+  insert into watch_progress (user_id, profile_id, media_id, is_watched, progress) values 
   `
 	params := []any{}
 
 	for i, v := range updates {
 		ln := len(params)
-		query += fmt.Sprintf("( $%d, $%d, $%d, $%d, )", ln+1, ln+2, ln+3, ln+4)
+		query += fmt.Sprintf("( $%d, $%d, $%d, true ,0)", ln+1, ln+2, ln+3)
 		params = append(params, v.UserId, v.ProfileId, v.MediaId)
 		if i != len(updates)-1 {
 			query += ", "
@@ -75,7 +75,7 @@ func (r *Repository) UpdateWatched(ctx context.Context, updates []ProgressUpdate
 
 	}
 
-	query += `on conflict (user_id, media_id, profile_id) do nothing`
+	query += `on conflict (user_id, media_id, profile_id) do update set is_watched = true, updated_at = now()`
 
 	var err error
 	tx, ok := ctx.Value("txn").(*sql.Tx)
@@ -86,7 +86,7 @@ func (r *Repository) UpdateWatched(ctx context.Context, updates []ProgressUpdate
 	}
 
 	if err != nil {
-		fmt.Println("Error updating watched")
+		fmt.Println("Error updating watched", err)
 	}
 
 	return err
@@ -160,6 +160,8 @@ func (r *Repository) GetProgressMultiple(
 	isShow bool,
 	progressLte float64,
 	progressGte float64,
+	isWatched *bool,
+	isVisible *bool,
 ) ([]ProgressUpdate, error) {
 	var res []ProgressUpdate
 	query := `
@@ -183,6 +185,13 @@ func (r *Repository) GetProgressMultiple(
 	}
 	if progressGte != 0 {
 		query += fmt.Sprintf(" and progress >= %.2f", progressGte)
+	}
+
+	if isWatched != nil {
+		query += fmt.Sprintf(" and is_watched = %t", *isWatched)
+	}
+	if isVisible != nil {
+		query += fmt.Sprintf(" and visible = %t", *isVisible)
 	}
 
 	query += " order by updated_at desc"

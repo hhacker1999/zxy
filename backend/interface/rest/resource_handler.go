@@ -1,6 +1,9 @@
 package rest
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,7 +25,6 @@ func (i *RestInterface) HandleGetMovieInfo(w http.ResponseWriter, r *http.Reques
 
 	details, err := i.tmdbUc.GetMovieDetails(
 		movieId,
-		"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU",
 	)
 	if err != nil {
 		response.Error = err.Error()
@@ -45,14 +47,12 @@ func (i *RestInterface) HandleGetShowInfo(w http.ResponseWriter, r *http.Request
 		return
 	}
 	splitted := strings.Split(showId, ":")
-	at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
 
 	var details models.TMDBShow
 	var err error
 	if len(splitted) == 1 {
 		details, err = i.tmdbUc.GetShowDetails(
 			showId,
-			at,
 		)
 	}
 
@@ -286,4 +286,37 @@ func (i *RestInterface) HandleSearchMovies(w http.ResponseWriter, r *http.Reques
 
 	response.StatusCode = http.StatusOK
 	response.Data = details
+}
+
+func (i *RestInterface) handleLibrary(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("Error reading body")
+		res.StatusCode = http.StatusInternalServerError
+		res.Error = "Something went wrong"
+		return
+	}
+
+	defer r.Body.Close()
+	var input models.LibraryFilter
+	err = json.Unmarshal(body, &input)
+	if err != nil {
+		fmt.Println("Error unmarshlling body", err)
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid body"
+		return
+	}
+
+	data, err := i.tmdbUc.GetLibraryFromFilter(input)
+	if err != nil {
+		res.StatusCode = http.StatusInternalServerError
+		res.Error = err.Error()
+		return
+	}
+
+	res.StatusCode = http.StatusOK
+	res.Data = data
 }

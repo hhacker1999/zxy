@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
+import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
@@ -31,8 +32,8 @@ class MovieViewModel implements VideoHandler {
   ValueListenable<ViewItemState<MovieDetails>> get movieDetailState =>
       _movieDetailsState;
 
-  final ValueNotifier<double> _progressNotifier = ValueNotifier(0);
-  ValueListenable<double> get progress => _progressNotifier;
+  late final ValueNotifier<WatchProgress> _progressNotifier;
+  ValueListenable<WatchProgress> get progress => _progressNotifier;
 
   final ValueNotifier<ViewItemState<ZxyStreamResponse>> _movieStreamsState =
       ValueNotifier(ItemInitial());
@@ -45,7 +46,8 @@ class MovieViewModel implements VideoHandler {
       final details = await mediaUc.getMovieDetails(id);
       _movieDetailsState.value = ItemLoaded(data: details);
       final progress = await progressUc.getMovieProgress(details.id.toString());
-      _progressNotifier.value = progress?.progress ?? 0;
+      _progressNotifier.value =
+          progress ?? WatchProgress.empty(details.id.toString());
       final userHasAddedDebrid =
           userBloc.profileNotifier.value != null &&
           userBloc.profileNotifier.value!.debridType.isNotEmpty;
@@ -102,7 +104,7 @@ class MovieViewModel implements VideoHandler {
   getCurrentStreamsNotifier() => _movieStreamsState;
 
   @override
-  ValueListenable<double> getProgressNotifier() => _progressNotifier;
+  ValueListenable<WatchProgress> getProgressNotifier() => _progressNotifier;
 
   @override
   ValueNotifier<int> getSelectedStreamNotifier() => selectedStream;
@@ -141,12 +143,13 @@ class MovieViewModel implements VideoHandler {
       if (_totalDuration == Duration.zero || _isPaused) {
         return;
       }
-      _progressNotifier.value =
-          (_currentProgress.inSeconds / _totalDuration.inSeconds) * 100;
+      _progressNotifier.value = _progressNotifier.value.copyWith(
+        progress: (_currentProgress.inSeconds / _totalDuration.inSeconds) * 100,
+      );
       progressUc.updateWatchProgressMovie(
         (_movieDetailsState.value as ItemLoaded<MovieDetails>).data.id
             .toString(),
-        _progressNotifier.value,
+        _progressNotifier.value.progress,
       );
     });
   }
@@ -158,7 +161,7 @@ class MovieViewModel implements VideoHandler {
 
   @override
   double getStartingPercentage() {
-    return _progressNotifier.value;
+    return _progressNotifier.value.progress;
   }
 
   @override

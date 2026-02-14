@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
@@ -103,7 +102,7 @@ class StreamRow extends StatelessWidget {
                       width: 60,
                       child: LinearProgressIndicator(
                         borderRadius: AppTheme.roundedXSmall,
-                        value: progress / 100,
+                        value: progress.progress / 100,
                         color: AppTheme.textBlack,
                         backgroundColor: AppTheme.textBlack.withOpacity(0.4),
                       ),

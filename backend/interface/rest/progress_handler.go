@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"zxy/models"
+	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -187,29 +188,21 @@ func (i *RestInterface) HandleGetMovieProgress(w http.ResponseWriter, r *http.Re
 	response.Data = data
 }
 
-func (i *RestInterface) handleLibrary(w http.ResponseWriter, r *http.Request) {
+func (i *RestInterface) handleMovieWatched(w http.ResponseWriter, r *http.Request) {
 	var res ApiResponse
 	defer res.SendResponse(w)
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println("Error reading body")
-		res.StatusCode = http.StatusInternalServerError
-		res.Error = "Something went wrong"
-		return
-	}
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
 
-	defer r.Body.Close()
-	var input models.LibraryFilter
-	err = json.Unmarshal(body, &input)
-	if err != nil {
-		fmt.Println("Error unmarshlling body", err)
+	movieId := chi.URLParam(r, "id")
+	if len(movieId) == 0 {
 		res.StatusCode = http.StatusBadRequest
-		res.Error = "Invalid body"
+		res.Error = "Invalid id"
 		return
 	}
 
-	data, err := i.tmdbUc.GetLibraryFromFilter(input)
+	err := i.progressUC.MarkMovieWatched(userId, profileId, movieId)
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError
 		res.Error = err.Error()
@@ -217,5 +210,54 @@ func (i *RestInterface) handleLibrary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res.StatusCode = http.StatusOK
-	res.Data = data
+}
+
+func (i *RestInterface) handleShowWatched(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+
+	id := chi.URLParam(r, "id")
+	if len(id) == 0 {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid id"
+		return
+	}
+	splitted := strings.Split(id, ":")
+	var err error
+	if len(splitted) == 1 {
+		err = i.progressUC.MarkShowWatched(userId, profileId, id)
+	} else if len(splitted) == 2 {
+		season, err := strconv.Atoi(splitted[1])
+		if err != nil {
+			res.StatusCode = http.StatusBadRequest
+			res.Error = "Invalid season"
+			return
+		}
+		err = i.progressUC.MarkSeasonWatched(userId, profileId, splitted[0], season)
+	} else {
+		season, err := strconv.Atoi(splitted[1])
+		if err != nil {
+			res.StatusCode = http.StatusBadRequest
+			res.Error = "Invalid season"
+			return
+		}
+		episode, err := strconv.Atoi(splitted[2])
+		if err != nil {
+			res.StatusCode = http.StatusBadRequest
+			res.Error = "Invalid episode"
+			return
+		}
+		err = i.progressUC.MarkEpisodeWatched(userId, profileId, splitted[0], season, episode)
+	}
+
+	if err != nil {
+		res.StatusCode = http.StatusInternalServerError
+		res.Error = err.Error()
+		return
+	}
+
+	res.StatusCode = http.StatusOK
 }

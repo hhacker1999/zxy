@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
+import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/screen.dart';
@@ -533,7 +534,7 @@ class EpisodeImage extends StatelessWidget {
   final double episodeHeight;
   final Episode episode;
   final String size;
-  final ValueNotifier<double>? progress;
+  final ValueNotifier<WatchProgress>? progress;
 
   @override
   Widget build(BuildContext context) {
@@ -563,11 +564,11 @@ class EpisodeImage extends StatelessWidget {
               child: ValueListenableBuilder(
                 valueListenable: progress!,
                 builder: (_, progress, _) {
-                  if (progress == 0) {
+                  if (progress.progress == 0) {
                     return SizedBox.shrink();
                   }
                   return LinearProgressIndicator(
-                    value: progress / 100,
+                    value: progress.progress / 100,
                     backgroundColor: AppTheme.surfaceLight,
                     color: AppTheme.textPrimary,
                     minHeight: 4,
@@ -575,6 +576,19 @@ class EpisodeImage extends StatelessWidget {
                 },
               ),
             ),
+          Positioned(
+            top: 10,
+            right: 10,
+            child: ValueListenableBuilder(
+              valueListenable: progress!,
+              builder: (_, progress, _) {
+                if (!progress.isWatched) {
+                  return SizedBox.shrink();
+                }
+                return Icon(Icons.check_circle);
+              },
+            ),
+          ),
         ],
       ),
     );
