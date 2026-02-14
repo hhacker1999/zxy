@@ -44,127 +44,122 @@ class _SearchViewState extends State<SearchView> {
 
   @override
   Widget build(BuildContext context) {
-    return BaseScaffold(
-      padding: EdgeInsets.zero,
-      builder: (_, color) {
-        return Column(
-          children: [
-            TopHeader(
-              onChanged: (val) {
-                if (val.isEmpty) {
-                  vm.reset();
+    return Column(
+      children: [
+        TopHeader(
+          onChanged: (val) {
+            if (val.isEmpty) {
+              vm.reset();
+            }
+          },
+          showBack: true,
+          searchController: searchController,
+          onSearch: () {
+            if (searchController.value.text.isNotEmpty) {
+              vm.loadResults(searchController.value.text);
+            }
+          },
+        ),
+        AppTheme.boxHeightM,
+        Expanded(
+          child: NotificationListener<ScrollMetricsNotification>(
+            onNotification: (noti) {
+              if (scrollController.position.maxScrollExtent == 0) {
+                vm.loadMoreResults();
+                return false;
+              }
+              final currOffset = scrollController.offset;
+              final maxOffset = scrollController.position.maxScrollExtent;
+              if ((maxOffset - currOffset) < 200) {
+                vm.loadMoreResults();
+              }
+              return false;
+            },
+            child: LayoutBuilder(
+              builder: (_, constr) {
+                double width = 160 + AppTheme.spacingL;
+                double ct = constr.maxWidth / width;
+                ct = ct.floorToDouble();
+                final widthUtilised = ct * width;
+                if ((constr.maxWidth - widthUtilised) > width / 2) {
+                  width = constr.maxWidth / (ct + 1);
+                  ct += 1;
                 }
-              },
-              showBack: true,
-              searchController: searchController,
-              onSearch: () {
-                if (searchController.value.text.isNotEmpty) {
-                  vm.loadResults(searchController.value.text);
-                }
-              },
-            ),
-            AppTheme.boxHeightM,
-            Expanded(
-              child: NotificationListener<ScrollMetricsNotification>(
-                onNotification: (noti) {
-                  if (scrollController.position.maxScrollExtent == 0) {
-                    vm.loadMoreResults();
-                    return false;
-                  }
-                  final currOffset = scrollController.offset;
-                  final maxOffset = scrollController.position.maxScrollExtent;
-                  if ((maxOffset - currOffset) < 200) {
-                    vm.loadMoreResults();
-                  }
-                  return false;
-                },
-                child: LayoutBuilder(
-                  builder: (_, constr) {
-                    double width = 160 + AppTheme.spacingL;
-                    double ct = constr.maxWidth / width;
-                    ct = ct.floorToDouble();
-                    final widthUtilised = ct * width;
-                    if ((constr.maxWidth - widthUtilised) > width / 2) {
-                      width = constr.maxWidth / (ct + 1);
-                      ct += 1;
+                final itemAspectRatio = 2 / 3.8;
+                final imageHeight = width / (2.2 / 3);
+                final height = width / itemAspectRatio;
+                return ValueListenableBuilder(
+                  valueListenable: vm.itemsState,
+                  builder: (_, itemState, _) {
+                    if (itemState is ItemLoading) {
+                      return Center(child: CupertinoActivityIndicator());
                     }
-                    final itemAspectRatio = 2 / 3.8;
-                    final imageHeight = width / (2.2 / 3);
-                    final height = width / itemAspectRatio;
-                    return ValueListenableBuilder(
-                      valueListenable: vm.itemsState,
-                      builder: (_, itemState, _) {
-                        if (itemState is ItemLoading) {
-                          return Center(child: CupertinoActivityIndicator());
-                        }
-                        if (itemState is ItemInitial) {
-                          return Center(
-                            child: Text("Search movie or show by name"),
-                          );
-                        }
-                        if (itemState is ItemError) {
-                          return Center(
-                            child: Text((itemState as ItemError).error),
-                          );
-                        }
-                        final List<ZxyMedia> items =
-                            (itemState as ItemLoaded<List<ZxyMedia>>).data;
-                        if (items.isEmpty) {
-                          return Center(child: Text("No Items found"));
-                        }
-
-                        return GridView.builder(
-                          clipBehavior: Clip.hardEdge,
-                          padding: EdgeInsets.zero,
-                          controller: scrollController,
-                          itemCount: items.length,
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisSpacing: AppTheme.spacingL,
-                                mainAxisSpacing: AppTheme.spacingM,
-                                childAspectRatio: itemAspectRatio,
-                                crossAxisCount: ct.toInt(),
-                              ),
-                          itemBuilder: (_, index) {
-                            return ClipRect(
-                              key: ValueKey(items[index].id),
-                              child: Banner(
-                                message: items[index].type == ZxyMediaType.movie
-                                    ? "Movie"
-                                    : "Show",
-                                color: items[index].type == ZxyMediaType.movie
-                                    ? Colors.red
-                                    : Colors.blue,
-                                location: BannerLocation.topEnd,
-                                child: LibraryCard(
-                                  updateColorOnHover: true,
-                                  resource: items[index],
-                                  onTap: (_) {
-                                    Navigator.pushNamed(
-                                      context,
-                                      items[index].type == ZxyMediaType.movie
-                                          ? AppRoutes.movieView
-                                          : AppRoutes.showView,
-                                      arguments: items[index].id,
-                                    );
-                                  },
-                                  width: width,
-                                  height: height,
-                                  imageHeight: imageHeight,
-                                ),
-                              ),
-                            );
-                          },
+                    if (itemState is ItemInitial) {
+                      return Center(
+                        child: Text("Search movie or show by name"),
+                      );
+                    }
+                    if (itemState is ItemError) {
+                      return Center(
+                        child: Text((itemState as ItemError).error),
+                      );
+                    }
+                    final List<ZxyMedia> items =
+                        (itemState as ItemLoaded<List<ZxyMedia>>).data;
+                    if (items.isEmpty) {
+                      return Center(child: Text("No Items found"));
+                    }
+    
+                    return GridView.builder(
+                      clipBehavior: Clip.hardEdge,
+                      padding: EdgeInsets.zero,
+                      controller: scrollController,
+                      itemCount: items.length,
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisSpacing: AppTheme.spacingL,
+                            mainAxisSpacing: AppTheme.spacingM,
+                            childAspectRatio: itemAspectRatio,
+                            crossAxisCount: ct.toInt(),
+                          ),
+                      itemBuilder: (_, index) {
+                        return ClipRect(
+                          key: ValueKey(items[index].id),
+                          child: Banner(
+                            message: items[index].type == ZxyMediaType.movie
+                                ? "Movie"
+                                : "Show",
+                            color: items[index].type == ZxyMediaType.movie
+                                ? Colors.red
+                                : Colors.blue,
+                            location: BannerLocation.topEnd,
+                            child: LibraryCard(
+                              updateColorOnHover: true,
+                              resource: items[index],
+                              onTap: (_) {
+                                Navigator.pushNamed(
+                                  context,
+                                  items[index].type == ZxyMediaType.movie
+                                      ? AppRoutes.movieView
+                                      : AppRoutes.showView,
+                                  arguments: items[index].id,
+                                );
+                              },
+                              width: width,
+                              height: height,
+                              imageHeight: imageHeight,
+                            ),
+                          ),
                         );
                       },
                     );
                   },
-                ),
-              ),
+                );
+              },
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 }

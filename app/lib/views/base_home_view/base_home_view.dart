@@ -200,11 +200,19 @@ class NavigationDrawerBar extends StatelessWidget {
         return ValueListenableBuilder(
           valueListenable: context.read<ImageBloc>().bgGradColor,
           builder: (_, color, _) {
-            return GlassContainer(
-              borderOpacity: 0.15,
-              containerOpacity: 0.15,
+            return Container(
+              // borderOpacity: 0.15,
+              // containerOpacity: 0.15,
               width: 280,
-              radius: AppTheme.roundedXXLarge,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.2),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 1.5,
+                ),
+
+                borderRadius: AppTheme.roundedXXLarge,
+              ),
               // height: 350,
               padding: EdgeInsets.all(AppTheme.spacingM),
               child: Column(

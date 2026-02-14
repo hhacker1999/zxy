@@ -650,14 +650,13 @@ class EpisodeImage extends StatelessWidget {
     return Container(
       height: episodeHeight,
       width: episodeWidth,
-      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(borderRadius: AppTheme.roundedSmall),
       child: Stack(
         children: [
           Positioned.fill(
             child: ZxyImage(
               radius: AppTheme.roundedSmall,
-              enableShadow: false,
+              enableShadow: true,
               animate: false,
               width: episodeWidth,
               height: episodeHeight,
