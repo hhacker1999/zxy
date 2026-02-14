@@ -3,6 +3,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
+import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/service/http_service.dart';
@@ -16,6 +17,7 @@ class SplashViewModel {
 
   Future<void> initialise(BuildContext context) async {
     try {
+      await context.read<ImageBloc>().initialise();
       context.read<SettingsBloc>().initialise(context);
       await Future.wait([
         context.read<HomeViewModel>().initialiseGenre(),

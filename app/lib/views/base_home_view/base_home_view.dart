@@ -217,7 +217,7 @@ class NavigationDrawerBar extends StatelessWidget {
                     },
                     isSelected: value == index,
                     baseColor: AppTheme.lightGreyBg,
-                    animationSelectedColor: color ?? AppTheme.accentColor,
+                    animationSelectedColor: AppTheme.accentColor,
                     child: Row(
                       children: [
                         SvgPicture.asset(
