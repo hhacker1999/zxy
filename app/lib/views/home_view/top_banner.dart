@@ -414,8 +414,8 @@ class _PlayButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ZxyButton(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? AppTheme.spacingS : AppTheme.spacingL,
-        vertical: isMobile ? AppTheme.spacingXS : AppTheme.spacingS,
+        horizontal: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
+        vertical: isMobile ? AppTheme.spacingS : AppTheme.spacingM,
       ),
       radius: AppTheme.radiusXXLarge,
       onTap: onTap,
@@ -436,7 +436,7 @@ class _PlayButton extends StatelessWidget {
             'Play',
             style:
                 (isMobile
-                        ? Theme.of(context).textTheme.labelMedium
+                        ? Theme.of(context).textTheme.labelLarge
                         : Theme.of(context).textTheme.titleMedium)
                     ?.copyWith(
                       color: AppTheme.backgroundDark,

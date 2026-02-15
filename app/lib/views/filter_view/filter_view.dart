@@ -37,9 +37,12 @@ class _FilterViewState extends State<FilterView> {
   @override
   Widget build(BuildContext context) {
     final screenData = Screen.of(context);
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Column(
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingM,
+        vertical: MediaQuery.of(context).padding.top,
+      ),
+      child: Column(
         children: [
           ValueListenableBuilder(
             valueListenable: vm.cFilter,

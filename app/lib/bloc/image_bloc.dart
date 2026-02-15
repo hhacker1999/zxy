@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
@@ -123,6 +124,9 @@ class ImageBloc {
   }
 
   Future<void> setGradColorFromImage(String path) async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      return;
+    }
     if (_images.containsKey(path)) {
       Color? imgColor = _images[path]!.color;
       if (imgColor == null) {

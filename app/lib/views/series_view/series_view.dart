@@ -647,6 +647,7 @@ class EpisodeImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ScreenData screenData = Screen.of(context);
     return Container(
       height: episodeHeight,
       width: episodeWidth,
@@ -686,15 +687,18 @@ class EpisodeImage extends StatelessWidget {
             ),
           if (progress != null)
             Positioned(
-              top: 10,
-              right: 10,
+              top: screenData.shouldRenderMobile ? 5 : 10,
+              right: screenData.shouldRenderMobile ? 5 : 10,
               child: ValueListenableBuilder(
                 valueListenable: progress!,
                 builder: (_, progress, _) {
                   if (!progress.isWatched) {
                     return SizedBox.shrink();
                   }
-                  return Icon(Icons.check_circle);
+                  return Icon(
+                    Icons.check_circle,
+                    size: screenData.shouldRenderMobile ? 18 : null,
+                  );
                 },
               ),
             ),
@@ -812,7 +816,7 @@ class PosterItemSeries extends StatelessWidget {
                         );
                         vm.onPause();
                       },
-                      color: color,
+                      color: AppTheme.accentColor,
                       handler: vm,
                       onStreamSelect: vm.onStreamSelect,
                     ),
@@ -1026,7 +1030,7 @@ class BannerItemSeries extends StatelessWidget {
               ),
               AppTheme.boxHeightL,
               StreamRow(
-                color: color,
+                color: AppTheme.accentColor,
                 onTap: () async {
                   await Navigator.pushNamed(
                     context,

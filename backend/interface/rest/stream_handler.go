@@ -170,7 +170,7 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := http.NewRequest("GET", plainText, nil)
+	req, err := http.NewRequest("HEAD", plainText, nil)
 	if err != nil {
 		res.StatusCode = http.StatusBadRequest
 		res.Error = "Invalid url"
@@ -178,10 +178,14 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.Header.Set("Range", "bytes=0-0")
+	// req.Header.Set("Range", "bytes=0-0")
 
 	resp, err := i.client.Do(req)
 	if err != nil {
+		if res.StatusCode == http.StatusMethodNotAllowed {
+			http.Redirect(w, r, resp.Request.URL.String(), http.StatusFound)
+			return
+		}
 		res.StatusCode = http.StatusBadGateway
 		res.Error = "Source resolution failed"
 		res.SendResponse(w)
@@ -189,7 +193,8 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	finalURL := resp.Request.URL.String()
+  finalURL := resp.Request.URL.String()
+
 
 	http.Redirect(w, r, finalURL, http.StatusFound)
 }

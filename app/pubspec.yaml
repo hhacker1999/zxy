@@ -2,7 +2,7 @@ name: zxy_app
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.10.4
@@ -27,11 +27,28 @@ dependencies:
   toastification: ^3.0.3
   lottie: ^3.3.2
   window_manager: ^0.5.1
+  rename_app: ^1.6.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  change_app_package_name: ^1.5.0
+  flutter_launcher_icons: "^0.14.4"
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "icons/logo.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  remove_alpha_ios: true
+  windows:
+    generate: true
+    image_path: "icons/logo.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "icons/logo.png"
 
 flutter:
 

@@ -17,7 +17,6 @@ import 'package:zxy_app/views/search_view/search_view_model.dart';
 import 'package:zxy_app/views/settings_view/settings_view.dart';
 import 'package:zxy_app/views/settings_view/settings_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
-import 'package:zxy_app/views/shared/glass_container.dart';
 import 'package:zxy_app/views/top_header.dart';
 
 class BaseHomeView extends StatefulWidget {
@@ -106,6 +105,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
   Widget build(BuildContext context) {
     final screenData = Screen.of(context);
     return BaseScaffold(
+      padding: EdgeInsets.zero,
       loading: vm.scaffoldLoading,
       bottomNavigationBar: screenData.shouldRenderMobile
           ? ZxyNavBar(
@@ -117,21 +117,6 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
       builder: (_, color) {
         return Column(
           children: [
-            // if (!screenData.shouldRenderMobile)
-            //   TopHeader(
-            //     searchController: searchController,
-            //     onSearch: () {
-            //       if (searchController.value.text.isNotEmpty) {
-            //         Navigator.pushNamed(
-            //           context,
-            //           AppRoutes.searchView,
-            //           arguments: searchController.value.text,
-            //         );
-            //         searchController.clear();
-            //       }
-            //     },
-            //   ),
-            // if (!screenData.shouldRenderMobile) AppTheme.boxHeightM,
             Expanded(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,9 +137,9 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                       builder: (_, index, _) {
                         return Column(
                           children: [
-                            SizedBox(
-                              height: MediaQuery.of(context).viewPadding.top,
-                            ),
+                            // SizedBox(
+                            //   height: MediaQuery.of(context).viewPadding.top,
+                            // ),
                             Expanded(
                               child: ZxyFadeIndexedStack(
                                 key: ValueKey("Switcher"),
@@ -315,7 +300,7 @@ class ZxyNavBar extends StatelessWidget {
                         SvgPicture.asset(
                           card.$2,
                           color: selectedIndex == index
-                              ? color ?? AppTheme.accentColor
+                              ? AppTheme.accentColor
                               : AppTheme.textSecondary,
                           height: 25,
                           width: 25,
@@ -326,7 +311,7 @@ class ZxyNavBar extends StatelessWidget {
                               .copyWith(
                                 fontSize: 10,
                                 color: selectedIndex == index
-                                    ? color ?? AppTheme.accentColor
+                                    ? AppTheme.accentColor
                                     : AppTheme.textSecondary,
                               ),
                         ),

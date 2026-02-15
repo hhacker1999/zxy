@@ -16,109 +16,127 @@ class SettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Builder(
-      builder: (context) {
-        final userBloc = context.read<UserBloc>();
-        final settingsVm = context.watch<SettingsViewModel>()
-          ..context = context;
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppTheme.spacingM),
-                child: ValueListenableBuilder<Profile?>(
-                  valueListenable: userBloc.profileNotifier,
-                  builder: (_, profile, _) {
-                    if (profile == null) return const SizedBox();
-                    // We also need the full User object to list all profiles
-                    return ValueListenableBuilder<User?>(
-                      valueListenable: userBloc.userNotifier,
-                      builder: (_, user, _) {
-                        final settingsBloc = context.read<SettingsBloc>();
-                        // Initialize library items from profile
-                        settingsVm.init(profile);
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Account",
-                              style: Theme.of(context).textTheme.headlineMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            AppTheme.boxHeightL,
-                            FilledButton.tonalIcon(
-                              onPressed: () {
-                                Navigator.of(
-                                  context,
-                                ).pushNamed(AppRoutes.profileSelectionView);
-                              },
-                              icon: const Icon(Icons.people_outline, size: 18),
-                              label: const Text("Switch Profile"),
-                            ),
-                            AppTheme.boxHeightL,
-                            FilledButton.icon(
-                              onPressed: () {
-                                settingsVm.logout();
-                              },
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppTheme.errorColor
-                                    .withOpacity(0.15),
-                                foregroundColor: AppTheme.errorColor,
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingM,
+        vertical: MediaQuery.of(context).padding.top,
+      ),
+      child: Builder(
+        builder: (context) {
+          final userBloc = context.read<UserBloc>();
+          final settingsVm = context.watch<SettingsViewModel>()
+            ..context = context;
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppTheme.spacingM),
+                  child: ValueListenableBuilder<Profile?>(
+                    valueListenable: userBloc.profileNotifier,
+                    builder: (_, profile, _) {
+                      if (profile == null) return const SizedBox();
+                      // We also need the full User object to list all profiles
+                      return ValueListenableBuilder<User?>(
+                        valueListenable: userBloc.userNotifier,
+                        builder: (_, user, _) {
+                          final settingsBloc = context.read<SettingsBloc>();
+                          // Initialize library items from profile
+                          settingsVm.init(profile);
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Account",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
-                              icon: const Icon(Icons.logout_rounded, size: 18),
-                              label: const Text("Log Out"),
-                            ),
-                            const SizedBox(height: AppTheme.spacingL),
-                            // Profile Management Section (Admin Only)
-                            if (profile.isAdmin && user != null) ...[
-                              _buildProfileManagementSection(
+                              AppTheme.boxHeightL,
+                              FilledButton.tonalIcon(
+                                onPressed: () {
+                                  Navigator.of(
+                                    context,
+                                  ).pushNamed(AppRoutes.profileSelectionView);
+                                },
+                                icon: const Icon(
+                                  Icons.people_outline,
+                                  size: 18,
+                                ),
+                                label: const Text("Switch Profile"),
+                              ),
+                              AppTheme.boxHeightL,
+                              FilledButton.icon(
+                                onPressed: () {
+                                  settingsVm.logout();
+                                },
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppTheme.errorColor
+                                      .withOpacity(0.15),
+                                  foregroundColor: AppTheme.errorColor,
+                                ),
+                                icon: const Icon(
+                                  Icons.logout_rounded,
+                                  size: 18,
+                                ),
+                                label: const Text("Log Out"),
+                              ),
+                              const SizedBox(height: AppTheme.spacingL),
+                              // Profile Management Section (Admin Only)
+                              if (profile.isAdmin && user != null) ...[
+                                _buildProfileManagementSection(
+                                  context,
+                                  user,
+                                  profile,
+                                ),
+                                const SizedBox(height: AppTheme.spacingXL),
+                              ],
+                              Text(
+                                "General",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: AppTheme.spacingM),
+                              _buildGeneralSection(context, settingsBloc),
+                              const SizedBox(height: AppTheme.spacingXL),
+                              _buildHomePageCustomizationSection(
                                 context,
-                                user,
-                                profile,
+                                settingsVm,
                               ),
                               const SizedBox(height: AppTheme.spacingXL),
+                              Text(
+                                "Debrid Integration",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: AppTheme.spacingM),
+                              _buildDebridSection(context, profile),
+                              AppTheme.boxHeightXL,
                             ],
-                            Text(
-                              "General",
-                              style: Theme.of(context).textTheme.headlineMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: AppTheme.spacingM),
-                            _buildGeneralSection(context, settingsBloc),
-                            const SizedBox(height: AppTheme.spacingXL),
-                            _buildHomePageCustomizationSection(
-                              context,
-                              settingsVm,
-                            ),
-                            const SizedBox(height: AppTheme.spacingXL),
-                            Text(
-                              "Debrid Integration",
-                              style: Theme.of(context).textTheme.headlineMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: AppTheme.spacingM),
-                            _buildDebridSection(context, profile),
-                            AppTheme.boxHeightXL,
-                          ],
-                        );
-                      },
-                    );
-                  },
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-            if (settingsVm.isLoading)
-              // 1. Block interactions
-              const Opacity(
-                opacity: 0.3,
-                child: ModalBarrier(dismissible: false, color: Colors.black),
-              ),
-            if (settingsVm.isLoading)
-              // 2. Show indicator
-              const Center(child: CircularProgressIndicator()),
-          ],
-        );
-      },
+              if (settingsVm.isLoading)
+                // 1. Block interactions
+                const Opacity(
+                  opacity: 0.3,
+                  child: ModalBarrier(dismissible: false, color: Colors.black),
+                ),
+              if (settingsVm.isLoading)
+                // 2. Show indicator
+                const Center(child: CircularProgressIndicator()),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -847,27 +865,10 @@ Widget _buildHomePageCustomizationSection(
               context,
             ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
-          Row(
-            children: [
-              if (viewModel.hasLibraryChanges)
-                Padding(
-                  padding: const EdgeInsets.only(right: AppTheme.spacingS),
-                  child: ZxyButton(
-                    color: AppTheme.accentColor,
-                    onTap: viewModel.saveLibraryItems,
-                    child: const Text(
-                      "Save Changes",
-                      style: TextStyle(color: AppTheme.textBlack),
-                    ),
-                  ),
-                ),
-              IconButton(
-                onPressed: () =>
-                    _showLibraryItemForm(context, viewModel, null, -1),
-                icon: const Icon(Icons.add),
-                tooltip: "Add List",
-              ),
-            ],
+          IconButton(
+            onPressed: () => _showLibraryItemForm(context, viewModel, null, -1),
+            icon: const Icon(Icons.add),
+            tooltip: "Add List",
           ),
         ],
       ),
@@ -935,6 +936,20 @@ Widget _buildHomePageCustomizationSection(
             },
           ),
         ),
+      if (viewModel.hasLibraryChanges) ...[
+        AppTheme.boxHeightM,
+        Padding(
+          padding: const EdgeInsets.only(right: AppTheme.spacingS),
+          child: ZxyButton(
+            color: AppTheme.accentColor,
+            onTap: viewModel.saveLibraryItems,
+            child: const Text(
+              "Save Changes",
+              style: TextStyle(color: AppTheme.textBlack),
+            ),
+          ),
+        ),
+      ],
     ],
   );
 }
@@ -1071,7 +1086,7 @@ class _LibraryItemTile extends StatelessWidget {
                 onPressed: onDelete,
                 tooltip: "Delete",
               ),
-              AppTheme.boxWidthS,
+              if (!isMobile) AppTheme.boxWidthS,
             ],
           ),
         ),

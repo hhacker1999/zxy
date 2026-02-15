@@ -357,7 +357,7 @@ class PosterItem extends StatelessWidget {
                             );
                             vm.onPause();
                           },
-                          color: color,
+                          color: AppTheme.accentColor,
                           handler: vm,
                           onStreamSelect: vm.onStreamSelect,
                         );
@@ -564,7 +564,7 @@ class BannerItem extends StatelessWidget {
                   );
                   vm.onPause();
                 },
-                color: color,
+                color: AppTheme.accentColor,
                 handler: vm,
                 onStreamSelect: vm.onStreamSelect,
               ),

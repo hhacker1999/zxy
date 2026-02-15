@@ -83,20 +83,6 @@ class ContinueWatchingCard extends StatelessWidget {
                         size: screenData.shouldRenderMobile ? "w300" : "w780",
                         fit: BoxFit.cover,
                       ),
-                      // Positioned(
-                      //   // bottom: spacing,
-                      //   // left: spacing,
-                      //   // right: spacing,
-                      //   bottom: 0,
-                      //   left: 0,
-                      //   right: 0,
-                      //   child: LinearProgressIndicator(
-                      //     value: info.progress.progress / 100,
-                      //     backgroundColor: AppTheme.surfaceLight,
-                      //     color: AppTheme.textPrimary,
-                      //     minHeight: screenData.shouldRenderMobile ? 2 : 4,
-                      //   ),
-                      // ),
                       Positioned.fill(
                         child: Container(color: Colors.black.withOpacity(0.3)),
                       ),
@@ -126,9 +112,10 @@ class ContinueWatchingCard extends StatelessWidget {
                                 ),
                                 height: AppTheme.spacingM,
                               ),
-                              AppTheme.boxWidthXS,
+                              if (!screenData.shouldRenderMobile)
+                                AppTheme.boxWidthXS,
                               SizedBox(
-                                width: 60,
+                                width: screenData.shouldRenderMobile ? 40 : 50,
                                 child: LinearProgressIndicator(
                                   borderRadius: AppTheme.roundedXSmall,
                                   value: info.progress.progress / 100,
