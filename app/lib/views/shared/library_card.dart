@@ -111,6 +111,7 @@ class LibraryCard extends StatelessWidget {
                 children: [
                   Positioned.fill(
                     child: ZxyImage(
+                      cache: true,
                       enableShadow: true,
                       height: imageHeight,
                       width: width,

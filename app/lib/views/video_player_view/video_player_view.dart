@@ -181,7 +181,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       player.setProperty('gamut-mapping-mode', 'clip'),
 
       player.setProperty('cache', 'yes'),
-      player.setProperty('demuxer-max-bytes', '5024MiB'),
+      player.setProperty('demuxer-max-bytes', '1024MiB'),
       player.setProperty('demuxer-max-back-bytes', '200MiB'),
 
       player.setProperty('scale', 'ewa_lanczossharp'),

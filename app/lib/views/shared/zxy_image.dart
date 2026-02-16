@@ -16,12 +16,14 @@ class ZxyImage extends StatefulWidget {
   final BoxFit fit;
   final bool animate;
   final Widget? replacement;
+  final bool cache;
   const ZxyImage({
     super.key,
     this.onLoad,
     required this.path,
     this.animate = true,
     required this.size,
+    this.cache = true,
     this.height,
     this.width,
     this.radius = BorderRadius.zero,
@@ -36,13 +38,33 @@ class ZxyImage extends StatefulWidget {
 
 class _ZxyImageState extends State<ZxyImage> {
   bool isCalledLoad = false;
+  late final ValueNotifier<MemoryImage?> provider;
+
+  @override
+  void initState() {
+    super.initState();
+    provider = context.read<ImageBloc>().getImage(
+      widget.size,
+      widget.path,
+      cache: widget.cache,
+    );
+  }
+
+  @override
+  void dispose() {
+    if (!widget.cache) {
+      if (provider.value != null) {
+        provider.value!.evict();
+      }
+      provider.dispose();
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: context.read<ImageBloc>().getImage(
-        widget.size,
-        widget.path,
-      ),
+      valueListenable: provider,
       builder: (_, provider, _) {
         if (provider != null) {
           if (!isCalledLoad && widget.onLoad != null) {

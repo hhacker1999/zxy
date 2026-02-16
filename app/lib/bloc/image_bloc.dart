@@ -147,22 +147,32 @@ class ImageBloc {
     }
   }
 
-  ValueListenable<MemoryImage?> getImage(String size, String path) {
+  ValueNotifier<MemoryImage?> getImage(
+    String size,
+    String path, {
+    bool cache = true,
+  }) {
     late final ValueNotifier<MemoryImage?> notifier;
     bool createdNew = false;
     if (_images.containsKey(path)) {
       final info = _images[path]!;
       if (info.images.containsKey(size)) {
-        notifier = info.images[size]!;
+        if (cache) {
+          notifier = info.images[size]!;
+        }
       } else {
         createdNew = true;
         notifier = ValueNotifier(null);
-        _images[path]!.images[size] = notifier;
+        if (cache) {
+          _images[path]!.images[size] = notifier;
+        }
       }
     } else {
       createdNew = true;
       notifier = ValueNotifier(null);
-      _images[path] = ImageData(images: {size: notifier});
+      if (cache) {
+        _images[path] = ImageData(images: {size: notifier});
+      }
     }
     if (createdNew) {
       _getImage(size, path, notifier, dontGetColor: true);
