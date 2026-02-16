@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 	"zxy/models"
 )
@@ -171,7 +170,7 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	plainText = strings.ReplaceAll(plainText, "comet:8000", "10.8.0.1:2020")
+	// plainText = strings.ReplaceAll(plainText, "comet:8000", "10.8.0.1:2020")
 
 	req, err := http.NewRequest("HEAD", plainText, nil)
 	if err != nil {
