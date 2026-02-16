@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"zxy/models"
 )
@@ -170,7 +171,9 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := http.NewRequest("GET", plainText, nil)
+	plainText = strings.ReplaceAll(plainText, "comet:8000", "10.8.0.1:2020")
+
+	req, err := http.NewRequest("HEAD", plainText, nil)
 	if err != nil {
 		res.StatusCode = http.StatusBadRequest
 		res.Error = "Invalid url"
@@ -178,14 +181,15 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.Header.Set("Range", "bytes=0-0")
+	// req.Header.Set("Range", "bytes=0-0")
+	fmt.Println("Got url ", plainText)
 
 	resp, err := i.client.Do(req)
 	if err != nil {
-		// if res.StatusCode == http.StatusMethodNotAllowed {
-		// 	http.Redirect(w, r, resp.Request.URL.String(), http.StatusFound)
-		// 	return
-		// }
+		if res.StatusCode == http.StatusMethodNotAllowed {
+			http.Redirect(w, r, resp.Request.URL.String(), http.StatusFound)
+			return
+		}
 		res.StatusCode = http.StatusBadGateway
 		res.Error = "Source resolution failed"
 		res.SendResponse(w)
@@ -193,8 +197,8 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-  finalURL := resp.Request.URL.String()
-
+	finalURL := resp.Request.URL.String()
+	fmt.Println("Final url ", finalURL)
 
 	http.Redirect(w, r, finalURL, http.StatusFound)
 }
