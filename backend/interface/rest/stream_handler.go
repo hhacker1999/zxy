@@ -172,7 +172,7 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 
 	// plainText = strings.ReplaceAll(plainText, "comet:8000", "10.8.0.1:2020")
 
-	req, err := http.NewRequest("HEAD", plainText, nil)
+	req, err := http.NewRequest("GET", plainText, nil)
 	if err != nil {
 		res.StatusCode = http.StatusBadRequest
 		res.Error = "Invalid url"
@@ -180,12 +180,13 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// req.Header.Set("Range", "bytes=0-0")
-	fmt.Println("Got url ", plainText)
+	req.Header.Set("Range", "bytes=0-0")
+	// fmt.Println("Got url ", plainText)
 
 	resp, err := i.client.Do(req)
 	if err != nil {
 		if res.StatusCode == http.StatusMethodNotAllowed {
+      fmt.Println("HEAD method not allowed")
 			http.Redirect(w, r, resp.Request.URL.String(), http.StatusFound)
 			return
 		}
