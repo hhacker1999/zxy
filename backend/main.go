@@ -46,7 +46,7 @@ func main() {
 		fmt.Println("Error connecting to postgres db ", err)
 		return
 	}
-  defer db.Close()
+	defer db.Close()
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		fmt.Println("Error getting postgres driver ", err)
@@ -78,13 +78,13 @@ func main() {
 		fmt.Println("Error connecting to local tmdb ", err)
 		return
 	}
-  defer localTmdb.Close()
+	defer localTmdb.Close()
 
 	userRepo := userrepository.New(db)
 	sessionRepo := sessionrepository.New(db)
 	playbackRepo := playbackrepository.New(db)
 	addonRepo := addonsrepository.New(db)
-  localTmdbRepo:= localtmdbrepository.New(localTmdb)
+	localTmdbRepo := localtmdbrepository.New(localTmdb)
 
 	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey, cfg.TmdbAT)
 	addonuc, err := addonusecase.New(
@@ -95,8 +95,8 @@ func main() {
 		cfg.TmdbAT,
 		db,
 		userRepo,
-    cfg.ZxyUrl,
-    cfg.EncrKey,
+		cfg.ZxyUrl,
+		cfg.EncrKey,
 	)
 	if err != nil {
 		return
@@ -104,7 +104,16 @@ func main() {
 
 	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo, addonuc)
 	progressUc := progressusecase.New(db, tmdbUc, playbackRepo)
-	restInterface := rest.New(addonuc, tmdbUc, userUc, userRepo, sessionRepo, progressUc, cfg.EncrKey)
+	restInterface := rest.New(
+		addonuc,
+		tmdbUc,
+		userUc,
+		userRepo,
+		sessionRepo,
+		progressUc,
+		cfg.EncrKey,
+	)
+	defer restInterface.Exit()
 	router := restInterface.SetupRoutes()
 	err = http.ListenAndServe(":6969", router)
 	if err != nil {

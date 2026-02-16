@@ -162,6 +162,19 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// rangeHeader := r.Header.Get("Range")
+	// fmt.Printf("Seek Detected! User is asking for range: %s\n", rangeHeader)
+
+	i.mtx.RLock()
+	defer i.mtx.RUnlock()
+	url, ok := i.urlMap[initial]
+	if ok {
+		fmt.Println("Found url in cache", url.FinalUrl)
+		http.Redirect(w, r, url.FinalUrl, http.StatusFound)
+		return
+	}
+
+
 	plainText, err := i.resolveInternalURL(initial)
 	if err != nil {
 		res.StatusCode = http.StatusBadRequest
@@ -170,7 +183,7 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// plainText = strings.ReplaceAll(plainText, "comet:8000", "10.8.0.1:2020")
+	fmt.Println("Initial decoded url", plainText)
 
 	req, err := http.NewRequest("GET", plainText, nil)
 	if err != nil {
@@ -181,15 +194,21 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Header.Set("Range", "bytes=0-0")
-	// fmt.Println("Got url ", plainText)
 
 	resp, err := i.client.Do(req)
 	if err != nil {
-		if res.StatusCode == http.StatusMethodNotAllowed {
-      fmt.Println("HEAD method not allowed")
-			http.Redirect(w, r, resp.Request.URL.String(), http.StatusFound)
-			return
-		}
+		// if res.StatusCode == http.StatusMethodNotAllowed {
+		// 	fmt.Println("--------------------------------------------------")
+		// 	fmt.Println("final url ", resp.Request.URL.String())
+		// 	fmt.Println("--------------------------------------------------")
+		// 	i.urlMap[initial] = RedirectUrlInfo{
+		// 		FinalUrl: resp.Request.URL.String(),
+		// 		UrlTime:  time.Now(),
+		// 	}
+		// 	fmt.Println("HEAD method not allowed")
+		// 	http.Redirect(w, r, resp.Request.URL.String(), http.StatusFound)
+		// 	return
+		// }
 		res.StatusCode = http.StatusBadGateway
 		res.Error = "Source resolution failed"
 		res.SendResponse(w)
@@ -198,7 +217,11 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	finalURL := resp.Request.URL.String()
-	fmt.Println("Final url ", finalURL)
+	fmt.Println("final url ", finalURL)
+	i.urlMap[initial] = RedirectUrlInfo{
+		FinalUrl: finalURL,
+		UrlTime:  time.Now(),
+	}
 
 	http.Redirect(w, r, finalURL, http.StatusFound)
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"sync"
 	"time"
 	"zxy/models"
 	sessionrepository "zxy/repository/session_repository"
@@ -32,6 +33,11 @@ func (t *AnonymizerTransport) RoundTrip(req *http.Request) (*http.Response, erro
 	return t.RoundTripper.RoundTrip(req)
 }
 
+type RedirectUrlInfo struct {
+	FinalUrl string
+	UrlTime  time.Time
+}
+
 type RestInterface struct {
 	addonuc     *addonusecase.Usecase
 	tmdbUc      *tmdbusecase.Usecase
@@ -42,6 +48,9 @@ type RestInterface struct {
 	encrKey     string
 	proxy       *httputil.ReverseProxy
 	client      *http.Client
+	urlMap      map[string]RedirectUrlInfo
+	mtx         *sync.RWMutex
+	cronCancel  context.CancelFunc
 }
 
 func New(
@@ -65,6 +74,8 @@ func New(
 		progressUC:  progressUC,
 		encrKey:     encrKey,
 		client:      client,
+		urlMap:      map[string]RedirectUrlInfo{},
+		mtx:         &sync.RWMutex{},
 	}
 }
 
@@ -95,6 +106,10 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 		Transport: &AnonymizerTransport{RoundTripper: http.DefaultTransport},
 	}
 	i.proxy = proxy
+
+	ctx, fnc := context.WithCancel(context.Background())
+	i.cronCancel = fnc
+	go i.urlCleanerCron(ctx)
 
 	router := chi.NewRouter()
 	router.Post("/signup", i.handleSignup)
@@ -131,6 +146,29 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/show/{id}/watched", i.SessionHandler(i.handleShowWatched, true))
 	router.Delete("/continue_watching/{id}", i.SessionHandler(i.handleDeleteContinueWatching, true))
 	return router
+}
+
+func (i *RestInterface) urlCleanerCron(ctx context.Context) {
+	timer := time.NewTicker(time.Minute * 15)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-timer.C:
+			fmt.Println("Clearing old urls")
+			i.mtx.Lock()
+			for k, v := range i.urlMap {
+				if time.Since(v.UrlTime) > time.Hour {
+					fmt.Println("removing old url ", k)
+					delete(i.urlMap, k)
+				}
+			}
+			i.mtx.Unlock()
+		case <-ctx.Done():
+			return
+		}
+	}
+
 }
 
 func (i *RestInterface) SessionHandler(next http.HandlerFunc, isProfile bool) http.HandlerFunc {
@@ -191,4 +229,8 @@ func (i *RestInterface) SessionHandler(next http.HandlerFunc, isProfile bool) ht
 
 		next.ServeHTTP(w, newR)
 	})
+}
+
+func (i *RestInterface) Exit() {
+	i.cronCancel()
 }
