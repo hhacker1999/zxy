@@ -122,12 +122,8 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Visibility(
-                    visible: !screenData.shouldRenderMobile,
-                    child: ModernNavigationDrawer(vm: vm, leftCards: leftCards),
-                  ),
-                  // if (!screenData.shouldRenderMobile)
-                  //   SizedBox(width: AppTheme.spacingM),
+                  if (!screenData.shouldRenderMobile)
+                    ModernNavigationDrawer(vm: vm, leftCards: leftCards),
                   Expanded(
                     child: ValueListenableBuilder(
                       valueListenable: vm.selectedIndex,
