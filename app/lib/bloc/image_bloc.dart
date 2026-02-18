@@ -157,9 +157,7 @@ class ImageBloc {
     if (_images.containsKey(path)) {
       final info = _images[path]!;
       if (info.images.containsKey(size)) {
-        if (cache) {
           notifier = info.images[size]!;
-        }
       } else {
         createdNew = true;
         notifier = ValueNotifier(null);

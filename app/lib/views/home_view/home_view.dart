@@ -61,47 +61,53 @@ class _HomeViewState extends State<HomeView> {
                     );
                   },
                 ),
-                ContinueWatchingHeader(homeViewModel: homeViewModel),
-                Column(
-                  spacing: Screen.of(context).shouldRenderMobile
-                      ? AppTheme.spacingM
-                      : AppTheme.spacingXL,
-                  children: list.map((item) {
-                    return ValueListenableBuilder<ViewItemState>(
-                      valueListenable: item.state,
-                      builder: (_, value, _) {
-                        if (value is ItemLoading) {
-                          return const Center(
-                            child: CupertinoActivityIndicator(),
+                Padding(
+                  padding: EdgeInsets.only(left: AppTheme.spacingM),
+                  child: ContinueWatchingHeader(homeViewModel: homeViewModel),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: AppTheme.spacingM),
+                  child: Column(
+                    spacing: Screen.of(context).shouldRenderMobile
+                        ? AppTheme.spacingM
+                        : AppTheme.spacingXL,
+                    children: list.map((item) {
+                      return ValueListenableBuilder<ViewItemState>(
+                        valueListenable: item.state,
+                        builder: (_, value, _) {
+                          if (value is ItemLoading) {
+                            return const Center(
+                              child: CupertinoActivityIndicator(),
+                            );
+                          }
+                          if (value is ItemError) {
+                            return Center(child: Text(value.error));
+                          }
+                          final List<ZxyMedia> resourceList =
+                              (value as ItemLoaded<List<ZxyMedia>>).data;
+                          return LibraryList(
+                            resource: resourceList,
+                            title: item.title,
+                            onTap: (res) {
+                              if (item.type == ZxyMediaType.movie) {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.movieView,
+                                  arguments: res.id,
+                                );
+                              } else {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.showView,
+                                  arguments: res.id,
+                                );
+                              }
+                            },
                           );
-                        }
-                        if (value is ItemError) {
-                          return Center(child: Text(value.error));
-                        }
-                        final List<ZxyMedia> resourceList =
-                            (value as ItemLoaded<List<ZxyMedia>>).data;
-                        return LibraryList(
-                          resource: resourceList,
-                          title: item.title,
-                          onTap: (res) {
-                            if (item.type == ZxyMediaType.movie) {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.movieView,
-                                arguments: res.id,
-                              );
-                            } else {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.showView,
-                                arguments: res.id,
-                              );
-                            }
-                          },
-                        );
-                      },
-                    );
-                  }).toList(),
+                        },
+                      );
+                    }).toList(),
+                  ),
                 ),
               ],
             );
@@ -151,6 +157,7 @@ class ContinueWatchingHeader extends StatelessWidget {
                       const SizedBox(width: AppTheme.spacingM),
                   itemBuilder: (_, index) {
                     return ContinueWatchingCard(
+                      key: ValueKey(data[index].progress.mediaId),
                       onLongPress: (details) {
                         _showContinueWatchingMenu(
                           context,
@@ -205,9 +212,6 @@ class ContinueWatchingHeader extends StatelessWidget {
                   },
                 ),
               ),
-              screenData.shouldRenderMobile
-                  ? AppTheme.boxHeightXS
-                  : AppTheme.boxHeightXL,
             ],
           );
         }

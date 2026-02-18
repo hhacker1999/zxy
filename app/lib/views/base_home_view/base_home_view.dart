@@ -129,8 +129,8 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                       screenData: screenData,
                     ),
                   ),
-                  if (!screenData.shouldRenderMobile)
-                    SizedBox(width: AppTheme.spacingM),
+                  // if (!screenData.shouldRenderMobile)
+                  //   SizedBox(width: AppTheme.spacingM),
                   Expanded(
                     child: ValueListenableBuilder(
                       valueListenable: vm.selectedIndex,

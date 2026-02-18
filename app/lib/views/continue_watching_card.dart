@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
-import 'package:zxy_app/views/shared/zxy_button.dart';
+
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
 class ContinueWatchingCard extends StatelessWidget {
@@ -27,148 +28,236 @@ class ContinueWatchingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     String? backdropPath;
     String? title;
-    late final SeriesDetails series;
-    late final MovieDetails movie;
     late final bool isShow;
 
     if (info.isShow) {
       isShow = true;
-      series = info.media as SeriesDetails;
+      final series = info.media as SeriesDetails;
       backdropPath = series.backdropPath;
       title = series.name;
     } else {
       isShow = false;
-      movie = info.media as MovieDetails;
+      final movie = info.media as MovieDetails;
       backdropPath = movie.backdropPath;
       title = movie.title;
     }
     final screenData = Screen.of(context);
-    final double width = screenData.shouldRenderMobile ? 280 : 380;
+    final double width = screenData.shouldRenderMobile ? 240 : 320;
     final double imageHeight = (width * 9) / 16;
-    final double height = (width * 9) / 16;
-    // final double spacing = screenData.shouldRenderMobile
-    //     ? AppTheme.spacingM
-    //     : AppTheme.spacingL;
+
+    // Calculate time remaining or percentage
+    String statusText = "";
+    int? runtime;
+
+    if (info.media is SeriesDetails) {
+      final s = info.media as SeriesDetails;
+      if (s.episodeRunTime != null && s.episodeRunTime!.isNotEmpty) {
+        runtime = s.episodeRunTime![0];
+      }
+    } else if (info.media is MovieDetails) {
+      final m = info.media as MovieDetails;
+      runtime = m.runtime;
+    }
+
+    if (runtime != null && runtime > 0) {
+      final double progressPercent = info.progress.progress / 100;
+      final int minutesLeft = ((runtime * (1 - progressPercent))).round();
+      if (minutesLeft <= 1) {
+        statusText = "Completed";
+      } else {
+        statusText = "$minutesLeft min left";
+      }
+    } else {
+      // Fallback to percentage if runtime is missing
+      statusText = "${(100 - info.progress.progress).round()}% left";
+    }
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onLongPressStart: (details) {
-          onLongPress(details);
-        },
-        onSecondaryTapUp: (details) {
-          onRightClick(details);
-        },
+        onLongPressStart: (details) => onLongPress(details),
+        onSecondaryTapUp: (details) => onRightClick(details),
         onTap: onTap,
         child: SizedBox(
           width: width,
-          height: height,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Container(
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  ),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ZxyImage(
-                        width: width,
-                        height: imageHeight,
-                        enableShadow: true,
-                        path: backdropPath ?? "",
-                        size: screenData.shouldRenderMobile ? "w300" : "w780",
-                        fit: BoxFit.cover,
-                      ),
-                      Positioned.fill(
-                        child: Container(color: Colors.black.withOpacity(0.3)),
-                      ),
+              // THUMBNAIL CONTAINER
+              Container(
+                height: imageHeight,
+                width: width,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  color: AppTheme.backgroundDark, // Fallback color
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Background Image
+                    ZxyImage(
+                      animate: false,
+                      width: width,
+                      height: imageHeight,
+                      enableShadow: false,
+                      path: backdropPath ?? "",
+                      size: screenData.shouldRenderMobile ? "w300" : "w780",
+                      fit: BoxFit.cover,
+                    ),
 
-                      Positioned(
-                        bottom: 10,
-                        left: 10,
-                        child: ZxyButton(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppTheme.spacingM,
-                            vertical: AppTheme.spacingS,
-                          ),
-                          radius: AppTheme.radiusLarge,
-                          onTap: () {
-                            onTap();
-                          },
-                          color: AppTheme.accentColor,
-                          child: Row(
-                            spacing: AppTheme.spacingS,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SvgPicture.asset(
-                                AppIcons.play,
-                                colorFilter: ColorFilter.mode(
-                                  AppTheme.backgroundDark,
-                                  BlendMode.srcIn,
-                                ),
-                                height: AppTheme.spacingM,
-                              ),
-                              if (!screenData.shouldRenderMobile)
-                                AppTheme.boxWidthXS,
-                              SizedBox(
-                                width: screenData.shouldRenderMobile ? 40 : 50,
-                                child: LinearProgressIndicator(
-                                  borderRadius: AppTheme.roundedXSmall,
-                                  value: info.progress.progress / 100,
-                                  color: AppTheme.backgroundDark,
-                                  backgroundColor: AppTheme.backgroundDark
-                                      .withOpacity(0.4),
-                                ),
-                              ),
+                    // Dark Overlay for better contrast
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.1),
+                              Colors.black.withOpacity(0.8),
                             ],
+                            stops: const [0.4, 0.7, 1.0],
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    // Centered Play Icon
+                    Center(
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withOpacity(0.5),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.5),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: SvgPicture.asset(
+                            AppIcons.play,
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
+                            ),
+                            width: 20,
+                            height: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Info Overlay (Bottom of Image)
+                    Positioned(
+                      left: 12,
+                      right: 12,
+                      bottom: 10,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (isShow)
+                            Builder(
+                              builder: (context) {
+                                final splitted = info.progress.mediaId.split(
+                                  ":",
+                                );
+                                final season = splitted.length > 1
+                                    ? splitted[1]
+                                    : "?";
+                                final episode = splitted.length > 2
+                                    ? splitted[2]
+                                    : "?";
+                                return Text(
+                                  "S${season.padLeft(2, '0')} E${episode.padLeft(2, '0')}",
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white.withOpacity(0.9),
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withOpacity(0.8),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+
+                          // Time Remaining / Percentage
+                          Text(
+                            statusText,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.accentColor,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.8),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Progress Bar at Bottom
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: LinearProgressIndicator(
+                        minHeight: 4,
+                        value: info.progress.progress / 100,
+                        color: AppTheme.accentColor,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.zero,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              screenData.shouldRenderMobile
-                  ? AppTheme.boxHeightXS
-                  : AppTheme.boxHeightS,
-              SizedBox(
-                height: screenData.shouldRenderMobile ? 42 : 50,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: screenData.shouldRenderMobile
-                          ? Theme.of(context).textTheme.titleSmall?.copyWith()
-                          : Theme.of(context).textTheme.titleMedium?.copyWith(),
-                    ),
-                    if (isShow)
-                      Builder(
-                        builder: (context) {
-                          final splitted = info.progress.mediaId.split(":");
-                          return Text(
-                            " S${splitted[1].padLeft(2, '0')}:E${splitted[2].padLeft(2, '0')}",
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: screenData.shouldRenderMobile
-                                ? Theme.of(
-                                    context,
-                                  ).textTheme.labelSmall?.copyWith()
-                                : Theme.of(
-                                    context,
-                                  ).textTheme.labelMedium?.copyWith(),
-                          );
-                        },
-                      ),
-                  ],
+
+              const SizedBox(height: 6),
+
+              // TITLE ONLY
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                child: Text(
+                  title!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      (screenData.shouldRenderMobile
+                              ? Theme.of(context).textTheme.titleSmall
+                              : Theme.of(context).textTheme.titleMedium)
+                          ?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                          ),
                 ),
               ),
             ],

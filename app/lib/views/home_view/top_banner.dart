@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
+import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
@@ -39,10 +41,16 @@ class _TopBannerState extends State<TopBanner> {
 
   void _onPageScroll() {
     if (_pageController.hasClients) {
+      final old = _currentPage;
       setState(() {
         _pageValue = _pageController.page ?? 0.0;
         _currentPage = _pageValue.round();
       });
+      if (old != _currentPage) {
+        context.read<ImageBloc>().setGradColorFromImage(
+          widget.media[_currentPage].backdropPath ?? "",
+        );
+      }
     }
   }
 
@@ -83,45 +91,42 @@ class _TopBannerState extends State<TopBanner> {
           alignment: Alignment.topCenter,
           child: AspectRatio(
             aspectRatio: aspectRatio,
-            child: ClipRRect(
-              borderRadius: AppTheme.roundedLarge,
-              child: Stack(
-                children: [
-                  // Page View with zoom effect on page change
-                  PageView.builder(
-                    controller: _pageController,
-                    itemCount: widget.media.length,
-                    itemBuilder: (context, index) {
-                      // Calculate scale for each page (zoom effect on swipe)
-                      final distance = (_pageValue - index).abs();
-                      final scale = (1 - (distance * 0.1)).clamp(0.85, 1.0);
-                      final opacity = (1 - (distance * 0.3)).clamp(0.6, 1.0);
+            child: Stack(
+              children: [
+                // Page View with zoom effect on page change
+                PageView.builder(
+                  controller: _pageController,
+                  itemCount: widget.media.length,
+                  itemBuilder: (context, index) {
+                    // Calculate scale for each page (zoom effect on swipe)
+                    final distance = (_pageValue - index).abs();
+                    final scale = (1 - (distance * 0.1)).clamp(0.85, 1.0);
+                    final opacity = (1 - (distance * 0.3)).clamp(0.6, 1.0);
 
-                      return Transform.scale(
-                        scale: scale,
-                        child: Opacity(
-                          opacity: opacity,
-                          child: _BannerSlide(
-                            media: widget.media[index],
-                            isMobile: isMobile,
-                          ),
+                    return Transform.scale(
+                      scale: scale,
+                      child: Opacity(
+                        opacity: opacity,
+                        child: _BannerSlide(
+                          media: widget.media[index],
+                          isMobile: isMobile,
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
+                ),
 
-                  // Page Indicators
-                  Positioned(
-                    bottom: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
-                    left: 0,
-                    right: 0,
-                    child: _PageIndicators(
-                      itemCount: widget.media.length,
-                      currentPage: _currentPage,
-                    ),
+                // Page Indicators
+                Positioned(
+                  bottom: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
+                  left: 0,
+                  right: 0,
+                  child: _PageIndicators(
+                    itemCount: widget.media.length,
+                    currentPage: _currentPage,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -154,11 +159,13 @@ class _BannerSlide extends StatelessWidget {
         : (media.backdropPath ?? media.posterPath);
 
     return ClipRRect(
-      borderRadius: AppTheme.roundedMedium,
+      borderRadius: BorderRadiusGeometry.only(
+        bottomRight: Radius.circular(AppTheme.radiusMedium),
+        bottomLeft: Radius.circular(AppTheme.radiusMedium),
+      ),
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Background Image (poster for mobile, backdrop for desktop)
           ZxyImage(
             path: imagePath,
             size: isMobile ? 'w780' : 'original',
