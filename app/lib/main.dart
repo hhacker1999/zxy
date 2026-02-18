@@ -79,113 +79,108 @@ class _MyAppState extends State<MyApp> {
         ),
       ],
       builder: (context, _) {
-        return ValueListenableBuilder(
-          valueListenable: context.read<SettingsBloc>().isAmoled,
-          builder: (_, _, _) {
-            return MaterialApp(
-              builder: (context, child) {
-                return Screen(child: child ?? SizedBox.shrink());
-              },
-              navigatorObservers: [routeObserver],
-              title: 'Flutter Demo',
-              themeMode: ThemeMode.dark,
-              theme: AppTheme.purpleTheme,
-              onGenerateRoute: (settings) {
-                switch (settings.name) {
-                  case AppRoutes.baseHomeView:
-                    return FadePageRoute(
-                      builder: (_) {
-                        return BaseHomeView(deps: deps);
+        return MaterialApp(
+          builder: (context, child) {
+            return Screen(child: child ?? SizedBox.shrink());
+          },
+          navigatorObservers: [routeObserver],
+          title: 'Flutter Demo',
+          themeMode: ThemeMode.dark,
+          theme: AppTheme.purpleTheme,
+          onGenerateRoute: (settings) {
+            switch (settings.name) {
+              case AppRoutes.baseHomeView:
+                return FadePageRoute(
+                  builder: (_) {
+                    return BaseHomeView(deps: deps);
+                  },
+                );
+              case AppRoutes.movieView:
+                return FadePageRoute(
+                  builder: (_) {
+                    return Provider(
+                      create: (_) => MovieViewModel(
+                        mediaUc: deps.mediaUc,
+                        streamUc: deps.streamUc,
+                        progressUc: deps.progUc,
+                        userBloc: context.read<UserBloc>(),
+                      ),
+                      dispose: (_, vm) => vm.dispose(),
+                      builder: (_, _) =>
+                          MovieView(id: settings.arguments as int),
+                    );
+                  },
+                );
+              case AppRoutes.showView:
+                final args = settings.arguments as int;
+                return FadePageRoute(
+                  builder: (_) {
+                    return Provider(
+                      create: (_) => SeriesViewModel(
+                        mediaUc: deps.mediaUc,
+                        streamUc: deps.streamUc,
+                        progressUc: deps.progUc,
+                        userBloc: context.read<UserBloc>(),
+                      ),
+                      dispose: (_, vm) => vm.dispose(),
+                      builder: (_, _) => ShowView(id: args),
+                    );
+                  },
+                );
+              case AppRoutes.searchView:
+                final args = settings.arguments as String;
+                return FadePageRoute(
+                  builder: (_) {
+                    return Provider(
+                      create: (_) => SearchViewModel(mediaUC: deps.mediaUc),
+                      dispose: (_, vm) => vm.dispose(),
+                      builder: (_, _) => SearchView(keyword: args),
+                    );
+                  },
+                );
+              case AppRoutes.loginView:
+                return FadePageRoute(
+                  builder: (_) {
+                    return Provider(
+                      create: (_) => LoginViewModel(authUC: deps.authUc),
+                      dispose: (_, vm) => vm.dispose(),
+                      builder: (_, _) => const LoginView(),
+                    );
+                  },
+                );
+              case AppRoutes.profileSelectionView:
+                return FadePageRoute(
+                  builder: (_) {
+                    return ChangeNotifierProvider<ProfileSelectionViewModel>(
+                      create: (_) => ProfileSelectionViewModel(deps.authUc),
+                      builder: (_, _) {
+                        return ProfileSelectionView();
                       },
                     );
-                  case AppRoutes.movieView:
-                    return FadePageRoute(
-                      builder: (_) {
-                        return Provider(
-                          create: (_) => MovieViewModel(
-                            mediaUc: deps.mediaUc,
-                            streamUc: deps.streamUc,
-                            progressUc: deps.progUc,
-                            userBloc: context.read<UserBloc>(),
-                          ),
-                          dispose: (_, vm) => vm.dispose(),
-                          builder: (_, _) =>
-                              MovieView(id: settings.arguments as int),
-                        );
+                  },
+                );
+              case AppRoutes.videoPlayerView:
+                return MaterialPageRoute(
+                  builder: (_) {
+                    return VideoPlayerView(
+                      handler: settings.arguments as VideoHandler,
+                    );
+                  },
+                );
+              default:
+                return MaterialPageRoute(
+                  builder: (_) {
+                    return Provider<SplashViewModel>(
+                      create: (_) => SplashViewModel(deps.authUc),
+                      builder: (_, _) {
+                        return SplashView();
                       },
                     );
-                  case AppRoutes.showView:
-                    final args = settings.arguments as int;
-                    return FadePageRoute(
-                      builder: (_) {
-                        return Provider(
-                          create: (_) => SeriesViewModel(
-                            mediaUc: deps.mediaUc,
-                            streamUc: deps.streamUc,
-                            progressUc: deps.progUc,
-                            userBloc: context.read<UserBloc>(),
-                          ),
-                          dispose: (_, vm) => vm.dispose(),
-                          builder: (_, _) => ShowView(id: args),
-                        );
-                      },
-                    );
-                  case AppRoutes.searchView:
-                    final args = settings.arguments as String;
-                    return FadePageRoute(
-                      builder: (_) {
-                        return Provider(
-                          create: (_) => SearchViewModel(mediaUC: deps.mediaUc),
-                          dispose: (_, vm) => vm.dispose(),
-                          builder: (_, _) => SearchView(keyword: args),
-                        );
-                      },
-                    );
-                  case AppRoutes.loginView:
-                    return FadePageRoute(
-                      builder: (_) {
-                        return Provider(
-                          create: (_) => LoginViewModel(authUC: deps.authUc),
-                          dispose: (_, vm) => vm.dispose(),
-                          builder: (_, _) => const LoginView(),
-                        );
-                      },
-                    );
-                  case AppRoutes.profileSelectionView:
-                    return FadePageRoute(
-                      builder: (_) {
-                        return ChangeNotifierProvider<ProfileSelectionViewModel>(
-                          create: (_) => ProfileSelectionViewModel(deps.authUc),
-                          builder: (_, _) {
-                            return ProfileSelectionView();
-                          },
-                        );
-                      },
-                    );
-                  case AppRoutes.videoPlayerView:
-                    return MaterialPageRoute(
-                      builder: (_) {
-                        return VideoPlayerView(
-                          handler: settings.arguments as VideoHandler,
-                        );
-                      },
-                    );
-                  default:
-                    return MaterialPageRoute(
-                      builder: (_) {
-                        return Provider<SplashViewModel>(
-                          create: (_) => SplashViewModel(deps.authUc),
-                          builder: (_, _) {
-                            return SplashView();
-                          },
-                        );
-                      },
-                    );
-                }
-              },
-              initialRoute: AppRoutes.splash,
-            );
-          }
+                  },
+                );
+            }
+          },
+          initialRoute: AppRoutes.splash,
         );
       },
     );

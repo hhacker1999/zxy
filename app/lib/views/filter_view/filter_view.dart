@@ -18,6 +18,7 @@ class FilterView extends StatefulWidget {
 }
 
 class _FilterViewState extends State<FilterView> {
+  static const _posterAspectRatio = (2 / 3);
   late final FilterViewModel vm;
   late final ScrollController _controller;
   @override
@@ -40,7 +41,7 @@ class _FilterViewState extends State<FilterView> {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: AppTheme.spacingM,
-        vertical: MediaQuery.of(context).padding.top,
+        vertical:screenData.shouldRenderMobile ? MediaQuery.of(context).padding.top: AppTheme.spacingM,
       ),
       child: Column(
         children: [
@@ -129,21 +130,13 @@ class _FilterViewState extends State<FilterView> {
               },
               child: LayoutBuilder(
                 builder: (_, constr) {
-                  double width = screenData.shouldRenderMobile
-                      ? 120 + AppTheme.spacingS
-                      : 160 + AppTheme.spacingL;
-                  double ct = constr.maxWidth / width;
-                  ct = ct.floorToDouble();
-                  final widthUtilised = ct * width;
-                  if ((constr.maxWidth - widthUtilised) > width / 2) {
-                    width = constr.maxWidth / (ct + 1);
-                    ct += 1;
-                  }
-                  final itemAspectRatio =
-                      2 / (screenData.shouldRenderMobile ? 4.0 : 4.0);
-                  final imageHeight =
-                      width / ((screenData.shouldRenderMobile ? 2 : 2) / 3);
-                  final height = width / itemAspectRatio;
+                  final ScreenData screenData = Screen.of(context);
+                  final double width = screenData.shouldRenderMobile
+                      ? 120
+                      : 160;
+                  final double imageHeight = width / _posterAspectRatio;
+                  final double itemHeight =
+                      imageHeight + (screenData.shouldRenderMobile ? 50 : 58);
                   return ValueListenableBuilder(
                     valueListenable: vm.mediaItems,
                     builder: (_, items, _) {
@@ -154,15 +147,15 @@ class _FilterViewState extends State<FilterView> {
                         padding: EdgeInsets.zero,
                         controller: _controller,
                         itemCount: items.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: width,
                           crossAxisSpacing: screenData.shouldRenderMobile
                               ? AppTheme.spacingS
                               : AppTheme.spacingL,
                           mainAxisSpacing: screenData.shouldRenderMobile
                               ? AppTheme.spacingXS
                               : AppTheme.spacingM,
-                          childAspectRatio: itemAspectRatio,
-                          crossAxisCount: ct.toInt(),
+                          childAspectRatio: width / itemHeight,
                         ),
                         itemBuilder: (_, index) {
                           return Center(
@@ -181,7 +174,7 @@ class _FilterViewState extends State<FilterView> {
                               },
                               width: width,
                               imageHeight: imageHeight,
-                              height: height,
+                              height: itemHeight,
                             ),
                           );
                         },

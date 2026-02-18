@@ -142,17 +142,6 @@ class SeriesViewModel implements VideoHandler {
     try {
       scffoldLoading.value = true;
       await progressUc.updateShowToWatched(mediaId);
-      _disposeAndClearEachProgress();
-      final details =
-          (_seriesDetailsState.value as ItemLoaded<SeriesDetails>).data;
-      final progressRes = await progressUc.getProgressShow(
-        details.id.toString(),
-      );
-      final Map<String, ValueNotifier<WatchProgress>> progressMap = {};
-      for (var element in progressRes) {
-        progressMap[element.mediaId] = ValueNotifier(element);
-      }
-      _progressNotifier.value = progressMap;
       scffoldLoading.value = false;
     } catch (e) {
       if (kDebugMode) {
@@ -161,6 +150,18 @@ class SeriesViewModel implements VideoHandler {
       scffoldLoading.value = false;
       rethrow;
     }
+  }
+
+  Future<void> updateShowProgressFromBE() async {
+    _disposeAndClearEachProgress();
+    final details =
+        (_seriesDetailsState.value as ItemLoaded<SeriesDetails>).data;
+    final progressRes = await progressUc.getProgressShow(details.id.toString());
+    final Map<String, ValueNotifier<WatchProgress>> progressMap = {};
+    for (var element in progressRes) {
+      progressMap[element.mediaId] = ValueNotifier(element);
+    }
+    _progressNotifier.value = progressMap;
   }
 
   void _disposeAndClearEachProgress() {

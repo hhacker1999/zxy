@@ -130,9 +130,6 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                       builder: (_, index, _) {
                         return Column(
                           children: [
-                            // SizedBox(
-                            //   height: MediaQuery.of(context).viewPadding.top,
-                            // ),
                             Expanded(
                               child: ZxyFadeIndexedStack(
                                 key: ValueKey("Switcher"),

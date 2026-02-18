@@ -91,7 +91,7 @@ class LibraryCard extends StatelessWidget {
       hoverColor: Colors.transparent,
       onHover: (entered) {
         if (entered && updateColorOnHover) {
-          context.read<ImageBloc>().setGradColorFromImage(resource.posterPath);
+          context.read<ImageBloc>().setGradColorFromImage(resource.posterPath, context);
         }
       },
       onTap: () {

@@ -284,6 +284,7 @@ class PosterItem extends StatelessWidget {
                 onLoad: (_) {
                   context.read<ImageBloc>().setGradColorFromImage(
                     movie.posterPath,
+                    context,
                   );
                 },
                 height: height,
@@ -466,6 +467,7 @@ class BannerItem extends StatelessWidget {
           onLoad: (_) {
             context.read<ImageBloc>().setGradColorFromImage(
               movie.backdropPath!,
+              context,
             );
           },
           height: height,

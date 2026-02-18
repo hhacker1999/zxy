@@ -5,8 +5,10 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:image/image.dart' as img;
+import 'package:zxy_app/bloc/settings_bloc.dart';
 
 class ImageData {
   Color? color;
@@ -123,8 +125,10 @@ class ImageBloc {
     });
   }
 
-  Future<void> setGradColorFromImage(String path) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+  Future<void> setGradColorFromImage(String path, BuildContext context) async {
+    if (Platform.isAndroid ||
+        Platform.isIOS ||
+        !context.read<SettingsBloc>().isDynamic.value) {
       return;
     }
     if (_images.containsKey(path)) {
@@ -157,7 +161,7 @@ class ImageBloc {
     if (_images.containsKey(path)) {
       final info = _images[path]!;
       if (info.images.containsKey(size)) {
-          notifier = info.images[size]!;
+        notifier = info.images[size]!;
       } else {
         createdNew = true;
         notifier = ValueNotifier(null);

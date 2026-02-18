@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
+import 'package:zxy_app/main.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
@@ -32,7 +33,7 @@ class ShowView extends StatefulWidget {
   State<ShowView> createState() => _ShowViewState();
 }
 
-class _ShowViewState extends State<ShowView> {
+class _ShowViewState extends State<ShowView> with RouteAware {
   late final SeriesViewModel vm;
   final episodeDF = DateFormat('MMM dd, yyyy');
 
@@ -44,7 +45,19 @@ class _ShowViewState extends State<ShowView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void didPopNext() {
+    vm.updateShowProgressFromBE();
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     super.dispose();
   }
 
@@ -676,6 +689,7 @@ class EpisodeImage extends StatelessWidget {
                   if (progress.progress == 0) {
                     return SizedBox.shrink();
                   }
+
                   return LinearProgressIndicator(
                     value: progress.progress / 100,
                     backgroundColor: AppTheme.surfaceLight,
@@ -748,6 +762,7 @@ class PosterItemSeries extends StatelessWidget {
                 onLoad: (_) {
                   context.read<ImageBloc>().setGradColorFromImage(
                     series.posterPath ?? "",
+                    context,
                   );
                 },
                 height: height,
@@ -946,6 +961,7 @@ class BannerItemSeries extends StatelessWidget {
           onLoad: (_) async {
             context.read<ImageBloc>().setGradColorFromImage(
               series.backdropPath!,
+              context,
             );
           },
           height: height,

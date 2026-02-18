@@ -271,15 +271,7 @@ class SettingsView extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(isMobile ? AppTheme.spacingM : AppTheme.spacingL),
       decoration: BoxDecoration(
-        // gradient: LinearGradient(
-        //   begin: Alignment.topLeft,
-        //   end: Alignment.bottomRight,
-        //   colors: [
-        //     AppTheme.surfaceColor,
-        //     AppTheme.surfaceColor.withOpacity(0.8),
-        //   ],
-        // ),
-        color: AppTheme.backgroundDark,
+        color: AppTheme.surfaceColor.withOpacity(0.3),
         borderRadius: AppTheme.roundedLarge,
         border: Border.all(
           color: AppTheme.accentColor.withOpacity(0.1),
@@ -288,16 +280,17 @@ class SettingsView extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _ModernSettingTile(
-            title: "AMOLED Theme",
-            subtitle: "Pure black background for OLED displays",
-            icon: Icons.dark_mode_outlined,
-            valueNotifier: settingsBloc.isAmoled,
-            onChanged: (value) {
-              settingsBloc.isAmoled = value;
-            },
-          ),
-          const SizedBox(height: AppTheme.spacingM),
+          if (!isMobile)
+            _ModernSettingTile(
+              title: "Dynamic Theme",
+              subtitle: "Extract color info from context image",
+              icon: Icons.dark_mode_outlined,
+              valueNotifier: settingsBloc.isDynamic,
+              onChanged: (value) {
+                settingsBloc.isDynamic = value;
+              },
+            ),
+          if (!isMobile) const SizedBox(height: AppTheme.spacingM),
           _ModernSettingTile(
             title: "Show Poster Ratings",
             subtitle: "Display ratings on movie and TV show posters",

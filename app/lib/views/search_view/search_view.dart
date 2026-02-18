@@ -5,8 +5,8 @@ import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
+import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/search_view/search_view_model.dart';
-import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/shared/library_card.dart';
 import 'package:zxy_app/views/top_header.dart';
 import 'package:zxy_app/views/view_item_state.dart';
@@ -44,10 +44,13 @@ class _SearchViewState extends State<SearchView> {
 
   @override
   Widget build(BuildContext context) {
+    final screenData = Screen.of(context);
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: AppTheme.spacingM,
-        vertical: MediaQuery.of(context).padding.top,
+        vertical: screenData.shouldRenderMobile
+            ? MediaQuery.of(context).padding.top
+            : AppTheme.spacingM,
       ),
       child: Column(
         children: [

@@ -6,6 +6,7 @@ import 'package:zxy_app/views/shared/subtitle_style.dart';
 
 class SettingsBloc {
   final ValueNotifier<bool> isAmoled = ValueNotifier(true);
+  final ValueNotifier<bool> isDynamic = ValueNotifier(true);
   final ValueNotifier<bool> showPosterRatings = ValueNotifier(true);
   final ValueNotifier<String> recommendedResolution = ValueNotifier("2160p");
   final ValueNotifier<double> volume = ValueNotifier(100);
@@ -21,6 +22,11 @@ class SettingsBloc {
 
     isAmoled.value = amoled;
     _storage.write(key: "amoled", value: amoled.toString());
+  }
+
+  set isDynamic(bool dynamic) {
+    isDynamic.value = dynamic;
+    _storage.write(key: "dynamic", value: dynamic.toString());
   }
 
   set showPosterRatings(bool show) {
@@ -71,6 +77,7 @@ class SettingsBloc {
       );
     }
     final amoled = await _storage.read(key: "amoled");
+    final dynamic = await _storage.read(key: "dynamic");
     final poster = await _storage.read(key: "poster");
     final fontSize = await _storage.read(key: "size");
     final fontPadding = await _storage.read(key: "padding");
@@ -79,6 +86,10 @@ class SettingsBloc {
     final sd = await _storage.read(key: "skipDuration");
     if (amoled != null) {
       isAmoled.value = amoled == "true";
+    }
+
+    if (dynamic != null) {
+      isDynamic.value = dynamic == "true";
     }
 
     if (poster != null) {

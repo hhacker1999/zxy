@@ -49,6 +49,7 @@ class _TopBannerState extends State<TopBanner> {
       if (old != _currentPage) {
         context.read<ImageBloc>().setGradColorFromImage(
           widget.media[_currentPage].backdropPath ?? "",
+          context,
         );
       }
     }
