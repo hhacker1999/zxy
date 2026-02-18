@@ -212,8 +212,9 @@ class _ModernSidebarState extends State<ModernSidebar>
     return ValueListenableBuilder(
       valueListenable: sVm!.seriesDetailState,
       builder: (_, detailState, __) {
-        if (detailState is! ItemLoaded<SeriesDetails>)
+        if (detailState is! ItemLoaded<SeriesDetails>) {
           return const Center(child: CircularProgressIndicator());
+        }
 
         final details = detailState.data;
 
@@ -371,8 +372,9 @@ class _ModernSidebarState extends State<ModernSidebar>
     return ValueListenableBuilder(
       valueListenable: mVm!.movieDetailState,
       builder: (_, state, __) {
-        if (state is! ItemLoaded<MovieDetails>)
+        if (state is! ItemLoaded<MovieDetails>) {
           return const Center(child: CircularProgressIndicator());
+        }
         final movie = state.data;
 
         return ListView(
@@ -499,8 +501,9 @@ class _ModernSidebarState extends State<ModernSidebar>
               );
             }
 
-            if (state is! ItemLoaded<ZxyStreamResponse>)
+            if (state is! ItemLoaded<ZxyStreamResponse>) {
               return const SizedBox();
+            }
 
             final streams = [
               ...state.data.uhd,
@@ -508,15 +511,16 @@ class _ModernSidebarState extends State<ModernSidebar>
               ...state.data.hd,
             ];
 
-            if (streams.isEmpty)
+            if (streams.isEmpty) {
               return const Text(
                 "No streams available",
                 style: TextStyle(color: Colors.white38),
               );
+            }
 
             return ValueListenableBuilder<int>(
               valueListenable: widget.selectedStreamNotifier,
-              builder: (_, selectedIdx, __) {
+              builder: (_, selectedIdx, _) {
                 return Column(
                   children: streams.asMap().entries.map((e) {
                     final index = e.key;
@@ -610,12 +614,13 @@ class _ModernSidebarState extends State<ModernSidebar>
         const SizedBox(height: 10),
         ValueListenableBuilder(
           valueListenable: widget.state.audioDetails,
-          builder: (_, audioData, __) {
-            if (audioData == null || audioData.$1.isEmpty)
+          builder: (_, audioData, _) {
+            if (audioData == null || audioData.$1.isEmpty) {
               return const Text(
                 "No audio tracks",
                 style: TextStyle(color: Colors.white38),
               );
+            }
 
             final tracks = audioData.$1;
             final currentIdx = audioData.$2; // -1 for none or index
@@ -661,11 +666,12 @@ class _ModernSidebarState extends State<ModernSidebar>
         ValueListenableBuilder(
           valueListenable: widget.state.subtitleDetails,
           builder: (_, subData, __) {
-            if (subData == null || subData.$1.isEmpty)
+            if (subData == null || subData.$1.isEmpty) {
               return const Text(
                 "No subtitles",
                 style: TextStyle(color: Colors.white38),
               );
+            }
 
             final tracks = subData.$1;
             final currentIdx = subData.$2;

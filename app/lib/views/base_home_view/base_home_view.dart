@@ -18,6 +18,7 @@ import 'package:zxy_app/views/settings_view/settings_view.dart';
 import 'package:zxy_app/views/settings_view/settings_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/top_header.dart';
+import 'package:zxy_app/views/base_home_view/modern_navigation_drawer.dart';
 
 class BaseHomeView extends StatefulWidget {
   final Dependencies deps;
@@ -123,11 +124,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                 children: [
                   Visibility(
                     visible: !screenData.shouldRenderMobile,
-                    child: NavigationDrawerBar(
-                      vm: vm,
-                      leftCards: leftCards,
-                      screenData: screenData,
-                    ),
+                    child: ModernNavigationDrawer(vm: vm, leftCards: leftCards),
                   ),
                   // if (!screenData.shouldRenderMobile)
                   //   SizedBox(width: AppTheme.spacingM),
@@ -191,8 +188,7 @@ class NavigationDrawerBar extends StatelessWidget {
               margin: EdgeInsets.only(
                 top: AppTheme.spacingM,
                 bottom: AppTheme.spacingM,
-                left: AppTheme.spacingM
-
+                left: AppTheme.spacingM,
               ),
               width: 280,
               decoration: BoxDecoration(
