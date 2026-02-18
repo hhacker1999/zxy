@@ -10,11 +10,10 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:zxy_app/app_constants.dart';
+
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
-import 'package:zxy_app/usecase/resource/movie_details.dart';
-import 'package:zxy_app/usecase/resource/tv_details.dart';
+
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
@@ -23,6 +22,7 @@ import 'package:zxy_app/views/shared/glass_container.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/video_handler.dart';
 import 'package:zxy_app/views/view_item_state.dart';
+import 'package:zxy_app/views/video_player_view/modern_sidebar.dart';
 
 class SeekValueNotifier extends ChangeNotifier
     implements ValueListenable<SeekBarInfo?> {
@@ -630,14 +630,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                           },
                         ),
                       ),
-                      VideoSettingsSidebar(
-                        handler: widget.handler,
-                        settingsBloc: _settingBloc,
-                        onVideoStreamChanged: onVideoStreamChanged,
-                        streamNotifier: widget.handler
-                            .getCurrentStreamsNotifier(),
-                        selectedStreamNotifier: widget.handler
-                            .getSelectedStreamNotifier(),
+                      ModernSidebar(
+                        state: _state,
+                        height: constr.maxHeight - 40,
                         updateAudioDelay: () {
                           final delaySec = _state.audioDelay.value / 1000;
                           (_player.platform as NativePlayer).setProperty(
@@ -645,6 +640,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                             delaySec.toString(),
                           );
                         },
+                        handler: widget.handler,
                         updateSubDelay: () {
                           final delaySec = _state.subtitleDelay.value / 1000;
                           (_player.platform as NativePlayer).setProperty(
@@ -652,428 +648,18 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                             delaySec.toString(),
                           );
                         },
+                        onVideoStreamChanged: onVideoStreamChanged,
+                        streamNotifier: widget.handler
+                            .getCurrentStreamsNotifier(),
+                        selectedStreamNotifier: widget.handler
+                            .getSelectedStreamNotifier(),
                         player: _player,
-                        state: _state,
-                        height: constr.maxHeight - 40,
+                        settingsBloc: _settingBloc,
                       ),
                     ],
                   ),
                 ),
               ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class VideoSettingsSidebar extends StatefulWidget {
-  final double height;
-  final Player player;
-  final VideoHandler handler;
-  final VoidCallback updateAudioDelay;
-  final VoidCallback updateSubDelay;
-  final ValueListenable<ViewItemState<ZxyStreamResponse>> streamNotifier;
-  final ValueNotifier<int> selectedStreamNotifier;
-  final ValueChanged<ZxyResolutionItem> onVideoStreamChanged;
-  final SettingsBloc settingsBloc;
-  const VideoSettingsSidebar({
-    super.key,
-    required ZxyPlayerState state,
-    required this.height,
-    required this.updateAudioDelay,
-    required this.handler,
-    required this.updateSubDelay,
-    required this.onVideoStreamChanged,
-    required this.streamNotifier,
-    required this.selectedStreamNotifier,
-    required this.player,
-    required this.settingsBloc,
-  }) : _state = state;
-
-  final ZxyPlayerState _state;
-
-  @override
-  State<VideoSettingsSidebar> createState() => _VideoSettingsSidebarState();
-}
-
-class _VideoSettingsSidebarState extends State<VideoSettingsSidebar> {
-  late final MovieViewModel mVm;
-  late final SeriesViewModel sVm;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.handler.isMovie()) {
-      mVm = widget.handler as MovieViewModel;
-    } else {
-      sVm = widget.handler as SeriesViewModel;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ScreenData screenData = Screen.of(context);
-    return ValueListenableBuilder(
-      valueListenable: widget._state.settingsVisible,
-      builder: (_, settingsVisible, child) {
-        return AnimatedPositioned(
-          curve: Curves.elasticOut,
-          top: 0,
-          bottom: 0,
-          right: settingsVisible ? 0 : -400,
-          duration: const Duration(milliseconds: 800),
-          child: child!,
-        );
-      },
-      child: GlassContainer(
-        containerOpacity: 0.7,
-        height: widget.height,
-        width: 400,
-        padding: const EdgeInsets.all(20),
-        radius: AppTheme.roundedMedium,
-        child: ValueListenableBuilder(
-          valueListenable: widget.streamNotifier,
-          builder: (_, streamState, _) {
-            late final List<ZxyResolutionItem> streams;
-            if (streamState is ItemLoaded<ZxyStreamResponse>) {
-              streams = List.from(streamState.data.uhd)
-                ..addAll(streamState.data.fhd)
-                ..addAll(streamState.data.hd);
-            } else {
-              streams = [];
-            }
-            return MultiValueListenableBuilder(
-              notifiers: [
-                widget._state.audioDetails,
-                widget._state.videoDetails,
-                widget._state.subtitleDetails,
-                widget._state.subtitleDelay,
-                widget._state.audioDelay,
-                widget.settingsBloc.subFontStyle,
-                widget.settingsBloc.skipDuration,
-                widget.selectedStreamNotifier,
-                if (!widget.handler.isMovie()) sVm.activeSeasonEpisode,
-              ],
-              builder: (_) {
-                return SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.handler.isMovie()
-                            ? (mVm.movieDetailState.value
-                                      as ItemLoaded<MovieDetails>)
-                                  .data
-                                  .title
-                            : (sVm.seriesDetailState.value
-                                      as ItemLoaded<SeriesDetails>)
-                                  .data
-                                  .name,
-                        style: TextStyle(
-                          fontSize: screenData.shouldRenderMobile ? 24 : 32,
-                        ),
-                      ),
-                      if (!widget.handler.isMovie()) ...[
-                        SideBarToggleList(
-                          items:
-                              (sVm.seriesDetailState.value
-                                      as ItemLoaded<SeriesDetails>)
-                                  .data
-                                  .seasons
-                                  .map((e) {
-                                    return "Season ${e.seasonNumber.toString().padLeft(2, '0')}";
-                                  })
-                                  .toList(),
-                          onChanged: (index) {
-                            if (sVm.activeSeasonEpisode.value.$1 == index) {
-                              return;
-                            }
-                            widget.player.stop();
-                            widget._state.bufferingOrLoading.value = true;
-                            sVm.onSeasonSelect(index);
-                          },
-                          title: "Seasons",
-                          selected: sVm.activeSeasonEpisode.value.$1,
-                        ),
-                        AppTheme.boxHeightM,
-                        SideBarToggleList(
-                          items:
-                              (sVm.seriesDetailState.value
-                                      as ItemLoaded<SeriesDetails>)
-                                  .data
-                                  .seasons[sVm.activeSeasonEpisode.value.$1]
-                                  .episodes
-                                  .map((e) {
-                                    return "Episodes ${e.episodeNumber.toString().padLeft(2, '0')}: ${e.name}";
-                                  })
-                                  .toList(),
-                          onChanged: (index) async {
-                            if (sVm.activeSeasonEpisode.value.$2 == index) {
-                              return;
-                            }
-                            widget.player.stop();
-                            widget._state.bufferingOrLoading.value = true;
-                            sVm.onEpisodeSelect(index);
-                          },
-                          title: "Episodes",
-                          selected: sVm.activeSeasonEpisode.value.$2,
-                        ),
-                      ],
-                      AppTheme.boxHeightM,
-                      if (streams.isNotEmpty)
-                        SideBarToggleList(
-                          items: streams.map((e) {
-                            String streamString = e.resolution;
-                            streamString += "|${e.quality}";
-                            if (e.visualTags.isNotEmpty) {
-                              streamString += "|";
-                              streamString += e.visualTags.join("|");
-                            }
-                            // if (stream.audioTags.isNotEmpty) {
-                            //   streamString += "|";
-                            //   streamString += stream.audioTags.join("|");
-                            // }
-                            final sz = (e.size ?? 0) / (1024 * 1024 * 1024);
-                            streamString += "|${sz.toStringAsFixed(2)}Gb";
-                            return streamString;
-                          }).toList(),
-                          onChanged: (index) {
-                            if (widget.selectedStreamNotifier.value == index) {
-                              return;
-                            }
-                            widget.selectedStreamNotifier.value = index;
-                            widget.onVideoStreamChanged(streams[index]);
-                          },
-                          title: "Video Streams",
-                          selected: widget.selectedStreamNotifier.value,
-                        ),
-                      if (streams.isNotEmpty) AppTheme.boxHeightM,
-                      if (widget._state.audioDetails.value != null &&
-                          widget._state.audioDetails.value!.$1.isNotEmpty)
-                        SideBarToggleList(
-                          items: List.empty(growable: true)
-                            ..add("None")
-                            ..addAll(
-                              widget._state.audioDetails.value!.$1.map((e) {
-                                return "[${e.language!.length == 3 ? AppConstants.iso6392Languages[e.language] ?? e.language : AppConstants.isoLanguages[e.language] ?? e.language}] ${e.codec ?? ''} ${e.title ?? ''} ${e.channelscount ?? 0}ch";
-                              }),
-                            ),
-                          onChanged: (index) {
-                            final selected =
-                                widget._state.audioDetails.value != null
-                                ? widget._state.audioDetails.value!.$2 + 1
-                                : 0;
-                            if (selected == index) {
-                              return;
-                            }
-                            if (index == 0) {
-                              widget.player.setAudioTrack(AudioTrack.no());
-                              widget._state.audioDetails.value = (
-                                widget._state.audioDetails.value!.$1,
-                                -1,
-                              );
-                              return;
-                            }
-
-                            final currentBuildAudioInfo = widget
-                                ._state
-                                .audioDetails
-                                .value!
-                                .$1[index != 0 ? index - 1 : 0];
-                            widget.player.setAudioTrack(currentBuildAudioInfo);
-                            widget._state.audioDetails.value = (
-                              widget._state.audioDetails.value!.$1,
-                              index - 1,
-                            );
-                          },
-                          title: "Audio Tracks",
-                          selected: widget._state.audioDetails.value != null
-                              ? widget._state.audioDetails.value!.$2 + 1
-                              : 0,
-                        ),
-                      if (widget._state.audioDetails.value != null &&
-                          widget._state.audioDetails.value!.$1.isNotEmpty)
-                        AppTheme.boxHeightM,
-                      if (widget._state.subtitleDetails.value != null &&
-                          widget._state.subtitleDetails.value!.$1.isNotEmpty)
-                        SideBarToggleList(
-                          items: List.empty(growable: true)
-                            ..add("None")
-                            ..addAll(
-                              widget._state.subtitleDetails.value!.$1.map((e) {
-                                return "[${e.language!.length == 3 ? AppConstants.iso6392Languages[e.language] ?? e.language : AppConstants.isoLanguages[e.language] ?? e.language}] ${e.title ?? 0}";
-                              }),
-                            ),
-                          onChanged: (index) {
-                            final selected =
-                                widget._state.subtitleDetails.value != null
-                                ? widget._state.subtitleDetails.value!.$2 + 1
-                                : 0;
-                            if (selected == index) {
-                              return;
-                            }
-                            if (index == 0) {
-                              widget.player.setSubtitleTrack(
-                                SubtitleTrack.no(),
-                              );
-                              widget._state.subtitleDetails.value = (
-                                widget._state.subtitleDetails.value!.$1,
-                                -1,
-                              );
-                              return;
-                            }
-
-                            final currentBuildsubtitleInfo =
-                                widget
-                                    ._state
-                                    .subtitleDetails
-                                    .value!
-                                    .$1
-                                    .isNotEmpty
-                                ? widget
-                                      ._state
-                                      .subtitleDetails
-                                      .value!
-                                      .$1[index != 0 ? index - 1 : 0]
-                                : null;
-                            widget.player.setSubtitleTrack(
-                              currentBuildsubtitleInfo!,
-                            );
-                            widget._state.subtitleDetails.value = (
-                              widget._state.subtitleDetails.value!.$1,
-                              index - 1,
-                            );
-                          },
-                          title: "Subtitle Tracks",
-                          selected: widget._state.subtitleDetails.value != null
-                              ? widget._state.subtitleDetails.value!.$2 + 1
-                              : 0,
-                        ),
-                      AppTheme.boxHeightM,
-                      SettingsPlusMinusWidget(
-                        text: "Audio delay",
-                        value: "${widget._state.audioDelay.value}ms",
-                        onPlus: () {
-                          widget._state.audioDelay.value += 10;
-                          widget.updateAudioDelay();
-                        },
-                        onMinus: () {
-                          widget._state.audioDelay.value -= 10;
-                          widget.updateAudioDelay();
-                        },
-                      ),
-                      AppTheme.boxHeightM,
-                      SettingsPlusMinusWidget(
-                        text: "Subtitle delay",
-                        value: "${widget._state.subtitleDelay.value}ms",
-                        onPlus: () {
-                          widget._state.subtitleDelay.value += 10;
-                          widget.updateSubDelay();
-                        },
-                        onMinus: () {
-                          widget._state.subtitleDelay.value -= 10;
-                          widget.updateSubDelay();
-                        },
-                      ),
-                      AppTheme.boxHeightM,
-                      SettingsPlusMinusWidget(
-                        text: "Subtitle font size",
-                        value:
-                            "${widget.settingsBloc.subFontStyle.value.fontSize}",
-                        onPlus: () {
-                          widget.settingsBloc.subStyle = widget
-                              .settingsBloc
-                              .subFontStyle
-                              .value
-                              .copyWith(
-                                fontSize: min(
-                                  widget
-                                          .settingsBloc
-                                          .subFontStyle
-                                          .value
-                                          .fontSize +
-                                      2,
-                                  150,
-                                ),
-                              );
-                        },
-                        onMinus: () {
-                          widget.settingsBloc.subStyle = widget
-                              .settingsBloc
-                              .subFontStyle
-                              .value
-                              .copyWith(
-                                fontSize: max(
-                                  widget
-                                          .settingsBloc
-                                          .subFontStyle
-                                          .value
-                                          .fontSize -
-                                      2,
-                                  0,
-                                ),
-                              );
-                        },
-                      ),
-                      AppTheme.boxHeightM,
-                      SettingsPlusMinusWidget(
-                        text: "Subtitle padding",
-                        value:
-                            "${widget.settingsBloc.subFontStyle.value.fontPadding}",
-                        onPlus: () {
-                          widget.settingsBloc.subStyle = widget
-                              .settingsBloc
-                              .subFontStyle
-                              .value
-                              .copyWith(
-                                fontPadding: min(
-                                  widget
-                                          .settingsBloc
-                                          .subFontStyle
-                                          .value
-                                          .fontPadding +
-                                      6,
-                                  150,
-                                ),
-                              );
-                        },
-                        onMinus: () {
-                          widget.settingsBloc.subStyle = widget
-                              .settingsBloc
-                              .subFontStyle
-                              .value
-                              .copyWith(
-                                fontPadding: max(
-                                  widget
-                                          .settingsBloc
-                                          .subFontStyle
-                                          .value
-                                          .fontPadding -
-                                      6,
-                                  0,
-                                ),
-                              );
-                        },
-                      ),
-                      AppTheme.boxHeightM,
-                      SettingsPlusMinusWidget(
-                        text: "Skip Duration(seconds)",
-                        value: "${widget.settingsBloc.skipDuration.value}",
-                        onPlus: () {
-                          widget.settingsBloc.skipDuration =
-                              widget.settingsBloc.skipDuration.value + 5;
-                        },
-                        onMinus: () {
-                          widget.settingsBloc.skipDuration =
-                              widget.settingsBloc.skipDuration.value - 5;
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
             );
           },
         ),

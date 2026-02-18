@@ -49,6 +49,8 @@ class _HomeViewState extends State<HomeView> {
           builder: (_, list, _) {
             return Column(
               children: [
+                if (!Screen.of(context).shouldRenderMobile)
+                AppTheme.boxHeightM,
                 ValueListenableBuilder(
                   valueListenable: homeViewModel.topBannerState,
                   builder: (_, state, _) {
@@ -65,6 +67,7 @@ class _HomeViewState extends State<HomeView> {
                   padding: EdgeInsets.only(left: AppTheme.spacingM),
                   child: ContinueWatchingHeader(homeViewModel: homeViewModel),
                 ),
+                AppTheme.boxHeightS,
                 Padding(
                   padding: EdgeInsets.only(left: AppTheme.spacingM),
                   child: Column(

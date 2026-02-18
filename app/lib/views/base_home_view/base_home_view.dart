@@ -188,6 +188,12 @@ class NavigationDrawerBar extends StatelessWidget {
             return Container(
               // borderOpacity: 0.15,
               // containerOpacity: 0.15,
+              margin: EdgeInsets.only(
+                top: AppTheme.spacingM,
+                bottom: AppTheme.spacingM,
+                left: AppTheme.spacingM
+
+              ),
               width: 280,
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.2),
