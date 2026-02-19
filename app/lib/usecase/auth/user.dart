@@ -80,7 +80,10 @@ class ProfileLibraryItem {
   final String name;
   final LibraryFilter filter;
 
-  ProfileLibraryItem({required this.name, required this.filter});
+  late String id;
+
+  ProfileLibraryItem({required this.name, required this.filter})
+    : id = DateTime.now().microsecondsSinceEpoch.toString();
 
   factory ProfileLibraryItem.fromJson(Map<String, dynamic> json) =>
       ProfileLibraryItem(

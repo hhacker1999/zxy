@@ -6,6 +6,7 @@ import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
+import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 
@@ -15,12 +16,9 @@ class SettingsViewModel extends ChangeNotifier {
   String _selectedDebridType = "";
   String get selectedDebridType => _selectedDebridType;
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
 
   final TextEditingController apiKeyController = TextEditingController();
 
-  // Library items state management
   List<ProfileLibraryItem> _libraryItems = [];
   List<ProfileLibraryItem> get libraryItems => _libraryItems;
 
@@ -42,15 +40,12 @@ class SettingsViewModel extends ChangeNotifier {
     if (currentProfile.debridType.isNotEmpty) {
       _selectedDebridType = currentProfile.debridType;
     }
-    // Initialize library items from profile
     _libraryItems = List.from(currentProfile.libraryItems);
     _hasLibraryChanges = false;
-    // notifyListeners();
   }
 
   set context(BuildContext context) => _context = context;
 
-  // Library Items CRUD Methods
   void addLibraryItem(ProfileLibraryItem item) {
     _libraryItems.add(item);
     _hasLibraryChanges = true;
@@ -80,18 +75,12 @@ class SettingsViewModel extends ChangeNotifier {
     final item = _libraryItems.removeAt(oldIndex);
     _libraryItems.insert(newIndex, item);
     _hasLibraryChanges = true;
-    // Future.microtask(() {
-    //   notifyListeners();
-    // });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      notifyListeners();
-    });
+    notifyListeners();
   }
 
   Future<void> saveLibraryItems() async {
     try {
-      _isLoading = true;
-      notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       await _authUc.updateProfileList(_libraryItems);
       final profile = await _authUc.getUserProfile();
       _context.read<UserBloc>().profile = profile;
@@ -101,15 +90,14 @@ class SettingsViewModel extends ChangeNotifier {
     } catch (e) {
       showToast(_context, true, e.toString(), "");
     } finally {
-      _isLoading = false;
       notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
     }
   }
 
   Future<void> storeDebridKey() async {
     try {
-      _isLoading = true;
-      notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       if (_selectedDebridType != "tb" && _selectedDebridType != "rd") {
         showToast(_context, true, "Invalid debrid provider", "");
         return;
@@ -127,15 +115,14 @@ class SettingsViewModel extends ChangeNotifier {
     } catch (e) {
       showToast(_context, true, e.toString(), "");
     } finally {
-      _isLoading = false;
       notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
     }
   }
 
   Future<void> removeDebridKey() async {
     try {
-      _isLoading = true;
-      notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       await _authUc.deleteUserDebridKey();
       _selectedDebridType = "";
       final newProfile = await _authUc.getUserProfile();
@@ -143,8 +130,8 @@ class SettingsViewModel extends ChangeNotifier {
     } catch (e) {
       showToast(_context, true, e.toString(), "");
     } finally {
-      _isLoading = false;
       notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
     }
   }
 
@@ -161,8 +148,7 @@ class SettingsViewModel extends ChangeNotifier {
         showToast(_context, true, "Name cannot be empty", "");
         return;
       }
-      _isLoading = true;
-      notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       await _authUc.createProfile(name, pin, copyDebrid);
       final user = await _authUc.getUser();
       showToast(_context, false, "Profile Created", "");
@@ -170,8 +156,8 @@ class SettingsViewModel extends ChangeNotifier {
     } catch (e) {
       showToast(_context, true, e.toString(), "");
     } finally {
-      _isLoading = false;
       notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
     }
   }
 
@@ -181,8 +167,7 @@ class SettingsViewModel extends ChangeNotifier {
         showToast(_context, true, "Name cannot be empty", "");
         return;
       }
-      _isLoading = true;
-      notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       await _authUc.updateProfile(name, pin, id);
       final user = await _authUc.getUser();
       final profile = await _authUc.getUserProfile();
@@ -192,15 +177,14 @@ class SettingsViewModel extends ChangeNotifier {
     } catch (e) {
       showToast(_context, true, e.toString(), "");
     } finally {
-      _isLoading = false;
       notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
     }
   }
 
   Future<void> deleteProfile(int id) async {
     try {
-      _isLoading = true;
-      notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       await _authUc.deleteProfile(id);
       final user = await _authUc.getUser();
       showToast(_context, false, "Profile Deleted", "");
@@ -208,15 +192,14 @@ class SettingsViewModel extends ChangeNotifier {
     } catch (e) {
       showToast(_context, true, e.toString(), "");
     } finally {
-      _isLoading = false;
       notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
     }
   }
 
   Future<void> logout() async {
     try {
-      _isLoading = true;
-      notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       await _authUc.logout();
       showToast(_context, false, "Logged out", "");
       Navigator.pushNamedAndRemoveUntil(_context, AppRoutes.loginView, (_) {
@@ -225,8 +208,8 @@ class SettingsViewModel extends ChangeNotifier {
     } catch (e) {
       showToast(_context, true, e.toString(), "");
     } finally {
-      _isLoading = false;
       notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
     }
   }
 

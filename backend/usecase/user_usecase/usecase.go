@@ -249,7 +249,7 @@ func (u *Usecase) GetUserProfile(userId int, profileId int) (models.UserProfile,
 }
 
 func (u *Usecase) CreateUserProfile(profileInput CreateProfileInput) error {
-	if len(profileInput.Name) < 1 || len(profileInput.Name) > 15 {
+	if len(profileInput.Name) < 1 || len(profileInput.Name) > 30 {
 		return apperrors.InvalidInput{Err: "Name should be between 1 and 15 characters"}
 	}
 
@@ -336,7 +336,7 @@ func GetRandomString(length int) string {
 }
 
 func (u *Usecase) UpdateUserProfile(profileInput CreateProfileInput) error {
-	if len(profileInput.Name) < 1 || len(profileInput.Name) > 10 {
+	if len(profileInput.Name) < 1 || len(profileInput.Name) > 30 {
 		return apperrors.InvalidInput{Err: "Invalid Name"}
 	}
 
