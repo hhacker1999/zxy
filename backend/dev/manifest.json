@@ -1,0 +1,68 @@
+{
+  "name": "AIOStreams",
+  "id": "aiostreamsfortheweebs.midnightignite.me.e8aeec76-d97",
+  "version": "2.18.1",
+  "description": "🪤",
+  "catalogs": [],
+  "resources": [
+    {
+      "name": "meta",
+      "types": [
+        "other",
+        "movie",
+        "series",
+        "tv",
+        "events"
+      ],
+      "idPrefixes": [
+        "st:store:tb:",
+        "torbox",
+        "mf",
+        "dl",
+        "aiostreamserror"
+      ]
+    },
+    {
+      "name": "stream",
+      "types": [
+        "other",
+        "movie",
+        "series",
+        "anime",
+        "tv",
+        "events"
+      ],
+      "idPrefixes": [
+        "tt",
+        "st:store:tb:",
+        "kitsu:",
+        "mal:",
+        "kitsu",
+        "mf",
+        "dl",
+        "imdb",
+        "mal",
+        "tvdb",
+        "tmdb"
+      ]
+    },
+    {
+      "name": "catalog",
+      "types": []
+    }
+  ],
+  "types": [
+    "other",
+    "movie",
+    "series",
+    "tv",
+    "events",
+    "anime"
+  ],
+  "logo": "https://64.media.tumblr.com/b5f7fe6bacd12f1df4d28a001f2d68c2/785d14de198d8334-99/s1280x1920/556a8a0fcc1b0ad3d15a4688f2358177ca8e5c5f.png",
+  "behaviorHints": {
+    "configurable": true,
+    "configurationRequired": false
+  },
+  "addonCatalogs": []
+}

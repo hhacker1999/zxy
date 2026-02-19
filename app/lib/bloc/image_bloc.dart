@@ -78,6 +78,7 @@ class ImageBloc {
         final image = img.decodeImage(data.image);
         if (image == null) return;
 
+        // NOTE: Logic for getting color out of an image is AI generated.
         // Scale down. 20x20 gives us a slightly better sample pool without hurting performance
         final tinyImage = img.copyResize(image, width: 20, height: 20);
 

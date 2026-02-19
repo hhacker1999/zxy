@@ -34,7 +34,6 @@ type Usecase struct {
 }
 
 func New(
-	addonUrl string,
 	addonRepo *addonsrepository.Repository,
 	templatePath string,
 	instances string,
@@ -58,7 +57,6 @@ func New(
 	}
 
 	return &Usecase{
-		addonUrl:  addonUrl,
 		addonRepo: addonRepo,
 		template:  string(byte),
 		instances: instancesSplitted,
