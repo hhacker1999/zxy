@@ -10,7 +10,6 @@ import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/usecase/stream/stream.dart';
 import 'package:zxy_app/views/video_handler.dart';
 import 'package:zxy_app/views/view_item_state.dart';
-import 'dart:developer' as dev;
 
 class SeriesViewModel implements VideoHandler {
   final MediaUsecase mediaUc;
@@ -57,7 +56,6 @@ class SeriesViewModel implements VideoHandler {
       ValueNotifier<(int, int)>((0, -1));
 
   Future<void> initialise(int id, {int? season, int episode = 0}) async {
-    dev.log("--------------------------------------------------");
     try {
       final details = await mediaUc.getSeriesDetails(id);
       imdbId = details.externalIds.imdbId;
@@ -87,8 +85,6 @@ class SeriesViewModel implements VideoHandler {
         }
       }
 
-      dev.log(season.toString());
-      dev.log(episode.toString());
       activeSeasonEpisode.value = (season!, activeSeasonEpisode.value.$2);
       onEpisodeSelect(episode);
       _seriesDetailsState.value = ItemLoaded(data: details);
