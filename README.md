@@ -54,8 +54,16 @@
 ## 🛠️ Built With
 
 * [Flutter](https://flutter.dev/) - UI Framework.
+* [Media Kit](https://github.com/media-kit/media-kit) - Media kit used as MPV based player
 
 ---
+
+## 📡 Data & Attributions
+
+<img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg" width="100" alt="TMDB Logo">
+
+This application uses *TMDB* and the *TMDB APIs* but is not endorsed, certified, or otherwise approved by *TMDB*.
+
 
 ---
 *Created with ❤️ for a better streaming experience.*
