@@ -23,7 +23,7 @@
 
 ### Profile Management & Provider Integration
 *Native support for multiple profiles and out-of-the-box Real-Debrid/TorBox integration.*
-![Profiles and Providers](screenshots/profiles.png)
+![Profiles and Providers](./screenshots/profile.png)
 
 ### Player
 *Powered using MPV*
