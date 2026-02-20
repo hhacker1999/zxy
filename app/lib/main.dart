@@ -104,6 +104,7 @@ class _MyAppState extends State<MyApp> {
                         streamUc: deps.streamUc,
                         progressUc: deps.progUc,
                         userBloc: context.read<UserBloc>(),
+                        settingsBloc: context.read<SettingsBloc>(),
                       ),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) =>
@@ -111,8 +112,8 @@ class _MyAppState extends State<MyApp> {
                     );
                   },
                 );
-              case AppRoutes.showView:
-                final args = settings.arguments as int;
+              case AppRoutes.seriesView:
+                final args = settings.arguments as SeriesViewData;
                 return FadePageRoute(
                   builder: (_) {
                     return Provider(
@@ -121,9 +122,10 @@ class _MyAppState extends State<MyApp> {
                         streamUc: deps.streamUc,
                         progressUc: deps.progUc,
                         userBloc: context.read<UserBloc>(),
+                        settingsBloc: context.read<SettingsBloc>(),
                       ),
                       dispose: (_, vm) => vm.dispose(),
-                      builder: (_, _) => ShowView(id: args),
+                      builder: (_, _) => SeriesView(data: args),
                     );
                   },
                 );

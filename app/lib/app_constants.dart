@@ -2,6 +2,86 @@ import 'package:zxy_app/usecase/resource/models.dart';
 
 enum FilterType { trending, year, featured, topRated, popular }
 
+//NOTE: Thanks AI
+class LanguageMapper {
+  static const Map<String, List<String>> nameToCodes = {
+    "Albanian": ["sq", "sqi", "alb"],
+    "Arabic": ["ar", "ara"],
+    "Armenian": ["hy", "hye", "arm"],
+    "Basque": ["eu", "eus", "baq"],
+    "Bengali": ["bn", "ben"],
+    "Bosnian": ["bs", "bos"],
+    "Bulgarian": ["bg", "bul"],
+    "Burmese": ["my", "mya", "bur"],
+    "Catalan": ["ca", "cat"],
+    "Chinese": ["zh", "zho", "chi"],
+    "Croatian": ["hr", "hrv", "scr"],
+    "Czech": ["cs", "ces", "cze"],
+    "Danish": ["da", "dan"],
+    "Dutch": ["nl", "nld", "dut"],
+    "English": ["en", "eng"],
+    "Estonian": ["et", "est"],
+    "Finnish": ["fi", "fin"],
+    "French": ["fr", "fra", "fre"],
+    "Georgian": ["ka", "kat", "geo"],
+    "German": ["de", "deu", "ger"],
+    "Greek": ["el", "ell", "gre"],
+    "Hebrew": ["he", "heb"],
+    "Hindi": ["hi", "hin"],
+    "Hungarian": ["hu", "hun"],
+    "Icelandic": ["is", "isl", "ice"],
+    "Indonesian": ["id", "ind"],
+    "Italian": ["it", "ita"],
+    "Japanese": ["ja", "jpn"],
+    "Korean": ["ko", "kor"],
+    "Latvian": ["lv", "lav"],
+    "Lithuanian": ["lt", "lit"],
+    "Macedonian": ["mk", "mkd", "mac"],
+    "Malay": ["ms", "msa", "may"],
+    "Norwegian": ["no", "nor"],
+    "Persian": ["fa", "fas", "per"],
+    "Polish": ["pl", "pol"],
+    "Portuguese": ["pt", "por"],
+    "Romanian": ["ro", "ron", "rum"],
+    "Russian": ["ru", "rus"],
+    "Serbian": ["sr", "srp", "scc"],
+    "Slovak": ["sk", "slk", "slo"],
+    "Slovenian": ["sl", "slv"],
+    "Spanish": ["es", "spa"],
+    "Swahili": ["sw", "swa"],
+    "Swedish": ["sv", "swe"],
+    "Thai": ["th", "tha"],
+    "Tibetan": ["bo", "bod", "tib"],
+    "Turkish": ["tr", "tur"],
+    "Ukrainian": ["uk", "ukr"],
+    "Urdu": ["ur", "urd"],
+    "Vietnamese": ["vi", "vie"],
+    "Welsh": ["cy", "cym", "wel"],
+  };
+
+  static const String defaultLang = "English";
+
+  static final Map<String, String> _codeToName = _generateCodeToName();
+
+  static Map<String, String> _generateCodeToName() {
+    final Map<String, String> result = {};
+    nameToCodes.forEach((name, codes) {
+      for (var code in codes) {
+        result[code.toLowerCase()] = name;
+      }
+    });
+    return result;
+  }
+
+  static String? getNameFromCode(String code) {
+    return _codeToName[code.toLowerCase().trim()];
+  }
+
+  static List<String>? getCodesFromName(String name) {
+    return nameToCodes[name];
+  }
+}
+
 class Filter {
   final FilterType type;
   final String showValue;
@@ -108,6 +188,12 @@ class AppConstants {
     featuredFilterShow,
     yearFilter,
   ];
+
+  static const Map<String, dynamic> resolutionMap = {
+    "2160p": null,
+    "1080p": null,
+    "720p": null,
+  };
 
   static const Map<String, String> isoLanguages = {
     'en': 'English',

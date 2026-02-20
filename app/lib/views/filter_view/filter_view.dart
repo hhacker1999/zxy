@@ -7,6 +7,7 @@ import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
+import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/shared/drop_down.dart';
 import 'package:zxy_app/views/shared/library_card.dart';
 
@@ -41,7 +42,9 @@ class _FilterViewState extends State<FilterView> {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: AppTheme.spacingM,
-        vertical:screenData.shouldRenderMobile ? MediaQuery.of(context).padding.top: AppTheme.spacingM,
+        vertical: screenData.shouldRenderMobile
+            ? MediaQuery.of(context).padding.top
+            : AppTheme.spacingM,
       ),
       child: Column(
         children: [
@@ -167,9 +170,11 @@ class _FilterViewState extends State<FilterView> {
                                 Navigator.pushNamed(
                                   context,
                                   vm.type == ZxyMediaType.shows
-                                      ? AppRoutes.showView
+                                      ? AppRoutes.seriesView
                                       : AppRoutes.movieView,
-                                  arguments: items[index].id,
+                                  arguments: vm.type == ZxyMediaType.shows
+                                      ? SeriesViewData(id: items[index].id)
+                                      : items[index].id,
                                 );
                               },
                               width: width,

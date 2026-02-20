@@ -10,6 +10,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:zxy_app/app_constants.dart';
 
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
@@ -253,7 +254,10 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       return val;
     });
     int trackIndex = audioTracks.indexWhere(
-      (track) => track.isDefault != null && track.isDefault!,
+      (track) =>
+          track.language != null &&
+          LanguageMapper.getNameFromCode(track.language!) ==
+              _settingBloc.langNotifier.value,
     );
     _state.audioDetails.value = (
       audioTracks,

@@ -11,6 +11,7 @@ import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/home_view/top_banner.dart';
 import 'package:zxy_app/views/screen.dart';
+import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/shared/library_list.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
@@ -49,8 +50,7 @@ class _HomeViewState extends State<HomeView> {
           builder: (_, list, _) {
             return Column(
               children: [
-                if (!Screen.of(context).shouldRenderMobile)
-                AppTheme.boxHeightM,
+                if (!Screen.of(context).shouldRenderMobile) AppTheme.boxHeightM,
                 ValueListenableBuilder(
                   valueListenable: homeViewModel.topBannerState,
                   builder: (_, state, _) {
@@ -101,8 +101,8 @@ class _HomeViewState extends State<HomeView> {
                               } else {
                                 Navigator.pushNamed(
                                   context,
-                                  AppRoutes.showView,
-                                  arguments: res.id,
+                                  AppRoutes.seriesView,
+                                  arguments: SeriesViewData(id: res.id),
                                 );
                               }
                             },
@@ -198,10 +198,19 @@ class ContinueWatchingHeader extends StatelessWidget {
                       info: data[index],
                       onTap: () {
                         if (data[index].isShow) {
+                          final splitted = data[index].progress.mediaId.split(
+                            ":",
+                          );
+                          final seasonIndex = (int.tryParse(splitted[1]) ?? 0) - 1;
+                          final episodeIndex = (int.tryParse(splitted[2]) ?? 0) - 1;
                           Navigator.pushNamed(
                             context,
-                            AppRoutes.showView,
-                            arguments: (data[index].media as SeriesDetails).id,
+                            AppRoutes.seriesView,
+                            arguments: SeriesViewData(
+                              id: (data[index].media as SeriesDetails).id,
+                              seasonIndex: seasonIndex,
+                              episodeIndex: episodeIndex
+                            ),
                           );
                         } else {
                           Navigator.pushNamed(

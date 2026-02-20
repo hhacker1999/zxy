@@ -91,9 +91,9 @@ class HttpService {
     RequestAuth auth = RequestAuth.none,
   }) async {
     try {
-      print("Sending HTTP get request to $uri");
+      // print("Sending HTTP get request to $uri");
       final res = await _client.get(uri, headers: _getHeaders(auth, false));
-      print("Response received for $uri with body${res.body}");
+      // print("Response received for $uri with body${res.body}");
       _checkError(res);
       return HttpResponse(body: res.body, hdrs: res.headers);
     } catch (e) {

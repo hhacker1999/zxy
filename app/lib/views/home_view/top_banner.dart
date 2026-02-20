@@ -8,6 +8,7 @@ import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
+import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/shared/zxy_button.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
@@ -375,7 +376,11 @@ class _BannerSlide extends StatelessWidget {
     if (media.type == ZxyMediaType.movie) {
       Navigator.pushNamed(context, AppRoutes.movieView, arguments: media.id);
     } else {
-      Navigator.pushNamed(context, AppRoutes.showView, arguments: media.id);
+      Navigator.pushNamed(
+        context,
+        AppRoutes.seriesView,
+        arguments: SeriesViewData(id: media.id),
+      );
     }
   }
 

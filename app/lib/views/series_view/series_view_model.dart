@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
@@ -9,12 +10,14 @@ import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/usecase/stream/stream.dart';
 import 'package:zxy_app/views/video_handler.dart';
 import 'package:zxy_app/views/view_item_state.dart';
+import 'dart:developer' as dev;
 
 class SeriesViewModel implements VideoHandler {
   final MediaUsecase mediaUc;
   final StreamUsecase streamUc;
   final ProgressUsecase progressUc;
   final UserBloc userBloc;
+  final SettingsBloc settingsBloc;
 
   late final List<Season> seasons;
   final Map<String, ZxyStreamResponse> _streams = {};
@@ -28,6 +31,7 @@ class SeriesViewModel implements VideoHandler {
     required this.streamUc,
     required this.progressUc,
     required this.userBloc,
+    required this.settingsBloc,
   });
 
   final ValueNotifier<bool> scffoldLoading = ValueNotifier(false);
@@ -52,7 +56,8 @@ class SeriesViewModel implements VideoHandler {
   final ValueNotifier<(int, int)> activeSeasonEpisode =
       ValueNotifier<(int, int)>((0, -1));
 
-  Future<void> initialise(int id) async {
+  Future<void> initialise(int id, {int? season, int episode = 0}) async {
+    dev.log("--------------------------------------------------");
     try {
       final details = await mediaUc.getSeriesDetails(id);
       imdbId = details.externalIds.imdbId;
@@ -64,7 +69,28 @@ class SeriesViewModel implements VideoHandler {
       for (var element in progressRes) {
         _progressNotifier.value[element.mediaId] = ValueNotifier(element);
       }
-      onEpisodeSelect(0);
+      if (season == null) {
+        outerLoop:
+        for (var element in details.seasons) {
+          for (var item in element.episodes) {
+            season = element.seasonNumber - 1;
+            episode = item.episodeNumber - 1;
+            var key = "$id:${element.seasonNumber}:${item.episodeNumber}";
+            final value = _progressNotifier.value[key]?.value;
+            if (value == null) {
+              break outerLoop;
+            }
+            if (!value.isWatched) {
+              break outerLoop;
+            }
+          }
+        }
+      }
+
+      dev.log(season.toString());
+      dev.log(episode.toString());
+      activeSeasonEpisode.value = (season!, activeSeasonEpisode.value.$2);
+      onEpisodeSelect(episode);
       _seriesDetailsState.value = ItemLoaded(data: details);
     } catch (e) {
       if (kDebugMode) {
@@ -84,7 +110,6 @@ class SeriesViewModel implements VideoHandler {
       return;
     }
     activeSeasonEpisode.value = (index, -1);
-    selectedStream.value = 0;
     onEpisodeSelect(0);
   }
 
@@ -97,11 +122,24 @@ class SeriesViewModel implements VideoHandler {
     );
   }
 
+  void _setSelectedStreamBasedOnPrefs(ZxyStreamResponse streams) {
+    final res = settingsBloc.resolutionNotifier.value;
+    List<ZxyResolutionItem> streamsFlat = List.empty(growable: true);
+    streamsFlat.addAll(streams.uhd);
+    streamsFlat.addAll(streams.fhd);
+    streamsFlat.addAll(streams.hd);
+    final index = streamsFlat.indexWhere((e) => e.resolution == res);
+    if (index != -1) {
+      selectedStream.value = index;
+    } else {
+      selectedStream.value = 0;
+    }
+  }
+
   Future<void> onEpisodeSelect(int episodeIndex) async {
     if (activeSeasonEpisode.value.$2 == episodeIndex) {
       return;
     }
-    selectedStream.value = 0;
     _resetVideoHandler();
     activeSeasonEpisode.value = (activeSeasonEpisode.value.$1, episodeIndex);
 
@@ -109,6 +147,7 @@ class SeriesViewModel implements VideoHandler {
         _streams["${activeSeasonEpisode.value.$1}:${activeSeasonEpisode.value.$2}"];
     if (cacheStreams != null) {
       _episodeStreamsState.value = ItemLoaded(data: cacheStreams);
+      _setSelectedStreamBasedOnPrefs(cacheStreams);
       return;
     }
 
@@ -128,6 +167,7 @@ class SeriesViewModel implements VideoHandler {
         _streams["${activeSeasonEpisode.value.$1}:${activeSeasonEpisode.value.$2}"] =
             streams;
         _episodeStreamsState.value = ItemLoaded(data: streams);
+        _setSelectedStreamBasedOnPrefs(streams);
       } catch (e) {
         if (kDebugMode) {
           print(e);
@@ -142,6 +182,7 @@ class SeriesViewModel implements VideoHandler {
     try {
       scffoldLoading.value = true;
       await progressUc.updateShowToWatched(mediaId);
+      await updateShowProgressFromBE();
       scffoldLoading.value = false;
     } catch (e) {
       if (kDebugMode) {
@@ -153,14 +194,14 @@ class SeriesViewModel implements VideoHandler {
   }
 
   Future<void> updateShowProgressFromBE() async {
-    _disposeAndClearEachProgress();
+    final Map<String, ValueNotifier<WatchProgress>> progressMap = {};
     final details =
         (_seriesDetailsState.value as ItemLoaded<SeriesDetails>).data;
     final progressRes = await progressUc.getProgressShow(details.id.toString());
-    final Map<String, ValueNotifier<WatchProgress>> progressMap = {};
     for (var element in progressRes) {
       progressMap[element.mediaId] = ValueNotifier(element);
     }
+    _disposeAndClearEachProgress();
     _progressNotifier.value = progressMap;
   }
 

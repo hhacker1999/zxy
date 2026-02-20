@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
@@ -16,6 +17,7 @@ class MovieViewModel implements VideoHandler {
   final StreamUsecase streamUc;
   final ProgressUsecase progressUc;
   final UserBloc userBloc;
+  final SettingsBloc settingsBloc;
 
   ValueNotifier<int> selectedStream = ValueNotifier(0);
 
@@ -24,6 +26,7 @@ class MovieViewModel implements VideoHandler {
     required this.streamUc,
     required this.progressUc,
     required this.userBloc,
+    required this.settingsBloc,
   });
 
   final ValueNotifier<ViewItemState<MovieDetails>> _movieDetailsState =
@@ -74,12 +77,27 @@ class MovieViewModel implements VideoHandler {
         details.externalIds.imdbId ?? "",
       );
       _movieStreamsState.value = ItemLoaded(data: streams);
+      _setSelectedStreamBasedOnPrefs(streams);
     } catch (e) {
       if (kDebugMode) {
         print(e);
       }
       _movieStreamsState.value = ItemError(error: e.toString());
       rethrow;
+    }
+  }
+
+  void _setSelectedStreamBasedOnPrefs(ZxyStreamResponse streams) {
+    final res = settingsBloc.resolutionNotifier.value;
+    List<ZxyResolutionItem> streamsFlat = List.empty(growable: true);
+    streamsFlat.addAll(streams.uhd);
+    streamsFlat.addAll(streams.fhd);
+    streamsFlat.addAll(streams.hd);
+    final index = streamsFlat.indexWhere((e) => e.resolution == res);
+    if (index != -1) {
+      selectedStream.value = index;
+    } else {
+      selectedStream.value = 0;
     }
   }
 

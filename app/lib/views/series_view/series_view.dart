@@ -25,15 +25,23 @@ import 'package:zxy_app/views/shared/zxy_image.dart';
 
 import '../filter_view/filter_view_model.dart';
 
-class ShowView extends StatefulWidget {
+class SeriesViewData {
   final int id;
-  const ShowView({super.key, required this.id});
+  int? seasonIndex;
+  final int episodeIndex;
 
-  @override
-  State<ShowView> createState() => _ShowViewState();
+  SeriesViewData({required this.id, this.seasonIndex, this.episodeIndex = 0});
 }
 
-class _ShowViewState extends State<ShowView> with RouteAware {
+class SeriesView extends StatefulWidget {
+  final SeriesViewData data;
+  const SeriesView({super.key, required this.data});
+
+  @override
+  State<SeriesView> createState() => _SeriesViewState();
+}
+
+class _SeriesViewState extends State<SeriesView> with RouteAware {
   late final SeriesViewModel vm;
   final episodeDF = DateFormat('MMM dd, yyyy');
 
@@ -41,7 +49,11 @@ class _ShowViewState extends State<ShowView> with RouteAware {
   void initState() {
     super.initState();
     vm = context.read<SeriesViewModel>();
-    vm.initialise(widget.id);
+    vm.initialise(
+      widget.data.id,
+      season: widget.data.seasonIndex,
+      episode: widget.data.episodeIndex,
+    );
   }
 
   @override
@@ -168,7 +180,7 @@ class _ShowViewState extends State<ShowView> with RouteAware {
                                   children: [
                                     ModernDropdown(
                                       height: 40,
-                                      initialSelection: 0,
+                                      initialSelection: active.$1,
                                       entries: List.generate(vm.seasons.length, (
                                         index,
                                       ) {
@@ -189,7 +201,7 @@ class _ShowViewState extends State<ShowView> with RouteAware {
                                         ? AppTheme.boxHeightM
                                         : AppTheme.boxHeightL,
                                     EpisodesList(
-                                      id: widget.id,
+                                      id: widget.data.id,
                                       color: color,
                                       renderMobile:
                                           screenInfo.shouldRenderMobile,
@@ -232,8 +244,8 @@ class _ShowViewState extends State<ShowView> with RouteAware {
                             onTap: (media) {
                               Navigator.pushNamed(
                                 context,
-                                AppRoutes.showView,
-                                arguments: media.id,
+                                AppRoutes.seriesView,
+                                arguments: SeriesViewData(id: media.id),
                               );
                             },
                           ),
@@ -269,8 +281,8 @@ class _ShowViewState extends State<ShowView> with RouteAware {
                             onTap: (media) {
                               Navigator.pushNamed(
                                 context,
-                                AppRoutes.showView,
-                                arguments: media.id,
+                                AppRoutes.seriesView,
+                                arguments: SeriesViewData(id: media.id),
                               );
                             },
                           ),
@@ -323,6 +335,7 @@ class EpisodesList extends StatelessWidget {
               final mapKey =
                   "$id:${season.seasonNumber}:${episode.episodeNumber}";
               return GestureDetector(
+                key: ValueKey(mapKey),
                 onLongPressStart: (details) {
                   if (episode.airDate == null ||
                       episode.airDate!.isAfter(DateTime.now())) {
@@ -472,6 +485,7 @@ class EpisodesList extends StatelessWidget {
               final mapKey =
                   "$id:${season.seasonNumber}:${episode.episodeNumber}";
               return MouseRegion(
+                key: ValueKey(mapKey),
                 cursor: SystemMouseCursors.click,
                 child: GestureDetector(
                   onLongPressStart: (details) {
@@ -958,11 +972,13 @@ class BannerItemSeries extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         ZxyImage(
-          onLoad: (_) async {
-            context.read<ImageBloc>().setGradColorFromImage(
-              series.backdropPath!,
-              context,
-            );
+          onLoad: (_) {
+            WidgetsBinding.instance.addPostFrameCallback((e) {
+              context.read<ImageBloc>().setGradColorFromImage(
+                series.backdropPath!,
+                context,
+              );
+            });
           },
           height: height,
           width: width,

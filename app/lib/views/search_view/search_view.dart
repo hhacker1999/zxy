@@ -7,6 +7,7 @@ import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/search_view/search_view_model.dart';
+import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/shared/library_card.dart';
 import 'package:zxy_app/views/top_header.dart';
 import 'package:zxy_app/views/view_item_state.dart';
@@ -148,8 +149,10 @@ class _SearchViewState extends State<SearchView> {
                                     context,
                                     items[index].type == ZxyMediaType.movie
                                         ? AppRoutes.movieView
-                                        : AppRoutes.showView,
-                                    arguments: items[index].id,
+                                        : AppRoutes.seriesView,
+                                    arguments: SeriesViewData(
+                                      id: items[index].id,
+                                    ),
                                   );
                                 },
                                 width: width,

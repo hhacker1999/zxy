@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/subtitle_style.dart';
@@ -8,10 +11,13 @@ class SettingsBloc {
   final ValueNotifier<bool> isAmoled = ValueNotifier(true);
   final ValueNotifier<bool> isDynamic = ValueNotifier(true);
   final ValueNotifier<bool> showPosterRatings = ValueNotifier(true);
-  final ValueNotifier<String> recommendedResolution = ValueNotifier("2160p");
   final ValueNotifier<double> volume = ValueNotifier(100);
   late final ValueNotifier<SubtitleFontStyle> subFontStyle;
   final ValueNotifier<int> skipDuration = ValueNotifier(30);
+  final ValueNotifier<String> langNotifier = ValueNotifier(
+    LanguageMapper.defaultLang,
+  );
+  late final ValueNotifier<String> resolutionNotifier;
 
   set isAmoled(bool amoled) {
     if (amoled) {
@@ -34,9 +40,14 @@ class SettingsBloc {
     _storage.write(key: "poster", value: show.toString());
   }
 
-  set recommendedResolution(String res) {
-    recommendedResolution.value = res;
-    _storage.write(key: "res", value: res);
+  set resolution(String res) {
+    resolutionNotifier.value = res;
+    _storage.write(key: "resolution", value: res);
+  }
+
+  set language(String lang) {
+    langNotifier.value = lang;
+    _storage.write(key: "language", value: lang);
   }
 
   set volume(double vol) {
@@ -81,9 +92,10 @@ class SettingsBloc {
     final poster = await _storage.read(key: "poster");
     final fontSize = await _storage.read(key: "size");
     final fontPadding = await _storage.read(key: "padding");
-    final res = await _storage.read(key: "res");
     final vol = await _storage.read(key: "vol");
     final sd = await _storage.read(key: "skipDuration");
+    final lang = await _storage.read(key: "language");
+    final resolution = await _storage.read(key: "resolution");
     if (amoled != null) {
       isAmoled.value = amoled == "true";
     }
@@ -94,10 +106,6 @@ class SettingsBloc {
 
     if (poster != null) {
       showPosterRatings.value = poster == "true";
-    }
-
-    if (res != null) {
-      recommendedResolution.value = res;
     }
 
     if (vol != null) {
@@ -116,14 +124,29 @@ class SettingsBloc {
       style = style.copyWith(fontPadding: double.tryParse(fontPadding));
     }
 
+    if (lang != null) {
+      langNotifier.value = lang;
+    }
+
+    if (resolution != null) {
+      resolutionNotifier = ValueNotifier(resolution);
+    } else {
+      if (Platform.isAndroid || Platform.isIOS) {
+        resolutionNotifier = ValueNotifier("1080p");
+      } else {
+        resolutionNotifier = ValueNotifier("2160p");
+      }
+    }
+
     subFontStyle = ValueNotifier(style);
   }
 
   void dispose() {
     isAmoled.dispose();
     showPosterRatings.dispose();
-    recommendedResolution.dispose();
     subFontStyle.dispose();
     skipDuration.dispose();
+    resolutionNotifier.dispose();
+    langNotifier.dispose();
   }
 }
