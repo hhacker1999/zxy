@@ -2,11 +2,30 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    <key>com.apple.application-identifier</key>
+    <string>FZKSZSMWR3.com.app.zxy</string>
     <key>keychain-access-groups</key>
     <array>
-        <string>$(AppIdentifierPrefix)com.app.zxy</string>
+        <string>FZKSZSMWR3.com.app.zxy</string>
     </array>
+    <!-- <key>com.apple.security.network.client</key> -->
+    <!-- <true/> -->
+    <!-- <key>com.apple.security.cs.allow-jit</key> -->
+    <!-- <true/> -->
+    <!-- <key>com.apple.security.cs.allow-unsigned-executable-memory</key> -->
+    <!-- <true/> -->
     <key>com.apple.security.network.client</key>
+    <true/>
+
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+
+    <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
 </dict>
 </plist>
