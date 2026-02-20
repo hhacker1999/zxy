@@ -4,11 +4,6 @@ import 'package:media_kit/media_kit.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/views/video_player_view/video_player_view.dart';
 
-// ---------------------------------------------------------------------------
-// MobileVideoPlayerHUD
-// Pure gradient overlay — no cards, no pills. Netflix/Plex style.
-// ---------------------------------------------------------------------------
-
 class MobileVideoPlayerHUD extends StatelessWidget {
   const MobileVideoPlayerHUD({
     super.key,
@@ -40,7 +35,6 @@ class MobileVideoPlayerHUD extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // ── Top gradient + icons ──────────────────────────────────────────
         Positioned(
           top: 0,
           left: 0,
@@ -53,7 +47,6 @@ class MobileVideoPlayerHUD extends StatelessWidget {
           ),
         ),
 
-        // ── Center play / skip controls ───────────────────────────────────
         Center(
           child: _CenterControls(
             state: _state,
@@ -63,7 +56,6 @@ class MobileVideoPlayerHUD extends StatelessWidget {
           ),
         ),
 
-        // ── Bottom gradient + scrubber ────────────────────────────────────
         Positioned(
           bottom: 0,
           left: 0,
@@ -74,10 +66,6 @@ class MobileVideoPlayerHUD extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Top bar — back + volume + settings
-// ---------------------------------------------------------------------------
 
 class _TopBar extends StatelessWidget {
   const _TopBar({
@@ -148,10 +136,6 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Center — ⏮10  ▶/⏸  ⏭10
-// ---------------------------------------------------------------------------
-
 class _CenterControls extends StatelessWidget {
   const _CenterControls({
     required this.state,
@@ -185,10 +169,6 @@ class _CenterControls extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Play / Pause — clean borderless icon, subtle background ring only
-// ---------------------------------------------------------------------------
 
 class _PlayPauseTap extends StatefulWidget {
   final bool isPlaying;
@@ -258,10 +238,6 @@ class _PlayPauseTapState extends State<_PlayPauseTap>
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skip tap — icon only, very lean
-// ---------------------------------------------------------------------------
-
 class _SkipTap extends StatefulWidget {
   final VoidCallback onTap;
   final bool forward;
@@ -317,10 +293,6 @@ class _SkipTapState extends State<_SkipTap>
   }
 }
 
-// ---------------------------------------------------------------------------
-// Bottom — thin gradient strip, progress bar flush to bottom
-// ---------------------------------------------------------------------------
-
 class _BottomBar extends StatelessWidget {
   const _BottomBar({required this.state, required this.player});
 
@@ -351,7 +323,6 @@ class _BottomBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Timestamps — left: elapsed, right: total
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -378,7 +349,6 @@ class _BottomBar extends StatelessWidget {
 
                 const SizedBox(height: 6),
 
-                // Scrubber — tall touch target, thin track
                 SizedBox(
                   height: 24,
                   child: ZxyProgressBar(
@@ -397,10 +367,6 @@ class _BottomBar extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Minimal tap icon — no container, just an icon with press feedback
-// ---------------------------------------------------------------------------
 
 class _TapIcon extends StatefulWidget {
   final IconData icon;
