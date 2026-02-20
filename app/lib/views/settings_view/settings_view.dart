@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -240,13 +238,7 @@ class _AccountActionRowState extends State<_AccountActionRow> {
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.isDestructive
-        ? AppTheme.errorColor.withValues(alpha: 0.75)
-        : AppTheme.textSecondary;
-    final activeColor = widget.isDestructive
-        ? AppTheme.errorColor
-        : AppTheme.textPrimary;
-    final color = _hovered ? activeColor : baseColor;
+    final color = AppTheme.textPrimary;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
