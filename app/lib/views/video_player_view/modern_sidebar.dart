@@ -116,6 +116,7 @@ class _ModernSidebarState extends State<ModernSidebar>
         margin: const EdgeInsets.all(16),
         child: GlassContainer(
           containerOpacity: 0.85,
+          padding: EdgeInsets.only(bottom: AppTheme.spacingM),
           radius: BorderRadius.circular(24),
           child: Column(
             children: [

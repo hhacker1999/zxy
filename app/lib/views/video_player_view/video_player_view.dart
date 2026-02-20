@@ -25,6 +25,8 @@ import 'package:zxy_app/views/video_handler.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 import 'package:zxy_app/views/video_player_view/modern_sidebar.dart';
 
+import 'mobile_player_hud.dart';
+
 class SeekValueNotifier extends ChangeNotifier
     implements ValueListenable<SeekBarInfo?> {
   SeekValueNotifier(this._value) {
@@ -591,49 +593,59 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                           },
                         ),
                       ),
-                      Align(
-                        alignment: screenData.shouldRenderMobile
-                            ? Alignment.center
-                            : Alignment.bottomCenter,
-                        child: ValueListenableBuilder(
-                          valueListenable: _state.isOverlayVisible,
-                          builder: (_, visible, _) {
-                            return AnimatedVisibileOpacity(
-                              visible: visible,
-                              duration: const Duration(milliseconds: 400),
-                              child: Padding(
-                                padding: screenData.shouldRenderMobile
-                                    ? EdgeInsets.zero
-                                    : const EdgeInsets.only(bottom: 100),
-                                child: screenData.shouldRenderMobile
-                                    ? MobileVideoPlayerHUD(
-                                        settingsBloc: _settingBloc,
-                                        onBackOrStop: onBackPress,
-                                        onPauseOrPlay: onPauseOrPlay,
-                                        iconHeight: constr.maxHeight * 0.1,
-                                        state: _state,
-                                        pinRadius: pinRadius,
-                                        progressHeight: progressHeight,
-                                        player: _player,
-                                      )
-                                    : ProgressHudWithBar(
-                                        settingsBloc: _settingBloc,
-                                        onHoverOnOverlay: () {
-                                          onHover();
-                                        },
-                                        onBackOrStop: onBackPress,
-                                        onPauseOrPlay: onPauseOrPlay,
-                                        iconHeight: constr.maxHeight * 0.1,
-                                        state: _state,
-                                        pinRadius: pinRadius,
-                                        progressHeight: progressHeight,
-                                        player: _player,
-                                      ),
-                              ),
-                            );
-                          },
+                      if (screenData.shouldRenderMobile)
+                        Positioned.fill(
+                          child: ValueListenableBuilder(
+                            valueListenable: _state.isOverlayVisible,
+                            builder: (_, visible, _) {
+                              return AnimatedVisibileOpacity(
+                                visible: visible,
+                                duration: const Duration(milliseconds: 400),
+                                child: MobileVideoPlayerHUD(
+                                  settingsBloc: _settingBloc,
+                                  onBackOrStop: onBackPress,
+                                  onPauseOrPlay: onPauseOrPlay,
+                                  iconHeight: constr.maxHeight * 0.1,
+                                  state: _state,
+                                  pinRadius: pinRadius,
+                                  progressHeight: progressHeight,
+                                  player: _player,
+                                  onSkipForward: () => onSkipPressOrTap(true),
+                                  onSkipBackward: () => onSkipPressOrTap(false),
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      ),
+                      if (!screenData.shouldRenderMobile)
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: ValueListenableBuilder(
+                            valueListenable: _state.isOverlayVisible,
+                            builder: (_, visible, _) {
+                              return AnimatedVisibileOpacity(
+                                visible: visible,
+                                duration: const Duration(milliseconds: 400),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 100),
+                                  child: ProgressHudWithBar(
+                                    settingsBloc: _settingBloc,
+                                    onHoverOnOverlay: () {
+                                      onHover();
+                                    },
+                                    onBackOrStop: onBackPress,
+                                    onPauseOrPlay: onPauseOrPlay,
+                                    iconHeight: constr.maxHeight * 0.1,
+                                    state: _state,
+                                    pinRadius: pinRadius,
+                                    progressHeight: progressHeight,
+                                    player: _player,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ModernSidebar(
                         state: _state,
                         height: constr.maxHeight - 40,
@@ -1003,220 +1015,6 @@ class ProgressHudWithBar extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class MobileVideoPlayerHUD extends StatelessWidget {
-  const MobileVideoPlayerHUD({
-    super.key,
-    required ZxyPlayerState state,
-    required this.pinRadius,
-    required this.progressHeight,
-    required this.onPauseOrPlay,
-    required Player player,
-    required this.onBackOrStop,
-    required this.iconHeight,
-    required this.settingsBloc,
-  }) : _state = state,
-       _player = player;
-
-  final ZxyPlayerState _state;
-  final SettingsBloc settingsBloc;
-  final double pinRadius;
-  final double progressHeight;
-  final Player _player;
-  final double iconHeight;
-  final VoidCallback onPauseOrPlay;
-  final VoidCallback onBackOrStop;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.spacingM,
-            vertical: AppTheme.spacingL,
-          ),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.black.withOpacity(0.7), Colors.transparent],
-            ),
-          ),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  onBackOrStop();
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(AppTheme.spacingXS),
-                  child: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              // Volume Control
-              ValueListenableBuilder<double>(
-                valueListenable: settingsBloc.volume,
-                builder: (context, volume, child) {
-                  return GestureDetector(
-                    onTap: () {
-                      if (volume != 0) {
-                        settingsBloc.volume = 0;
-                        _player.setVolume(0);
-                      } else {
-                        settingsBloc.volume = 100;
-                        _player.setVolume(100);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(AppTheme.spacingXS),
-                      child: Icon(
-                        volume == 0 ? Icons.volume_off : Icons.volume_up,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(width: AppTheme.spacingS),
-              // Settings button
-              GestureDetector(
-                onTap: () {
-                  _state.isOverlayVisible.value = false;
-                  _state.settingsVisible.value = !_state.settingsVisible.value;
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(AppTheme.spacingXS),
-                  child: const Icon(
-                    Icons.settings,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Spacer(),
-        Center(
-          child: ValueListenableBuilder<bool>(
-            valueListenable: _state.isPlaying,
-            builder: (context, isPlaying, child) {
-              return GestureDetector(
-                onTap: onPauseOrPlay,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        Spacer(),
-        Container(
-          padding: const EdgeInsets.only(
-            left: AppTheme.spacingM,
-            right: AppTheme.spacingM,
-            bottom: AppTheme.spacingL,
-            top: AppTheme.spacingM,
-          ),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              colors: [Colors.black.withOpacity(0.8), Colors.transparent],
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            left: false,
-            right: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ValueListenableBuilder(
-                  valueListenable: _state.seekInfo,
-                  builder: (context, seekInfo, child) {
-                    return Column(
-                      children: [
-                        SizedBox(
-                          height: 28, // Larger touch target for mobile
-                          child: ZxyProgressBar(
-                            renderMobileLayout: true,
-                            player: _player,
-                            state: _state,
-                            pinRadius: 10,
-                            progressHeight: 5,
-                          ),
-                        ),
-                        const SizedBox(height: AppTheme.spacingXS),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              getPlayBackInfoString(seekInfo!.current),
-                              style: Theme.of(context).textTheme.bodyMedium!
-                                  .copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withOpacity(0.5),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                            ),
-                            Text(
-                              getPlayBackInfoString(seekInfo.playback),
-                              style: Theme.of(context).textTheme.bodyMedium!
-                                  .copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withOpacity(0.5),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
