@@ -156,7 +156,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // ── Logo mark ────────────────────────────────────────────────────
-        _buildLogoMark(isMobile: isMobile),
+        // _buildLogoMark(isMobile: isMobile),
         SizedBox(height: isMobile ? AppTheme.spacingM : AppTheme.spacingL),
 
         // ── Heading ──────────────────────────────────────────────────────
@@ -229,7 +229,8 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
     final size = isMobile ? 44.0 : 52.0;
     final fontSize = isMobile ? 22.0 : 26.0;
     final radius = isMobile ? 12.0 : 14.0;
-    return Center(
+    return Align(
+      alignment: isMobile ? Alignment.centerLeft : Alignment.center,
       child: Container(
         width: size,
         height: size,

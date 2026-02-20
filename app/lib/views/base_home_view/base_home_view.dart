@@ -1,5 +1,8 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
@@ -109,11 +112,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
       padding: EdgeInsets.zero,
       loading: vm.scaffoldLoading,
       bottomNavigationBar: screenData.shouldRenderMobile
-          ? ZxyNavBar(
-              vm: vm,
-              cards: leftCards,
-              // screenData: screenData,
-            )
+          ? ZxyNavBar(vm: vm, cards: leftCards)
           : null,
       builder: (_, color) {
         return Column(
@@ -128,19 +127,11 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                     child: ValueListenableBuilder(
                       valueListenable: vm.selectedIndex,
                       builder: (_, index, _) {
-                        return Column(
-                          children: [
-                            Expanded(
-                              child: ZxyFadeIndexedStack(
-                                key: ValueKey("Switcher"),
-                                duration: const Duration(milliseconds: 500),
-                                index: index,
-                                children: baseChildren,
-                              ),
-                            ),
-                            if (screenData.shouldRenderMobile)
-                              SizedBox(height: 24),
-                          ],
+                        return ZxyFadeIndexedStack(
+                          key: ValueKey("Switcher"),
+                          duration: const Duration(milliseconds: 500),
+                          index: index,
+                          children: baseChildren,
                         );
                       },
                     ),
@@ -148,6 +139,8 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                 ],
               ),
             ),
+            // // Reserve space so content is not hidden under the nav bar
+            // if (screenData.shouldRenderMobile) const SizedBox(height: 88),
           ],
         );
       },
@@ -251,74 +244,206 @@ class ZxyNavBar extends StatelessWidget {
       builder: (_, selectedIndex, _) {
         return ValueListenableBuilder(
           valueListenable: context.read<ImageBloc>().bgGradColor,
-          builder: (_, color, _) {
-            return Container(
-              height: 70,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.spacingL,
-                vertical: AppTheme.spacingS,
-              ),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundBlack,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3), // Subtle dark color
-                    blurRadius: 6, // Keeps the shadow close
-                    spreadRadius: 1, // Small spread for definition
-                    offset: const Offset(0, -3), // Moves shadow slightly down
-                  ),
-                ],
-
-                // gradient: LinearGradient(
-                //   begin: Alignment.topCenter,
-                //   end: Alignment.bottomCenter,
-                //   colors: [
-                //     Colors.black.withOpacity(0.2),
-                //     Colors.black.withOpacity(0.9),
-                //   ],
-                // ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(cards.length, (index) {
-                  final card = cards[index];
-                  return InkWell(
-                    splashColor: Colors.transparent,
-                    focusColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    onTap: () {
-                      vm.selectedIndex.value = index;
-                    },
-                    child: Column(
-                      spacing: AppTheme.spacingXS,
-                      children: [
-                        SvgPicture.asset(
-                          card.$2,
-                          color: selectedIndex == index
-                              ? AppTheme.accentColor
-                              : AppTheme.textSecondary,
-                          height: 25,
-                          width: 25,
-                        ),
-                        Text(
-                          card.$1,
-                          style: Theme.of(context).textTheme.labelSmall!
-                              .copyWith(
-                                fontSize: 10,
-                                color: selectedIndex == index
-                                    ? AppTheme.accentColor
-                                    : AppTheme.textSecondary,
-                              ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
+          builder: (_, accentColor, _) {
+            final accent = accentColor ?? Colors.white;
+            return _ZxyNavBarShell(
+              accent: accent,
+              selectedIndex: selectedIndex,
+              cards: cards,
+              vm: vm,
             );
           },
         );
       },
+    );
+  }
+}
+
+class _ZxyNavBarShell extends StatelessWidget {
+  final Color accent;
+  final int selectedIndex;
+  final List<(String, String)> cards;
+  final BaseHomeViewModel vm;
+
+  const _ZxyNavBarShell({
+    required this.accent,
+    required this.selectedIndex,
+    required this.cards,
+    required this.vm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppTheme.spacingM,
+        right: AppTheme.spacingM,
+        bottom: AppTheme.spacingM,
+        top: AppTheme.spacingS,
+      ),
+      child: ClipRRect(
+        borderRadius: AppTheme.roundedXLarge,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            height: 64,
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.45),
+              borderRadius: AppTheme.roundedXLarge,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.12),
+                width: 1,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingS),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(cards.length, (index) {
+                return _ZxyNavItem(
+                  label: cards[index].$1,
+                  iconPath: cards[index].$2,
+                  isSelected: selectedIndex == index,
+                  accent: accent,
+                  onTap: () => vm.selectedIndex.value = index,
+                );
+              }),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ZxyNavItem extends StatefulWidget {
+  final String label;
+  final String iconPath;
+  final bool isSelected;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _ZxyNavItem({
+    required this.label,
+    required this.iconPath,
+    required this.isSelected,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  State<_ZxyNavItem> createState() => _ZxyNavItemState();
+}
+
+class _ZxyNavItemState extends State<_ZxyNavItem>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+      lowerBound: 0.0,
+      upperBound: 1.0,
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.88,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = widget.isSelected;
+    final Color iconColor = isSelected ? Colors.white : AppTheme.textSecondary;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => _ctrl.forward(),
+      onTapUp: (_) {
+        _ctrl.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _ctrl.reverse(),
+      child: ScaleTransition(
+        scale: _scale,
+        child: SizedBox(
+          width: 56,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Indicator dot + icon stacked
+              Stack(
+                alignment: Alignment.topCenter,
+                clipBehavior: Clip.none,
+                children: [
+                  // Soft glow bg pill behind icon when selected
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
+                    width: 40,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? widget.accent.withOpacity(0.15)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: SvgPicture.asset(
+                      widget.iconPath,
+                      width: 22,
+                      height: 22,
+                      colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    ),
+                  ),
+                  // Indicator dot above icon
+                  if (isSelected)
+                    Positioned(
+                      top: -6,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut,
+                        width: isSelected ? 16 : 0,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: widget.accent,
+                          borderRadius: BorderRadius.circular(2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: widget.accent.withOpacity(0.6),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: iconColor,
+                  letterSpacing: 0.2,
+                ),
+                child: Text(widget.label, maxLines: 1),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
