@@ -43,7 +43,7 @@
 
 1.  Navigate to the [**Releases**](https://github.com/hhacker1999/zxy/releases) page.
 2.  Download the latest version for your device (windows and macos supported for now).
-3.  Install the application and sign up and add your debrid key in settings
+3.  Install the application, sign up and add your debrid key in settings
 
 ### Requirements
 * A valid **Real-Debrid** or **TorBox** account.
@@ -54,7 +54,7 @@
 ## 🛠️ Built With
 
 * [Flutter](https://flutter.dev/) - UI Framework.
-* [Media Kit](https://github.com/media-kit/media-kit) - Media kit used as MPV based player
+* [Media Kit](https://github.com/media-kit/media-kit) - Media kit is used for video playback
 
 ---
 
