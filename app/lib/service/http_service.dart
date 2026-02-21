@@ -110,13 +110,13 @@ class HttpService {
     RequestAuth auth = RequestAuth.none,
   }) async {
     try {
-      print("Sending HTTP post request to $uri with body $body");
+      // print("Sending HTTP post request to $uri with body $body");
       final res = await _client.post(
         uri,
         body: body != null ? jsonEncode(body) : null,
         headers: _getHeaders(auth, body != null),
       );
-      print("Response received with body${res.body}");
+      // print("Response received with body${res.body}");
       _checkError(res);
       return HttpResponse(body: res.body, hdrs: res.headers);
     } catch (e) {
@@ -133,13 +133,13 @@ class HttpService {
     RequestAuth auth = RequestAuth.none,
   }) async {
     try {
-      print("Sending HTTP put request to $uri with body $body");
+      // print("Sending HTTP put request to $uri with body $body");
       final res = await _client.put(
         uri,
         body: body != null ? jsonEncode(body) : null,
         headers: _getHeaders(auth, body != null),
       );
-      print("Response received with body${res.body}");
+      // print("Response received with body${res.body}");
       _checkError(res);
       return HttpResponse(body: res.body, hdrs: res.headers);
     } catch (e) {

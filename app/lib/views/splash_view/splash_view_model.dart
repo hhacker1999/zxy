@@ -6,6 +6,7 @@ import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
+import 'package:zxy_app/service/http_proxy.dart';
 import 'package:zxy_app/service/http_service.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
@@ -19,6 +20,7 @@ class SplashViewModel {
     try {
       await context.read<ImageBloc>().initialise();
       context.read<SettingsBloc>().initialise(context);
+      await context.read<ProxyManager>().startProxyManager();
       await Future.wait([
         context.read<HomeViewModel>().initialiseGenre(),
         context.read<HomeViewModel>().initialiseConfig(),

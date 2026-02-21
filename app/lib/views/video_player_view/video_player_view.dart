@@ -14,6 +14,7 @@ import 'package:zxy_app/app_constants.dart';
 
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
+import 'package:zxy_app/service/http_proxy.dart';
 
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
@@ -129,6 +130,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   late final SettingsBloc _settingBloc;
   late final MovieViewModel mVm;
   late final SeriesViewModel sVm;
+  late final ProxyManager _pm;
   DateTime? lastTap;
   bool updateLayoutToNormal = false;
   Timer? _hoverTimer;
@@ -141,6 +143,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   void initState() {
     super.initState();
     _settingBloc = context.read<SettingsBloc>();
+    _pm = context.read<ProxyManager>();
     _state = ZxyPlayerState();
     _initialiseMpvPlayer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -176,6 +179,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     await Future.wait([
       player.setProperty('icc-profile-auto', 'yes'),
       player.setProperty('tone-mapping', 'spline'),
+      player.setProperty('log-level', 'debug'),
 
       player.setProperty('target-peak', 'auto'),
       player.setProperty('videotoolbox-format', 'nv12'),
@@ -222,7 +226,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
         ..addAll(fhdStreams)
         ..addAll(hdStreams);
       print("Playing url ${streams[selectedStream].url}");
-      _player.open(Media(streams[selectedStream].url), play: true);
+      _pm.setInternalUrl(streams[selectedStream].url);
+      // _player.open(Media(streams[selectedStream].url), play: true);
+      _player.open(Media("http://127.0.0.1:6969"), play: true);
     }
   }
 
@@ -357,7 +363,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     _player.stop();
     _state.bufferingOrLoading.value = true;
     print("Playing url ${streamItem.url}");
-    _player.open(Media(streamItem.url), play: _state.isPlaying.value);
+    _pm.setInternalUrl(streamItem.url);
+    _player.open(Media("http://127.0.0.1:6969"), play: true);
+    // _player.open(Media(streamItem.url), play: _state.isPlaying.value);
   }
 
   void initialMobileDeviceSetup() {

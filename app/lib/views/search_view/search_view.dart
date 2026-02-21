@@ -150,9 +150,10 @@ class _SearchViewState extends State<SearchView> {
                                     items[index].type == ZxyMediaType.movie
                                         ? AppRoutes.movieView
                                         : AppRoutes.seriesView,
-                                    arguments: SeriesViewData(
-                                      id: items[index].id,
-                                    ),
+                                    arguments:
+                                        items[index].type == ZxyMediaType.movie
+                                        ? items[index].id
+                                        : SeriesViewData(id: items[index].id),
                                   );
                                 },
                                 width: width,

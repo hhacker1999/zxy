@@ -5,6 +5,7 @@ import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
+import 'package:zxy_app/service/http_proxy.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
@@ -64,6 +65,11 @@ class _MyAppState extends State<MyApp> {
         ),
         Provider<BaseHomeViewModel>(
           create: (_) => BaseHomeViewModel(),
+          dispose: (_, model) => model.dispose(),
+          lazy: true,
+        ),
+        Provider<ProxyManager>(
+          create: (_) => ProxyManager(),
           dispose: (_, model) => model.dispose(),
           lazy: true,
         ),
