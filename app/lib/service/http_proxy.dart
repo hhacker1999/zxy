@@ -6,6 +6,12 @@ class StartMessage {}
 
 class KillMessage {}
 
+class ErrorMessage {
+  final String error;
+
+  ErrorMessage({required this.error});
+}
+
 class UrlMessage {
   final String url;
 
@@ -46,6 +52,9 @@ class ProxyManager {
       if (data is StartedMessage) {
         cmp.complete();
       }
+      if (data is ErrorMessage) {
+        cmp.completeError(data.error);
+      }
     });
   }
 
@@ -57,7 +66,11 @@ class ProxyManager {
     rp.listen((message) async {
       if (message is StartMessage) {
         proxy = RedirectAwareProxy(port: 6969);
-        await proxy.startHttpServer();
+        try {
+          await proxy.startHttpServer();
+        } catch (e) {
+          sp.send(ErrorMessage(error: e.toString()));
+        }
         sp.send(StartedMessage());
       }
       if (message is UrlMessage) {

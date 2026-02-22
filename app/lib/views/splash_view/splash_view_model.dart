@@ -10,6 +10,7 @@ import 'package:zxy_app/service/http_proxy.dart';
 import 'package:zxy_app/service/http_service.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
+import 'package:zxy_app/views/shared/toast.dart';
 
 class SplashViewModel {
   final AuthUsecase authUc;
@@ -40,7 +41,7 @@ class SplashViewModel {
         Navigator.pushReplacementNamed(context, AppRoutes.loginView);
         return;
       }
-      rethrow;
+      showToast(context, true, e.toString(), "");
     }
   }
 }
