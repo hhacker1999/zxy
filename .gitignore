@@ -4,3 +4,4 @@
 .fvm/
 .idea/
 backend/dev/
+app/mac_build.sh

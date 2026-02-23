@@ -187,9 +187,16 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       player.setProperty('tone-mapping-mode', 'luma'),
       player.setProperty('gamut-mapping-mode', 'clip'),
 
-      player.setProperty('cache', 'yes'),
-      player.setProperty('demuxer-max-bytes', '1024MiB'),
-      player.setProperty('demuxer-max-back-bytes', '200MiB'),
+      //NOTE: settings for faster first frame load times
+      player.setProperty('profile', 'low-latency'),
+      player.setProperty('vd-lavc-threads', 'auto'),
+      player.setProperty('cache-pause', 'no'),
+      player.setProperty('demuxer-lavf-o', 'fflags=+nobuffer'),
+      player.setProperty('demuxer-lavf-analyzeduration', '0.1'),
+
+      // player.setProperty('cache', 'yes'),
+      // player.setProperty('demuxer-max-bytes', '1024MiB'),
+      // player.setProperty('demuxer-max-back-bytes', '200MiB'),
 
       player.setProperty('scale', 'ewa_lanczossharp'),
       player.setProperty('cscale', 'ewa_lanczossharp'),
