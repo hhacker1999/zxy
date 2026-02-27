@@ -39,4 +39,20 @@ class StreamUsecase {
     }
     return ZxyStreamResponse.fromJson(decoded);
   }
+
+  Future<String> getStreamUrl(String tempUrl) async {
+    final response = await _httpService.get(
+      Uri.parse("${AppConstants.baseUrl}/stream_url?temp_url=$tempUrl"),
+      auth: RequestAuth.profile,
+    );
+    final decoded = json.decode(response.body);
+    if (decoded is Map<String, dynamic>) {
+      final url = decoded["url"];
+      if (url != null) {
+        return url;
+      }
+    }
+
+    throw HttpSomethingWentWrong();
+  }
 }

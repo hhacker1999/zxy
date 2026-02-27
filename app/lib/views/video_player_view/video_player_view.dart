@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: use_build_context_synchronously, avoid_print
 
 import 'dart:async';
 import 'dart:math';
@@ -138,6 +138,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   double progressHeight = 10;
   // NOTE: To determine zoom in or out for player fit
   double horizontalScale = 1;
+  // NOTE: This is here so that when user is tapping different stream links we can check
+  // in our fuction calls to only start streaming from last user selected stream
+  String? _currentInternalUrl;
 
   @override
   void initState() {
@@ -197,7 +200,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       // player.setProperty('cache', 'yes'),
       // player.setProperty('demuxer-max-bytes', '1024MiB'),
       // player.setProperty('demuxer-max-back-bytes', '200MiB'),
-
       player.setProperty('scale', 'ewa_lanczossharp'),
       player.setProperty('cscale', 'ewa_lanczossharp'),
     ]);
@@ -233,9 +235,20 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
         ..addAll(fhdStreams)
         ..addAll(hdStreams);
       print("Playing url ${streams[selectedStream].url}");
-      _pm.setInternalUrl(streams[selectedStream].url);
+      // _pm.setInternalUrl(streams[selectedStream].url);
       // _player.open(Media(streams[selectedStream].url), play: true);
-      _player.open(Media("http://127.0.0.1:6969"), play: true);
+      _currentInternalUrl = streams[selectedStream].url;
+      widget.handler
+          .getStreamUrl(streams[selectedStream].url)
+          .then((url) {
+            print("Final url $url");
+            _player.open(Media(url), play: true);
+          })
+          .onError((e, _) {
+            if (context.mounted) {
+              showToast(context, true, e.toString(), "");
+            }
+          });
     }
   }
 
@@ -370,8 +383,20 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     _player.stop();
     _state.bufferingOrLoading.value = true;
     print("Playing url ${streamItem.url}");
-    _pm.setInternalUrl(streamItem.url);
-    _player.open(Media("http://127.0.0.1:6969"), play: true);
+    // _pm.setInternalUrl(streamItem.url);
+    _currentInternalUrl = streamItem.url;
+    widget.handler
+        .getStreamUrl(streamItem.url)
+        .then((url) {
+          print("Final url $url");
+          _player.open(Media(url), play: true);
+        })
+        .onError((e, _) {
+          if (context.mounted) {
+            showToast(context, true, e.toString(), "");
+          }
+        });
+    // _player.open(Media("http://127.0.0.1:6969"), play: true);
     // _player.open(Media(streamItem.url), play: _state.isPlaying.value);
   }
 

@@ -341,4 +341,9 @@ class SeriesViewModel implements VideoHandler {
   String shortTitle() {
     return "S${(activeSeasonEpisode.value.$1 + 1).toString().padLeft(2, '0')}:E${(activeSeasonEpisode.value.$2 + 1).toString().padLeft(2, '0')}";
   }
+
+  @override
+  Future<String> getStreamUrl(String tempUrl) async {
+    return await streamUc.getStreamUrl(tempUrl);
+  }
 }

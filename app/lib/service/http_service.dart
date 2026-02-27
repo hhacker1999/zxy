@@ -196,7 +196,6 @@ class HttpService {
     }
   }
 
-
   Map<String, String>? _getHeaders(RequestAuth auth, bool hasBody) {
     Map<String, String>? res;
     if (auth == RequestAuth.session) {

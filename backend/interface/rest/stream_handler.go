@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 	"zxy/models"
@@ -174,7 +175,6 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	plainText, err := i.resolveInternalURL(initial)
 	if err != nil {
 		res.StatusCode = http.StatusBadRequest
@@ -290,4 +290,86 @@ func (i *RestInterface) resolveInternalURL(initial string) (string, error) {
 		return "", err
 	}
 	return string(plainText), nil
+}
+
+func (i *RestInterface) handleFinalUrl(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+  defer res.SendResponse(w)
+	tempUrl := r.URL.Query().Get("temp_url")
+	if len(tempUrl) == 0 {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid url"
+		return
+	}
+
+	fmt.Println("Url received", tempUrl)
+	parsedUrl, err := url.Parse(tempUrl)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid url"
+		return
+	}
+
+	initial := parsedUrl.Query().Get("internal")
+	if len(initial) == 0 {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid url"
+		return
+	}
+
+	fmt.Println("Initial found", initial)
+
+	type Response struct {
+		Url string `json:"url"`
+	}
+
+	i.mtx.RLock()
+	defer i.mtx.RUnlock()
+	url, ok := i.urlMap[initial]
+	if ok {
+		fmt.Println("Found url in cache", url.FinalUrl)
+		res.StatusCode = http.StatusOK
+		res.Data = Response{
+			Url: url.FinalUrl,
+		}
+		return
+	}
+
+	plainText, err := i.resolveInternalURL(initial)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid url"
+		return
+	}
+
+	fmt.Println("Initial decoded url", plainText)
+
+	req, err := http.NewRequest("GET", plainText, nil)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = "Invalid url"
+		return
+	}
+
+	req.Header.Set("Range", "bytes=0-0")
+
+	resp, err := i.client.Do(req)
+	if err != nil {
+		res.StatusCode = http.StatusBadGateway
+		res.Error = "Source resolution failed"
+		return
+	}
+	defer resp.Body.Close()
+
+	finalURL := resp.Request.URL.String()
+	fmt.Println("final url ", finalURL)
+	i.urlMap[initial] = RedirectUrlInfo{
+		FinalUrl: finalURL,
+		UrlTime:  time.Now(),
+	}
+
+	res.StatusCode = http.StatusOK
+	res.Data = Response{
+		Url: finalURL,
+	}
 }

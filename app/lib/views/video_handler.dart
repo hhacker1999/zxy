@@ -16,4 +16,5 @@ abstract class VideoHandler {
   double getStartingPercentage();
   String longTitle();
   String shortTitle();
+  Future<String> getStreamUrl(String tempUrl);
 }

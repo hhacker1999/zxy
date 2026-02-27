@@ -195,4 +195,9 @@ class MovieViewModel implements VideoHandler {
     final details = (_movieDetailsState.value as ItemLoaded<MovieDetails>).data;
     return details.title;
   }
+
+  @override
+  Future<String> getStreamUrl(String tempUrl) async {
+    return await streamUc.getStreamUrl(tempUrl);
+  }
 }
