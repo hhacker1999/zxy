@@ -385,6 +385,75 @@ func (u *Usecase) UpdateUserProfile(profileInput CreateProfileInput) error {
 	return nil
 }
 
+func (u *Usecase) DeleteAccount(userId int, profileId int) error {
+	profile, err := u.userRepo.GetUserProfile(
+		context.Background(),
+		userId, profileId,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return apperrors.InvalidInput{Err: "User is not registered"}
+		}
+		return apperrors.SomethingWentWrongError{}
+	}
+	if !profile.IsAdmin {
+		return apperrors.InvalidInput{Err: "Not authorised to delete account"}
+	}
+
+	user, err := u.userRepo.GetUserFromId(userId)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	txn, err := u.db.BeginTx(context.Background(), nil)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+	defer txn.Rollback()
+
+	ctx := context.WithValue(context.Background(), "txn", txn)
+	for _, v := range user.Profiles {
+		err = u.sessionRepo.RemoveProfileSessions(ctx, v.Id)
+		if err != nil {
+			return apperrors.SomethingWentWrongError{}
+		}
+
+		err = u.addonRepo.RemoveProfileAddons(ctx, v.Id)
+		if err != nil {
+			return apperrors.SomethingWentWrongError{}
+		}
+
+		err = u.pbRepo.DeleteProfileProgress(ctx, userId, v.Id)
+		if err != nil {
+			return apperrors.SomethingWentWrongError{}
+		}
+
+		err = u.userRepo.DeleteUserProfile(ctx, userId, v.Id)
+		if err != nil {
+			return apperrors.SomethingWentWrongError{}
+		}
+
+	}
+
+	err = u.sessionRepo.RemoveUserSessions(ctx, userId)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	err = u.userRepo.DeleteUser(ctx, userId)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	err = txn.Commit()
+	if err != nil {
+		fmt.Println("Error comitting transaction", err)
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	return nil
+}
+
 func (u *Usecase) DeleteUserProfile(userId int, profileIdToDelete int, profileId int) error {
 	profile, err := u.userRepo.GetUserProfile(
 		context.Background(),

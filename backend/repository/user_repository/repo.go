@@ -400,6 +400,30 @@ func (r *Repository) UpdateUserProfile(
 	return err
 }
 
+func (r *Repository) DeleteUser(
+	ctx context.Context,
+	userId int,
+) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			`delete from users where id = $1`,
+			userId,
+		)
+	} else {
+		_, err = r.db.Exec(
+			`delete from users where id = $1`,
+			userId,
+		)
+	}
+	if err != nil {
+		fmt.Println("Error deleting user", err)
+	}
+
+	return err
+}
+
 func (r *Repository) DeleteUserProfile(
 	ctx context.Context,
 	userId int,

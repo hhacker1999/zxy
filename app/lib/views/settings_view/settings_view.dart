@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -67,6 +69,12 @@ class SettingsView extends StatelessWidget {
                                 context,
                               ).pushNamed(AppRoutes.profileSelectionView),
                               onLogout: settingsVm.logout,
+                              onDeleteAccount: profile.isAdmin
+                                  ? () => _showDeleteAccountDialog(
+                                      context,
+                                      settingsVm,
+                                    )
+                                  : null,
                             ),
                             const SizedBox(height: AppTheme.spacingXL),
 
@@ -104,7 +112,6 @@ class SettingsView extends StatelessWidget {
                 ),
               ),
             ),
-
           ],
         );
       },
@@ -134,15 +141,24 @@ class _SectionLabel extends StatelessWidget {
 
 // ── Account card ──────────────────────────────────────────────────────────────
 
+void _showDeleteAccountDialog(BuildContext context, SettingsViewModel vm) {
+  showDialog(
+    context: context,
+    builder: (_) => _DeleteAccountDialog(onConfirm: vm.deleteAccount),
+  );
+}
+
 class _AccountCard extends StatelessWidget {
   final Profile profile;
   final VoidCallback onSwitchProfile;
   final VoidCallback onLogout;
+  final VoidCallback? onDeleteAccount;
 
   const _AccountCard({
     required this.profile,
     required this.onSwitchProfile,
     required this.onLogout,
+    this.onDeleteAccount,
   });
 
   @override
@@ -210,6 +226,17 @@ class _AccountCard extends StatelessWidget {
             onTap: onLogout,
             isDestructive: true,
           ),
+
+          // ── Delete Account (admin only) ───────────────────────────
+          if (onDeleteAccount != null) ...[
+            Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+            _AccountActionRow(
+              icon: Icons.delete_forever_rounded,
+              label: 'Delete Account',
+              onTap: onDeleteAccount!,
+              isDestructive: true,
+            ),
+          ],
         ],
       ),
     );
@@ -317,6 +344,150 @@ class _ProfileAvatar extends StatelessWidget {
           fontWeight: FontWeight.w700,
           color: Colors.white,
           height: 1,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Delete Account confirmation dialog ────────────────────────────────────────
+
+class _DeleteAccountDialog extends StatelessWidget {
+  final VoidCallback onConfirm;
+
+  const _DeleteAccountDialog({required this.onConfirm});
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
+        vertical: AppTheme.spacingXL,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              padding: const EdgeInsets.all(AppTheme.spacingXL),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Warning icon ───────────────────────────────────────────
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.errorColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppTheme.errorColor.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.delete_forever_rounded,
+                        color: AppTheme.errorColor,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacingM),
+
+                  // ── Title ──────────────────────────────────────────────────
+                  Text(
+                    'Delete Account',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
+                  // ── Body ───────────────────────────────────────────────────
+                  Text(
+                    'This will permanently delete your account and all associated data. This action cannot be undone.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppTheme.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacingXL),
+
+                  // ── Actions ────────────────────────────────────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.textSecondary,
+                              side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.15),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppTheme.roundedMedium,
+                              ),
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spacingM),
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              onConfirm();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.errorColor,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppTheme.roundedMedium,
+                              ),
+                            ),
+                            child: Text(
+                              'Delete',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

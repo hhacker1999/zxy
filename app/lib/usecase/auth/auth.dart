@@ -153,6 +153,13 @@ class AuthUsecase {
     );
   }
 
+  Future<void> deleteAccount() async {
+    await _httpService.delete(
+      Uri.parse("${AppConstants.baseUrl}/user"),
+      auth: RequestAuth.profile,
+    );
+  }
+
   Future<void> logout() async {
     await _storage.delete(key: "st");
     await _storage.delete(key: "pt");

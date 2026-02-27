@@ -289,3 +289,19 @@ func (i *RestInterface) handleUpdateUserProfileLists(w http.ResponseWriter, r *h
 	}
 	res.StatusCode = http.StatusOK
 }
+
+func (i *RestInterface) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
+	var res ApiResponse
+	defer res.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+
+	err := i.userUC.DeleteAccount(userId, profileId)
+	if err != nil {
+		res.StatusCode = http.StatusBadRequest
+		res.Error = err.Error()
+		return
+	}
+	res.StatusCode = http.StatusOK
+}

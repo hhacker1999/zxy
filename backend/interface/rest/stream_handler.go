@@ -163,9 +163,6 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// rangeHeader := r.Header.Get("Range")
-	// fmt.Printf("Seek Detected! User is asking for range: %s\n", rangeHeader)
-
 	i.mtx.RLock()
 	defer i.mtx.RUnlock()
 	url, ok := i.urlMap[initial]
@@ -197,18 +194,6 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := i.client.Do(req)
 	if err != nil {
-		// if res.StatusCode == http.StatusMethodNotAllowed {
-		// 	fmt.Println("--------------------------------------------------")
-		// 	fmt.Println("final url ", resp.Request.URL.String())
-		// 	fmt.Println("--------------------------------------------------")
-		// 	i.urlMap[initial] = RedirectUrlInfo{
-		// 		FinalUrl: resp.Request.URL.String(),
-		// 		UrlTime:  time.Now(),
-		// 	}
-		// 	fmt.Println("HEAD method not allowed")
-		// 	http.Redirect(w, r, resp.Request.URL.String(), http.StatusFound)
-		// 	return
-		// }
 		res.StatusCode = http.StatusBadGateway
 		res.Error = "Source resolution failed"
 		res.SendResponse(w)

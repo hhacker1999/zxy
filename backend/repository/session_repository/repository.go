@@ -128,7 +128,29 @@ func (r *Repository) RemoveProfileSessions(ctx context.Context, profileId int) e
 	}
 
 	if err != nil {
-		fmt.Println("Error storing profile session", err)
+		fmt.Println("Error removing profile session", err)
+	}
+
+	return err
+}
+
+func (r *Repository) RemoveUserSessions(ctx context.Context, userId int) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			`delete from sessions where user_id = $1`,
+			userId,
+		)
+	} else {
+		_, err = r.db.Exec(
+			`delete from sessions where user_id = $1`,
+			userId,
+		)
+	}
+
+	if err != nil {
+		fmt.Println("Error removing user sessions", err)
 	}
 
 	return err

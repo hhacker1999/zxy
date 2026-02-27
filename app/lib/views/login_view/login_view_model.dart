@@ -49,7 +49,6 @@ class LoginViewModel {
     } catch (e) {
       isLoading.value = false;
       error.value = e.toString();
-      rethrow;
     }
   }
 
@@ -91,7 +90,6 @@ class LoginViewModel {
     } catch (e) {
       isLoading.value = false;
       error.value = e.toString();
-      rethrow;
     }
   }
 

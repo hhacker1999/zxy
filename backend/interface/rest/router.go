@@ -123,6 +123,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Put("/user/profile", i.SessionHandler(i.handleUpdateUserProfile, true))
 	router.Put("/user/profile/list", i.SessionHandler(i.handleUpdateUserProfileLists, true))
 	router.Delete("/user/profile", i.SessionHandler(i.handleDeleteUserProfile, true))
+	router.Delete("/user", i.SessionHandler(i.handleDeleteUser, true))
 	router.Get("/streams", i.SessionHandler(i.HandleGetStream, true))
 	router.Get("/discover/movies", i.SessionHandler(i.HandleDiscoverMovies, true))
 	router.Get("/discover/shows", i.SessionHandler(i.HandleDiscoverShows, true))

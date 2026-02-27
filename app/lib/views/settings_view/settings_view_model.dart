@@ -16,7 +16,6 @@ class SettingsViewModel extends ChangeNotifier {
   String _selectedDebridType = "";
   String get selectedDebridType => _selectedDebridType;
 
-
   final TextEditingController apiKeyController = TextEditingController();
 
   List<ProfileLibraryItem> _libraryItems = [];
@@ -202,6 +201,22 @@ class SettingsViewModel extends ChangeNotifier {
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       await _authUc.logout();
       showToast(_context, false, "Logged out", "");
+      Navigator.pushNamedAndRemoveUntil(_context, AppRoutes.loginView, (_) {
+        return false;
+      });
+    } catch (e) {
+      showToast(_context, true, e.toString(), "");
+    } finally {
+      notifyListeners();
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
+    }
+  }
+
+  Future<void> deleteAccount() async {
+    try {
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
+      await _authUc.deleteAccount();
+      showToast(_context, false, "Account Deleted successfully", "");
       Navigator.pushNamedAndRemoveUntil(_context, AppRoutes.loginView, (_) {
         return false;
       });
