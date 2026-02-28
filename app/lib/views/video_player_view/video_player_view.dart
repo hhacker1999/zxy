@@ -282,7 +282,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       (track) =>
           track.language != null &&
           LanguageMapper.getNameFromCode(track.language!) ==
-              _settingBloc.langNotifier.value,
+              _settingBloc.langNotifier.value && track.codec?.toLowerCase() != "truehd",
     );
     _state.audioDetails.value = (
       audioTracks,
