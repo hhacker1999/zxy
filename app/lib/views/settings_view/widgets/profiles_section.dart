@@ -66,32 +66,51 @@ class ProfileManagementSection extends StatelessWidget {
         Wrap(
           spacing: AppTheme.spacingM,
           runSpacing: AppTheme.spacingM,
-          children: [
-            ProfileChip(
-              profile: currentProfile,
-              onEdit: () => _showProfileDialog(
-                context,
-                profileToEdit: currentProfile,
-                currentProfile: currentProfile,
-              ),
-              onDelete: () => viewModel.deleteProfile(currentProfile.id),
-              isCurrent: true,
-            ),
-            ...user.profiles
-                .where((e) => e.id != currentProfile.id)
-                .map(
-                  (p) => ProfileChip(
-                    profile: p,
-                    onEdit: () => _showProfileDialog(
-                      context,
-                      profileToEdit: p,
-                      currentProfile: currentProfile,
+          children:
+              List<Profile>.from(
+                    user.profiles
+                      ..sort((a, b) => a.createdAt.compareTo(b.createdAt)),
+                  )
+                  .map(
+                    (p) => ProfileChip(
+                      key: ValueKey(p.id),
+                      profile: p,
+                      onEdit: () => _showProfileDialog(
+                        context,
+                        profileToEdit: p,
+                        currentProfile: currentProfile,
+                      ),
+                      onDelete: () => viewModel.deleteProfile(p.id),
+                      isCurrent: false,
                     ),
-                    onDelete: () => viewModel.deleteProfile(p.id),
-                    isCurrent: false,
-                  ),
-                ),
-          ],
+                  )
+                  .toList(),
+          // [
+          //   ProfileChip(
+          //     profile: currentProfile,
+          //     onEdit: () => _showProfileDialog(
+          //       context,
+          //       profileToEdit: currentProfile,
+          //       currentProfile: currentProfile,
+          //     ),
+          //     onDelete: () => viewModel.deleteProfile(currentProfile.id),
+          //     isCurrent: true,
+          //   ),
+          //   ...user.profiles
+          //       .where((e) => e.id != currentProfile.id)
+          //       .map(
+          //         (p) => ProfileChip(
+          //           profile: p,
+          //           onEdit: () => _showProfileDialog(
+          //             context,
+          //             profileToEdit: p,
+          //             currentProfile: currentProfile,
+          //           ),
+          //           onDelete: () => viewModel.deleteProfile(p.id),
+          //           isCurrent: false,
+          //         ),
+          //       ),
+          // ],
         ),
       ],
     );

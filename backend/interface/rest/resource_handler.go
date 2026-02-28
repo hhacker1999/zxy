@@ -86,7 +86,6 @@ func (i *RestInterface) HandleGetTrendingMovies(w http.ResponseWriter, r *http.R
 	details, err := i.tmdbUc.GetTrendingMovies(
 		timeLine,
 		page,
-		"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU",
 	)
 	if err != nil {
 		response.Error = err.Error()
@@ -118,7 +117,6 @@ func (i *RestInterface) HandleGetTrendingShows(w http.ResponseWriter, r *http.Re
 	details, err := i.tmdbUc.GetTrendingShows(
 		timeLine,
 		page,
-		"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU",
 	)
 	if err != nil {
 		response.Error = err.Error()
@@ -142,7 +140,6 @@ func (i *RestInterface) HandleDiscoverMovies(w http.ResponseWriter, r *http.Requ
 
 	movies, err := i.tmdbUc.GetMovieLibrary(
 		params,
-		"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU",
 	)
 
 	if err != nil {
@@ -167,7 +164,6 @@ func (i *RestInterface) HandleDiscoverShows(w http.ResponseWriter, r *http.Reque
 
 	movies, err := i.tmdbUc.GetShowsLibrary(
 		params,
-		"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU",
 	)
 
 	if err != nil {
@@ -184,11 +180,7 @@ func (i *RestInterface) HandleGetGenre(w http.ResponseWriter, r *http.Request) {
 	response := &ApiResponse{}
 	defer response.SendResponse(w)
 
-	at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
-
-	genre, err := i.tmdbUc.GetGenres(
-		at,
-	)
+	genre, err := i.tmdbUc.GetGenres()
 
 	if err != nil {
 		response.Error = err.Error()
@@ -201,14 +193,11 @@ func (i *RestInterface) HandleGetGenre(w http.ResponseWriter, r *http.Request) {
 }
 
 func (i *RestInterface) HandleGetConfiguration(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Getting config")
 	response := &ApiResponse{}
 	defer response.SendResponse(w)
 
-	at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
-
-	config, err := i.tmdbUc.GetConfiguration(
-		at,
-	)
+	config, err := i.tmdbUc.GetConfiguration()
 
 	if err != nil {
 		response.Error = err.Error()
@@ -216,6 +205,7 @@ func (i *RestInterface) HandleGetConfiguration(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	fmt.Println("got config")
 	response.StatusCode = http.StatusOK
 	response.Data = config
 }
@@ -240,7 +230,6 @@ func (i *RestInterface) HandleSearchShows(w http.ResponseWriter, r *http.Request
 	}
 
 	details, err := i.tmdbUc.SearchShows(
-		"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU",
 		page,
 		timeLine,
 	)
@@ -274,7 +263,6 @@ func (i *RestInterface) HandleSearchMovies(w http.ResponseWriter, r *http.Reques
 	}
 
 	details, err := i.tmdbUc.SearchMovie(
-		"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU",
 		page,
 		timeLine,
 	)

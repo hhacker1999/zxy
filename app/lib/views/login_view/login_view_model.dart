@@ -85,8 +85,9 @@ class LoginViewModel {
         context,
         false,
         "Sign Up successfull",
-        "Please go back to login",
+        "Please login with your credentials",
       );
+      isLoginMode.value = true;
     } catch (e) {
       isLoading.value = false;
       error.value = e.toString();

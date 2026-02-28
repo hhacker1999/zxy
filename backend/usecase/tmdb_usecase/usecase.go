@@ -50,7 +50,6 @@ func New(
 func (u *Usecase) GetTrendingMovies(
 	timeline string,
 	page int,
-	at string,
 ) (models.MediaPaginatedResponse, error) {
 	var resp models.MediaPaginatedResponse
 
@@ -63,7 +62,7 @@ func (u *Usecase) GetTrendingMovies(
 	req.Header.Add("accept", "application/json")
 	req.Header.Add(
 		"Authorization",
-		fmt.Sprintf("Bearer %s", at),
+		fmt.Sprintf("Bearer %s", u.tmdbAt),
 	)
 
 	res, err := u.client.Do(req)
@@ -115,7 +114,6 @@ func (u *Usecase) GetTrendingMovies(
 func (u *Usecase) GetTrendingShows(
 	timeline string,
 	page int,
-	at string,
 ) (models.MediaPaginatedResponse, error) {
 	var resp models.MediaPaginatedResponse
 
@@ -128,7 +126,7 @@ func (u *Usecase) GetTrendingShows(
 	req.Header.Add("accept", "application/json")
 	req.Header.Add(
 		"Authorization",
-		fmt.Sprintf("Bearer %s", at),
+		fmt.Sprintf("Bearer %s", u.tmdbAt),
 	)
 
 	res, err := u.client.Do(req)
@@ -178,7 +176,6 @@ func (u *Usecase) GetTrendingShows(
 
 func (u *Usecase) GetMovieLibrary(
 	params map[string]string,
-	at string,
 ) (models.MediaPaginatedResponse, error) {
 	var resp models.MediaPaginatedResponse
 	url := fmt.Sprintf(
@@ -194,7 +191,7 @@ func (u *Usecase) GetMovieLibrary(
 	req.Header.Add("accept", "application/json")
 	req.Header.Add(
 		"Authorization",
-		fmt.Sprintf("Bearer %s", at),
+		fmt.Sprintf("Bearer %s", u.tmdbAt),
 	)
 
 	res, err := u.client.Do(req)
@@ -244,7 +241,6 @@ func (u *Usecase) GetMovieLibrary(
 
 func (u *Usecase) GetShowsLibrary(
 	params map[string]string,
-	at string,
 ) (models.MediaPaginatedResponse, error) {
 	var resp models.MediaPaginatedResponse
 	url := fmt.Sprintf(
@@ -260,7 +256,7 @@ func (u *Usecase) GetShowsLibrary(
 	req.Header.Add("accept", "application/json")
 	req.Header.Add(
 		"Authorization",
-		fmt.Sprintf("Bearer %s", at),
+		fmt.Sprintf("Bearer %s", u.tmdbAt),
 	)
 
 	res, err := u.client.Do(req)
@@ -642,7 +638,7 @@ func (u *Usecase) GetShowDetails(id string) (models.TMDBShow, error) {
 	return response, nil
 }
 
-func (u *Usecase) GetSeasonDetails(id string, season string, at string) ([]byte, error) {
+func (u *Usecase) GetSeasonDetails(id string, season string) ([]byte, error) {
 	url := fmt.Sprintf(
 		"%s/tv/%s/season/%s",
 		u.tmdbApiBaseUrl, id, season,
@@ -653,7 +649,7 @@ func (u *Usecase) GetSeasonDetails(id string, season string, at string) ([]byte,
 	req.Header.Add("accept", "application/json")
 	req.Header.Add(
 		"Authorization",
-		fmt.Sprintf("Bearer %s", at),
+		fmt.Sprintf("Bearer %s", u.tmdbAt),
 	)
 
 	res, err := u.client.Do(req)
@@ -681,7 +677,6 @@ func (u *Usecase) GetEpisodeDetails(
 	id string,
 	season string,
 	episode string,
-	at string,
 ) ([]byte, error) {
 	url := fmt.Sprintf(
 		"%s/tv/%s/season/%s/episode/%s",
@@ -693,7 +688,7 @@ func (u *Usecase) GetEpisodeDetails(
 	req.Header.Add("accept", "application/json")
 	req.Header.Add(
 		"Authorization",
-		fmt.Sprintf("Bearer %s", at),
+		fmt.Sprintf("Bearer %s", u.tmdbAt),
 	)
 
 	res, err := u.client.Do(req)
@@ -717,7 +712,7 @@ func (u *Usecase) GetEpisodeDetails(
 	return body, nil
 }
 
-func (u *Usecase) GetGenres(at string) (models.ZxyGenreResponse, error) {
+func (u *Usecase) GetGenres() (models.ZxyGenreResponse, error) {
 	wg := sync.WaitGroup{}
 
 	var movieGenre []models.Genre
@@ -726,7 +721,7 @@ func (u *Usecase) GetGenres(at string) (models.ZxyGenreResponse, error) {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		movieGenreRes, err := u.getTMDBMovieGenre(at)
+		movieGenreRes, err := u.getTMDBMovieGenre()
 		if err != nil {
 			errChan <- err
 		}
@@ -735,7 +730,7 @@ func (u *Usecase) GetGenres(at string) (models.ZxyGenreResponse, error) {
 
 	go func() {
 		defer wg.Done()
-		showGenreRes, err := u.getTMDBShowGenre(at)
+		showGenreRes, err := u.getTMDBShowGenre()
 		if err != nil {
 			errChan <- err
 		}
@@ -750,14 +745,14 @@ func (u *Usecase) GetGenres(at string) (models.ZxyGenreResponse, error) {
 	return models.ZxyGenreResponse{MovieGenre: movieGenre, ShowGenre: showGenre}, nil
 }
 
-func (u *Usecase) getTMDBMovieGenre(at string) ([]models.Genre, error) {
+func (u *Usecase) getTMDBMovieGenre() ([]models.Genre, error) {
 
 	url := fmt.Sprintf("%s/genre/movie/list?language=en", u.tmdbApiBaseUrl)
 
 	req, _ := http.NewRequest("GET", url, nil)
 
 	req.Header.Set("accept", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", at))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", u.tmdbAt))
 	req.Header.Set(
 		"User-Agent",
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36",
@@ -795,13 +790,13 @@ func (u *Usecase) getTMDBMovieGenre(at string) ([]models.Genre, error) {
 	return tmdbRes.Genres, nil
 }
 
-func (u *Usecase) getTMDBShowGenre(at string) ([]models.Genre, error) {
+func (u *Usecase) getTMDBShowGenre() ([]models.Genre, error) {
 	url := fmt.Sprintf("%s/genre/tv/list?language=en", u.tmdbApiBaseUrl)
 
 	req, _ := http.NewRequest("GET", url, nil)
 
 	req.Header.Set("accept", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", at))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", u.tmdbAt))
 	req.Header.Set(
 		"User-Agent",
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36",
@@ -841,7 +836,6 @@ func (u *Usecase) getTMDBShowGenre(at string) ([]models.Genre, error) {
 }
 
 func (u *Usecase) SearchMovie(
-	at string,
 	page int,
 	keyword string,
 ) (models.MediaPaginatedResponse, error) {
@@ -857,7 +851,7 @@ func (u *Usecase) SearchMovie(
 	req.Header.Add("accept", "application/json")
 	req.Header.Add(
 		"Authorization",
-		fmt.Sprintf("Bearer %s", at),
+		fmt.Sprintf("Bearer %s", u.tmdbAt),
 	)
 
 	res, err := u.client.Do(req)
@@ -906,7 +900,6 @@ func (u *Usecase) SearchMovie(
 }
 
 func (u *Usecase) SearchShows(
-	at string,
 	page int,
 	keyword string,
 ) (models.MediaPaginatedResponse, error) {
@@ -922,7 +915,7 @@ func (u *Usecase) SearchShows(
 	req.Header.Add("accept", "application/json")
 	req.Header.Add(
 		"Authorization",
-		fmt.Sprintf("Bearer %s", at),
+		fmt.Sprintf("Bearer %s", u.tmdbAt),
 	)
 
 	res, err := u.client.Do(req)
@@ -970,11 +963,11 @@ func (u *Usecase) SearchShows(
 	return resp, nil
 }
 
-func (u *Usecase) GetConfiguration(at string) ([]byte, error) {
+func (u *Usecase) GetConfiguration() ([]byte, error) {
 	req, _ := http.NewRequest("GET", u.tmdbApiBaseUrl+"/configuration", nil)
 
 	req.Header.Set("accept", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", at))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", u.tmdbAt))
 	req.Header.Set(
 		"User-Agent",
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36",

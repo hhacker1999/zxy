@@ -43,6 +43,7 @@ class Profile {
   final String debridType;
   final bool isAdmin;
   final List<ProfileLibraryItem> libraryItems;
+  final DateTime createdAt;
 
   Profile({
     required this.id,
@@ -51,12 +52,14 @@ class Profile {
     required this.debridType,
     required this.isAdmin,
     required this.libraryItems,
+    required this.createdAt,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
     id: json["id"],
     name: json["name"],
     isPinProtected: json["is_pin_protected"],
+    createdAt: DateTime.parse(json["created_at"]),
     debridType: json["debrid_type"],
     isAdmin: json["is_admin"],
     libraryItems: json["library_items"] != null

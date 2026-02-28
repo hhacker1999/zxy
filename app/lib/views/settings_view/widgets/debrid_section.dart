@@ -32,16 +32,22 @@ class DebridSection extends StatelessWidget {
         if (isMobile)
           Column(
             children: [
-              _DebridProviderCard(
-                title: 'Real Debrid',
-                isSelected: viewModel.selectedDebridType == 'rd',
-                onTap: () => viewModel.selectDebridType('rd'),
+              ConstrainedBox(
+                constraints: BoxConstraints.tight(Size(double.maxFinite, 100)),
+                child: _DebridProviderCard(
+                  title: 'Real Debrid',
+                  isSelected: viewModel.selectedDebridType == 'rd',
+                  onTap: () => viewModel.selectDebridType('rd'),
+                ),
               ),
               const SizedBox(height: AppTheme.spacingM),
-              _DebridProviderCard(
-                title: 'Torbox',
-                isSelected: viewModel.selectedDebridType == 'tb',
-                onTap: () => viewModel.selectDebridType('tb'),
+              ConstrainedBox(
+                constraints: BoxConstraints.tight(Size(double.maxFinite, 100)),
+                child: _DebridProviderCard(
+                  title: 'Torbox',
+                  isSelected: viewModel.selectedDebridType == 'tb',
+                  onTap: () => viewModel.selectDebridType('tb'),
+                ),
               ),
             ],
           )

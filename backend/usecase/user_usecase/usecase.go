@@ -374,7 +374,7 @@ func (u *Usecase) UpdateUserProfile(profileInput CreateProfileInput) error {
 	err = u.userRepo.UpdateUserProfile(
 		context.Background(),
 		profileInput.UserId,
-		profileInput.CreaterProfileId,
+		profileInput.ProfileId,
 		profileInput.Name,
 		pinHash,
 	)

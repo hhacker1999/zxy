@@ -19,14 +19,19 @@ class SplashViewModel {
 
   Future<void> initialise(BuildContext context) async {
     try {
+      print("in initialise");
       await context.read<ImageBloc>().initialise();
-      context.read<SettingsBloc>().initialise(context);
+      print("after image");
+      await context.read<SettingsBloc>().initialise(context);
+      print("after settings");
       // await context.read<ProxyManager>().startProxyManager();
       await Future.wait([
         context.read<HomeViewModel>().initialiseGenre(),
         context.read<HomeViewModel>().initialiseConfig(),
       ]);
+      print("after config");
       var res = await authUc.initialise();
+      print("after auth");
       if (!res) {
         Navigator.pushReplacementNamed(context, AppRoutes.loginView);
         return;
@@ -42,6 +47,7 @@ class SplashViewModel {
         return;
       }
       showToast(context, true, e.toString(), "");
+      rethrow;
     }
   }
 }
