@@ -180,28 +180,25 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     var player = _player.platform as NativePlayer;
     player.setVolume(context.read<SettingsBloc>().volume.value);
     await Future.wait([
+      //NOTE: settings for faster first frame load times
+      player.setProperty('vd-lavc-threads', 'auto'),
+      player.setProperty('demuxer-lavf-analyzeduration', '0.1'),
+      player.setProperty('cache-pause', 'no'),
+      player.setProperty('cache', 'yes'),
+      player.setProperty('demuxer-max-bytes', '500MiB'),
+      player.setProperty('demuxer-max-back-bytes', '50MiB'),
+      player.setProperty('demuxer-readahead-secs', '300'),
+
+      // HDR to SDR tonemapping settings
       player.setProperty('icc-profile-auto', 'yes'),
       player.setProperty('tone-mapping', 'spline'),
-      player.setProperty('log-level', 'debug'),
-
-      player.setProperty('target-peak', 'auto'),
-      player.setProperty('videotoolbox-format', 'nv12'),
-      player.setProperty('tone-mapping', 'bt.2446a'),
+      player.setProperty('hdr-compute-peak', 'yes'),
       player.setProperty('tone-mapping-mode', 'luma'),
-      player.setProperty('gamut-mapping-mode', 'clip'),
-
-      //NOTE: settings for faster first frame load times
-      player.setProperty('profile', 'low-latency'),
-      player.setProperty('vd-lavc-threads', 'auto'),
-      player.setProperty('cache-pause', 'no'),
-      player.setProperty('demuxer-lavf-o', 'fflags=+nobuffer'),
-      player.setProperty('demuxer-lavf-analyzeduration', '0.1'),
-
-      // player.setProperty('cache', 'yes'),
-      // player.setProperty('demuxer-max-bytes', '1024MiB'),
-      // player.setProperty('demuxer-max-back-bytes', '200MiB'),
+      player.setProperty('target-peak', 'auto'),
+      player.setProperty('gamut-mapping-mode', 'perceptual'),
       player.setProperty('scale', 'ewa_lanczossharp'),
       player.setProperty('cscale', 'ewa_lanczossharp'),
+      if (kDebugMode) player.setProperty('log-level', 'debug'),
     ]);
   }
 
