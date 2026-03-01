@@ -282,7 +282,8 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       (track) =>
           track.language != null &&
           LanguageMapper.getNameFromCode(track.language!) ==
-              _settingBloc.langNotifier.value && track.codec?.toLowerCase() != "truehd",
+              _settingBloc.langNotifier.value &&
+          track.codec?.toLowerCase() != "truehd",
     );
     _state.audioDetails.value = (
       audioTracks,
@@ -308,6 +309,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     });
 
     _playbackSub = _player.stream.position.listen((position) {
+      if (position == Duration.zero) {
+        return;
+      }
       _state.seekInfo.value = _state.seekInfo.value.copyWith(current: position);
       widget.handler.onProgress(position);
     });
