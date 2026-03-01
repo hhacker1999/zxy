@@ -92,6 +92,19 @@ class ZxyResolutionItem {
     required this.resolution,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'visualTags': visualTags,
+      'url': url,
+      'languageCodes': languageCodes,
+      'resolution': resolution,
+      'audioTags': audioTags,
+      'fileName': fileName,
+      'size': size,
+      'quality': quality,
+    };
+  }
+
   factory ZxyResolutionItem.fromJson(Map<String, dynamic> json) {
     return ZxyResolutionItem(
       visualTags: json["visual_tags"] == null
