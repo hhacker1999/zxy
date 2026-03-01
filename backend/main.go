@@ -94,6 +94,7 @@ func main() {
 		Password: cfg.RedisPassword,
 		DB:       cacheDBID,
 	})
+	defer cacheRDB.Close()
 	_, err = cacheRDB.Ping(context.Background()).Result()
 	if err != nil {
 		fmt.Println("Unable to connect to cache redis db", err)
@@ -111,6 +112,7 @@ func main() {
 		Password: cfg.RedisPassword,
 		DB:       watchSessionDBID,
 	})
+	defer watchSessionDB.Close()
 	_, err = watchSessionDB.Ping(context.Background()).Result()
 	if err != nil {
 		fmt.Println("Unable to connect to watch session redis db", err)
