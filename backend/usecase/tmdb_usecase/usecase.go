@@ -1,6 +1,7 @@
 package tmdbusecase
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,8 @@ import (
 	apperrors "zxy/app_errors"
 	"zxy/models"
 	localtmdbrepository "zxy/repository/local_tmdb_repository"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type Usecase struct {
@@ -20,6 +23,7 @@ type Usecase struct {
 	localTmdbRepo  *localtmdbrepository.Repository
 	traktKey       string
 	tmdbAt         string
+	redisCacheDb   *redis.Client
 }
 
 func New(
@@ -27,6 +31,7 @@ func New(
 	localTmdbRepo *localtmdbrepository.Repository,
 	traktKey string,
 	tmdbAt string,
+	redisCacheDb *redis.Client,
 ) *Usecase {
 	var tmdbClient = &http.Client{
 		Timeout: 10 * time.Second,
@@ -44,6 +49,7 @@ func New(
 		localTmdbRepo:  localTmdbRepo,
 		tmdbAt:         tmdbAt,
 		traktKey:       traktKey,
+		redisCacheDb:   redisCacheDb,
 	}
 }
 
@@ -711,8 +717,33 @@ func (u *Usecase) GetEpisodeDetails(
 
 	return body, nil
 }
+func (u *Usecase) GetGenres() ([]byte, error) {
+	byteRes, err := u.redisCacheDb.Get(context.Background(), "genre").Result()
+	if err != nil {
+		res, err := u.GetGenresInternal()
+		if err != nil {
+			return nil, err
+		}
+		marshalled, err := json.Marshal(res)
+		if err != nil {
+			fmt.Println("Error marshalling genre response for storing in cache", err)
+			return nil, apperrors.SomethingWentWrongError{}
+		}
+		go func() {
+			u.redisCacheDb.Set(
+				context.Background(),
+				"genre",
+				string(marshalled),
+				time.Duration(time.Hour*24),
+			)
+		}()
+		return marshalled, nil
+	}
 
-func (u *Usecase) GetGenres() (models.ZxyGenreResponse, error) {
+	return []byte(byteRes), nil
+}
+
+func (u *Usecase) GetGenresInternal() (models.ZxyGenreResponse, error) {
 	wg := sync.WaitGroup{}
 
 	var movieGenre []models.Genre
@@ -962,8 +993,26 @@ func (u *Usecase) SearchShows(
 
 	return resp, nil
 }
-
 func (u *Usecase) GetConfiguration() ([]byte, error) {
+	config, err := u.redisCacheDb.Get(context.Background(), "config").Result()
+	if err != nil {
+		config, err := u.getConfigurationInternal()
+		if err != nil {
+			return nil, err
+		}
+		go u.redisCacheDb.Set(
+			context.Background(),
+			"config",
+			string(config),
+			time.Duration(time.Hour*24),
+		)
+		return config, nil
+	}
+
+	return []byte(config), nil
+}
+
+func (u *Usecase) getConfigurationInternal() ([]byte, error) {
 	req, _ := http.NewRequest("GET", u.tmdbApiBaseUrl+"/configuration", nil)
 
 	req.Header.Set("accept", "application/json")

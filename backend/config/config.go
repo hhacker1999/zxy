@@ -7,18 +7,22 @@ import (
 )
 
 type Config struct {
-	TmdbAT          string
-	TmdbUrl         string
-	TraktUrl        string
-	PosgresUrl      string
-	MigrationsPath  string
-	AIOTemplatePath string
-	AIOInstances    string
-	LocalTmdbUrl    string
-	ZxyUrl          string
-	TraktKey        string
-	EncrKey         string
-	TraktSecret        string
+	TmdbAT              string
+	TmdbUrl             string
+	TraktUrl            string
+	PosgresUrl          string
+	MigrationsPath      string
+	AIOTemplatePath     string
+	AIOInstances        string
+	LocalTmdbUrl        string
+	ZxyUrl              string
+	TraktKey            string
+	EncrKey             string
+	TraktSecret         string
+	RedisAddress        string
+	RedisPassword       string
+	RedisCacheDb        string
+	RedisWatchSessionDb string
 }
 
 func GetConfig(filePath string) (Config, error) {
@@ -41,6 +45,10 @@ func GetConfig(filePath string) (Config, error) {
 	config.TraktKey = configMap["TRAKT_KEY"]
 	config.EncrKey = configMap["ENCR_KEY"]
 	config.TraktSecret = configMap["TRAKT_SECRET"]
+	config.RedisAddress = configMap["REDIS_ADDR"]
+	config.RedisCacheDb = configMap["REDIS_CACHE_DB"]
+	config.RedisWatchSessionDb = configMap["REDIS_WATCH_SESSION_DB"]
+	config.RedisPassword = configMap["REDIS_PASSWORD"]
 
 	return config, nil
 }

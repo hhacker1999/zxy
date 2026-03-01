@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"zxy/config"
 	"zxy/interface/rest"
 	addonsrepository "zxy/repository/addons_repository"
@@ -22,6 +24,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -80,13 +83,47 @@ func main() {
 	}
 	defer localTmdb.Close()
 
+	cacheDBID, err := strconv.Atoi(cfg.RedisCacheDb)
+	if err != nil {
+		fmt.Println("Invalid redis cache db")
+		return
+	}
+
+	cacheRDB := redis.NewClient(&redis.Options{
+		Addr:     cfg.RedisAddress,
+		Password: cfg.RedisPassword,
+		DB:       cacheDBID,
+	})
+	_, err = cacheRDB.Ping(context.Background()).Result()
+	if err != nil {
+		fmt.Println("Unable to connect to cache redis db", err)
+		return
+	}
+
+	watchSessionDBID, err := strconv.Atoi(cfg.RedisWatchSessionDb)
+	if err != nil {
+		fmt.Println("Invalid redis watch session db")
+		return
+	}
+
+	watchSessionDB := redis.NewClient(&redis.Options{
+		Addr:     cfg.RedisAddress,
+		Password: cfg.RedisPassword,
+		DB:       watchSessionDBID,
+	})
+	_, err = watchSessionDB.Ping(context.Background()).Result()
+	if err != nil {
+		fmt.Println("Unable to connect to watch session redis db", err)
+		return
+	}
+
 	userRepo := userrepository.New(db)
 	sessionRepo := sessionrepository.New(db)
 	playbackRepo := playbackrepository.New(db)
 	addonRepo := addonsrepository.New(db)
 	localTmdbRepo := localtmdbrepository.New(localTmdb)
 
-	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey, cfg.TmdbAT)
+	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey, cfg.TmdbAT, cacheRDB)
 	addonuc, err := addonusecase.New(
 		addonRepo,
 		cfg.AIOTemplatePath,
