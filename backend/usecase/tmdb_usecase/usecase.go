@@ -53,6 +53,7 @@ func New(
 	}
 }
 
+// NOTE: Deprecated using TRAKT for trending now
 func (u *Usecase) GetTrendingMovies(
 	timeline string,
 	page int,
@@ -117,6 +118,7 @@ func (u *Usecase) GetTrendingMovies(
 	return resp, nil
 }
 
+// NOTE: Deprecated using TRAKT for trending now
 func (u *Usecase) GetTrendingShows(
 	timeline string,
 	page int,
@@ -1049,7 +1051,7 @@ func (u *Usecase) getConfigurationInternal() ([]byte, error) {
 
 func (u *Usecase) GetLibraryFromFilter(
 	filter models.LibraryFilter,
-) (models.MediaPaginatedResponse, error) {
+) (any, error) {
 	// NOTE: We are using trakt to get trending things
 	if filter.IsTrending {
 		return u.GetTrending(filter)
@@ -1074,8 +1076,37 @@ func (u *Usecase) GetLibraryFromFilter(
 
 	return res, nil
 }
+func (u *Usecase) GetTrending(filter models.LibraryFilter) ([]byte, error) {
+	tp := "shows"
+	if filter.IsMovie {
+		tp = "movies"
+	}
+	key := fmt.Sprintf("%s:%d:%d", tp, filter.Page, filter.Items)
+	bodyBytes, err := u.redisCacheDb.Get(context.Background(), key).Result()
+	if err != nil {
+		response, err := u.GetTrendingInternal(filter)
+		if err != nil {
+			return nil, err
+		}
+		resBytes, err := json.Marshal(response)
+		if err != nil {
+			fmt.Println("Error marshalling trending response", err)
+			return nil, apperrors.SomethingWentWrongError{}
+		}
+		go u.redisCacheDb.Set(
+			context.Background(),
+			key,
+			string(resBytes),
+			time.Duration(time.Minute*30),
+		)
+		return resBytes, nil
+	}
+	return []byte(bodyBytes), nil
+}
 
-func (u *Usecase) GetTrending(filter models.LibraryFilter) (models.MediaPaginatedResponse, error) {
+func (u *Usecase) GetTrendingInternal(
+	filter models.LibraryFilter,
+) (models.MediaPaginatedResponse, error) {
 	var res models.MediaPaginatedResponse
 	tp := "shows"
 	if filter.IsMovie {
