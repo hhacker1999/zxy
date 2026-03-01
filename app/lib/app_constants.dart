@@ -262,6 +262,8 @@ class AppConstants {
     'tel': 'Telugu',
   };
   static late ImageConfiguation imageConfig;
+
+  static const double posterAspectRatio = (2 / 3);
 }
 
 class AppIcons {

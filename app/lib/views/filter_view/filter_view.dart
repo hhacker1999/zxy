@@ -19,7 +19,6 @@ class FilterView extends StatefulWidget {
 }
 
 class _FilterViewState extends State<FilterView> {
-  static const _posterAspectRatio = (2 / 3);
   late final FilterViewModel vm;
   late final ScrollController _controller;
   @override
@@ -137,7 +136,8 @@ class _FilterViewState extends State<FilterView> {
                   final double width = screenData.shouldRenderMobile
                       ? 120
                       : 160;
-                  final double imageHeight = width / _posterAspectRatio;
+                  final double imageHeight =
+                      width / AppConstants.posterAspectRatio;
                   final double itemHeight =
                       imageHeight + (screenData.shouldRenderMobile ? 50 : 58);
                   return ValueListenableBuilder(

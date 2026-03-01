@@ -5,6 +5,7 @@ import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
+import 'package:zxy_app/extensions.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
@@ -263,16 +264,6 @@ class PosterItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String? logoPath;
-    if ((movie.images?.logos?.isNotEmpty ?? false) == true) {
-      logoPath = movie.images!.logos!
-          .firstWhere(
-            (element) => element.iso6391 == "en",
-            orElse: () => movie.images!.logos!.first,
-          )
-          .filePath;
-    }
-
     return Column(
       children: [
         SizedBox(
@@ -317,7 +308,7 @@ class PosterItem extends StatelessWidget {
                     ZxyImage(
                       width: 140,
                       height: height * 0.10,
-                      path: logoPath ?? "",
+                      path: movie.images?.logos?.getLogo()?.filePath ?? "",
                       size: "w154",
                       fit: BoxFit.contain,
                       replacement: Text(
@@ -450,16 +441,6 @@ class BannerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String? logoPath;
-    if ((movie.images?.logos?.isNotEmpty ?? false) == true) {
-      logoPath = movie.images!.logos!
-          .firstWhere(
-            (element) => element.iso6391 == "en",
-            orElse: () => movie.images!.logos!.first,
-          )
-          .filePath;
-    }
-
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -498,7 +479,7 @@ class BannerItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ZxyImage(
-                path: logoPath ?? "",
+                path: movie.images?.logos?.getLogo()?.filePath ?? "",
                 size: "w500",
                 fit: BoxFit.contain,
                 replacement: Text(

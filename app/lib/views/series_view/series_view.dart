@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
+import 'package:zxy_app/extensions.dart';
 import 'package:zxy_app/main.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
@@ -755,16 +756,6 @@ class PosterItemSeries extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String? logoPath;
-    if ((series.images?.logos?.isNotEmpty ?? false) == true) {
-      logoPath = series.images!.logos!
-          .firstWhere(
-            (element) => element.iso6391 == "en",
-            orElse: () => series.images!.logos!.first,
-          )
-          .filePath;
-    }
-
     return Column(
       children: [
         SizedBox(
@@ -809,7 +800,7 @@ class PosterItemSeries extends StatelessWidget {
                     ZxyImage(
                       width: 140,
                       height: height * 0.10,
-                      path: logoPath ?? "",
+                      path: series.images?.logos?.getLogo()?.filePath ?? "",
                       size: "w154",
                       fit: BoxFit.contain,
                       replacement: Text(
@@ -958,16 +949,6 @@ class BannerItemSeries extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String? logoPath;
-    if ((series.images?.logos?.isNotEmpty ?? false) == true) {
-      logoPath = series.images!.logos!
-          .firstWhere(
-            (element) => element.iso6391 == "en",
-            orElse: () => series.images!.logos!.first,
-          )
-          .filePath;
-    }
-
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -1008,7 +989,7 @@ class BannerItemSeries extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ZxyImage(
-                path: logoPath ?? "",
+                path: series.images?.logos?.getLogo()?.filePath ?? "",
                 size: "w500",
                 fit: BoxFit.contain,
                 replacement: Text(
