@@ -2,6 +2,10 @@
 
 **zxy** is a minimalist, high-performance media streaming application built with Flutter. Designed for a "plug and play" experience, zxy removes the friction of complex configurations, letting you get straight to your content.
 
+[![Google Play](https://img.shields.io/badge/Google_Play-Download-green?style=for-the-badge&logo=google-play)](https://play.google.com/store/apps/details?id=com.app.zxy&pli=1)
+[![TestFlight](https://img.shields.io/badge/TestFlight-Join_Beta-blue?style=for-the-badge&logo=apple)](https://testflight.apple.com/join/U5vYdMw6)
+[![Discord](https://img.shields.io/badge/Discord-Join_Server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/y4Sc6XuTJd)
+
 ---
 
 ## ✨ Features
@@ -41,9 +45,14 @@
 
 ### Download & Install
 
+**For Desktop (Windows & macOS):**
 1.  Navigate to the [**Releases**](https://github.com/hhacker1999/zxy/releases) page.
-2.  Download the latest version for your device (windows and macos supported for now).
-3.  Install the application, sign up and add your debrid key in settings
+2.  Download the latest version for your device.
+3.  Install the application, sign up and add your debrid key in settings.
+
+**For Mobile:**
+* **Android:** Download via [Google Play](https://play.google.com/store/apps/details?id=com.app.zxy&pli=1).
+* **iOS:** Join the [TestFlight Beta](https://testflight.apple.com/join/U5vYdMw6).
 
 ### Requirements
 * A valid **Real-Debrid** or **TorBox** account.
@@ -67,3 +76,4 @@ This application uses *TMDB* and the *TMDB APIs* but is not endorsed, certified,
 
 ---
 *Created with ❤️ for a better streaming experience.*
+
