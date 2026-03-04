@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"sync"
 	"time"
+	zxyWs "zxy/interface/websocket"
 	"zxy/models"
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
@@ -39,18 +40,19 @@ type RedirectUrlInfo struct {
 }
 
 type RestInterface struct {
-	addonuc     *addonusecase.Usecase
-	tmdbUc      *tmdbusecase.Usecase
-	userUC      *userusecase.Usecase
-	userRepo    *userrepository.Repository
-	sessionRepo *sessionrepository.Repository
-	progressUC  *progressusecase.Usecase
-	encrKey     string
-	proxy       *httputil.ReverseProxy
-	client      *http.Client
-	urlMap      map[string]RedirectUrlInfo
-	mtx         *sync.RWMutex
-	cronCancel  context.CancelFunc
+	addonuc       *addonusecase.Usecase
+	tmdbUc        *tmdbusecase.Usecase
+	userUC        *userusecase.Usecase
+	userRepo      *userrepository.Repository
+	sessionRepo   *sessionrepository.Repository
+	progressUC    *progressusecase.Usecase
+	encrKey       string
+	proxy         *httputil.ReverseProxy
+	client        *http.Client
+	urlMap        map[string]RedirectUrlInfo
+	mtx           *sync.RWMutex
+	cronCancel    context.CancelFunc
+	sockerHandler *zxyWs.WSHandler
 }
 
 func New(
@@ -61,21 +63,23 @@ func New(
 	sessionRepo *sessionrepository.Repository,
 	progressUC *progressusecase.Usecase,
 	encrKey string,
+	sockerHandler *zxyWs.WSHandler,
 ) *RestInterface {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
 	return &RestInterface{
-		addonuc:     addonuc,
-		tmdbUc:      tmdbUc,
-		userUC:      userUC,
-		userRepo:    userRepo,
-		sessionRepo: sessionRepo,
-		progressUC:  progressUC,
-		encrKey:     encrKey,
-		client:      client,
-		urlMap:      map[string]RedirectUrlInfo{},
-		mtx:         &sync.RWMutex{},
+		addonuc:       addonuc,
+		tmdbUc:        tmdbUc,
+		userUC:        userUC,
+		userRepo:      userRepo,
+		sessionRepo:   sessionRepo,
+		progressUC:    progressUC,
+		encrKey:       encrKey,
+		client:        client,
+		urlMap:        map[string]RedirectUrlInfo{},
+		mtx:           &sync.RWMutex{},
+		sockerHandler: sockerHandler,
 	}
 }
 
@@ -116,6 +120,8 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/login", i.handleLogin)
 	router.Get("/stream", i.handleStream)
 	router.Get("/proxy", i.handleProxy)
+	// router.Get("/ws", i.sockerHandler.HandleClientConnectionRequest)
+	router.Get("/ws", i.SessionHandler(i.sockerHandler.HandleClientConnectionRequest, true))
 	router.Post("/profile/login", i.SessionHandler(i.handleProfileLogin, false))
 	router.Get("/user", i.SessionHandler(i.handleGetUser, false))
 	router.Get("/user/profile", i.SessionHandler(i.handleGetUserProfile, true))

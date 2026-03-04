@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -19,11 +20,22 @@ type Message struct {
 
 type MessageHandler = func(message Message)
 
+type ClientInfo struct {
+	conn            *websocket.Conn
+	writeMutex      *sync.Mutex
+	userId          int
+	profileId       int
+	incomingChannel chan []byte
+	closeChan       chan struct{}
+	isStale         atomic.Bool
+}
+
 type WSHandler struct {
 	messageHandlers   map[string]MessageHandler
-	clientConnections map[string]*websocket.Conn
+	clientConnections map[string]*ClientInfo
 	upgrader          websocket.Upgrader
 	mtx               *sync.RWMutex
+	onExitProcedure   atomic.Bool
 }
 
 func New() *WSHandler {
@@ -32,12 +44,14 @@ func New() *WSHandler {
 			return true
 		},
 	}
-	return &WSHandler{
+	handler := &WSHandler{
 		messageHandlers:   make(map[string]MessageHandler),
-		clientConnections: make(map[string]*websocket.Conn),
+		clientConnections: make(map[string]*ClientInfo),
 		upgrader:          upgrader,
 		mtx:               &sync.RWMutex{},
 	}
+	go handler.removeStaleConnections()
+	return handler
 }
 
 func (h *WSHandler) RegisterMessageHandler(msgType []string, handler MessageHandler) {
@@ -47,6 +61,11 @@ func (h *WSHandler) RegisterMessageHandler(msgType []string, handler MessageHand
 }
 
 func (h *WSHandler) HandleClientConnectionRequest(w http.ResponseWriter, r *http.Request) {
+	if h.onExitProcedure.Load() {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println("Error upgrading:", err)
@@ -55,64 +74,93 @@ func (h *WSHandler) HandleClientConnectionRequest(w http.ResponseWriter, r *http
 
 	userId := r.Context().Value("user_id").(int)
 	profileId := r.Context().Value("profile_id").(int)
+	// userId := 0
+	// profileId := 0
 
-	h.mtx.Lock()
 	key := fmt.Sprintf("%d:%d", userId, profileId)
-	oldConn, ok := h.clientConnections[key]
+	h.mtx.Lock()
+	oldClient, ok := h.clientConnections[key]
 	if ok {
 		fmt.Println("Old connection found for same user ", userId, profileId)
-		err := oldConn.Close()
-		if err != nil {
-			fmt.Println("Erorr closing old client connection", err)
+		select {
+		case oldClient.closeChan <- struct{}{}:
+		default:
 		}
 	}
-	h.clientConnections[key] = conn
+	client := &ClientInfo{
+		conn:            conn,
+		writeMutex:      &sync.Mutex{},
+		userId:          userId,
+		profileId:       profileId,
+		incomingChannel: make(chan []byte, 20),
+		closeChan:       make(chan struct{}, 1),
+	}
+	h.clientConnections[key] = client
+	fmt.Println("Total socket connections currently are ", len(h.clientConnections))
+	h.mtx.Unlock()
 	conn.SetReadLimit(512 * 1024)
 
-	fmt.Println("Total socket connections currently are ", len(h.clientConnections))
-	go h.listenForClientMessages(userId, profileId, conn)
-	defer h.mtx.Unlock()
+	go h.handleSingleClient(client)
+	go h.listenForMessages(client)
 
 }
 
-func (h *WSHandler) listenForClientMessages(userId int, profileId int, conn *websocket.Conn) {
-	clientKey := fmt.Sprintf("%d:%d", userId, profileId)
-	pingTicker := time.NewTicker(time.Second * 1)
+func (h *WSHandler) listenForMessages(client *ClientInfo) {
+	for {
+		_, message, err := client.conn.ReadMessage()
+		if err != nil {
+			fmt.Println("Error reading message:", err)
+			select {
+			case client.closeChan <- struct{}{}:
+			default:
+			}
+			return
+		}
+		select {
+		case client.incomingChannel <- message:
+		case <-client.closeChan:
+			return
+		}
+	}
+}
+
+func (h *WSHandler) handleSingleClient(info *ClientInfo) {
+	clientKey := fmt.Sprintf("%d:%d", info.userId, info.profileId)
+	pingTicker := time.NewTicker(time.Second * 2)
 	defer pingTicker.Stop()
 	lastPingTime := time.Now()
-
+	once := &sync.Once{}
 	closeConn := func() {
-		h.mtx.Lock()
-		conn.Close()
-		delete(h.clientConnections, clientKey)
-		h.mtx.Unlock()
+		once.Do(func() {
+			info.isStale.Store(true)
+			info.conn.Close()
+		})
 	}
 
 	for {
 		select {
 		case <-pingTicker.C:
-			if time.Now().Sub(lastPingTime) > (time.Second * 1) {
+			if time.Now().Sub(lastPingTime) > (time.Second * 10) {
 				fmt.Println("Ping not received from client, closing connection for ", clientKey)
 				closeConn()
 				return
 			}
-		default:
-			_, message, err := conn.ReadMessage()
-			if err != nil {
-				fmt.Println("Error reading message:", err)
-				break
-			}
+		case message := <-info.incomingChannel:
+			fmt.Printf("Raw bytes: %v | String: %s\n", message, string(message))
 			if string(message) == "ping" {
 				lastPingTime = time.Now()
-				err := conn.WriteMessage(websocket.TextMessage, []byte("pong"))
+				info.writeMutex.Lock()
+				err := info.conn.WriteMessage(websocket.TextMessage, []byte("pong"))
 				if err != nil {
 					fmt.Println("Error writing message:", err)
+					info.writeMutex.Unlock()
 					closeConn()
 					return
 				}
+				info.writeMutex.Unlock()
 			} else {
 				var msg Message
-				err = json.Unmarshal(message, &msg)
+				err := json.Unmarshal(message, &msg)
 				if err != nil {
 					fmt.Println("Error unmarshalling client message: ", string(message), err)
 					continue
@@ -120,49 +168,70 @@ func (h *WSHandler) listenForClientMessages(userId int, profileId int, conn *web
 				handler, ok := h.messageHandlers[msg.Type]
 				if !ok {
 					fmt.Println("No handler for type", msg.Type)
+					continue
 				}
 				// NOTE: Our message handler, could be any usecase who registers himself as a handler for
 				// this type of message
-				msg.UserId = userId
-				msg.Profile = profileId
+				msg.UserId = info.userId
+				msg.Profile = info.profileId
 				go handler(msg)
 			}
+		case <-info.closeChan:
+			closeConn()
+			return
 		}
 	}
 
 }
 
 func (h *WSHandler) SendMessage(userId int, profileId int, message []byte) error {
-	h.mtx.RLock()
 	key := fmt.Sprintf("%d:%d", userId, profileId)
-	conn, ok := h.clientConnections[key]
+	h.mtx.RLock()
+	client, ok := h.clientConnections[key]
 	h.mtx.RUnlock()
 
-	if !ok {
+	if !ok || client.isStale.Load() {
 		return fmt.Errorf("Client is currently not connected")
 	}
-	err := conn.WriteMessage(websocket.BinaryMessage, message)
+	client.writeMutex.Lock()
+	defer client.writeMutex.Unlock()
+	err := client.conn.WriteMessage(websocket.BinaryMessage, message)
 	if err != nil {
 		fmt.Println("Error sending message ", err)
-		h.mtx.Lock()
-		conn.Close()
-		delete(h.clientConnections, key)
-		h.mtx.Unlock()
+		select {
+		case client.closeChan <- struct{}{}:
+		default:
+		}
 		return err
 	}
 
 	return nil
 }
 
-func (h *WSHandler) Close() {
-	wg := &sync.WaitGroup{}
-	for _, v := range h.clientConnections {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			v.Close()
-		}()
+func (h *WSHandler) removeStaleConnections() {
+	for {
+		time.Sleep(time.Minute * 1)
+		h.mtx.Lock()
+		fmt.Println("Removing stale connections ", len(h.clientConnections))
+		for k, v := range h.clientConnections {
+			if v.isStale.Load() {
+				delete(h.clientConnections, k)
+			}
+		}
+		fmt.Println(
+			"Removed stale connections now current connections are ",
+			len(h.clientConnections),
+		)
+		h.mtx.Unlock()
 	}
+}
 
-	wg.Wait()
+func (h *WSHandler) Close() {
+	h.onExitProcedure.Store(true)
+	for _, v := range h.clientConnections {
+		select {
+		case v.closeChan <- struct{}{}:
+		default:
+		}
+	}
 }

@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"zxy/config"
 	"zxy/interface/rest"
+	zxyWs "zxy/interface/websocket"
 	addonsrepository "zxy/repository/addons_repository"
 	localtmdbrepository "zxy/repository/local_tmdb_repository"
 	playbackrepository "zxy/repository/playback_repository"
@@ -125,6 +126,8 @@ func main() {
 	addonRepo := addonsrepository.New(db)
 	localTmdbRepo := localtmdbrepository.New(localTmdb)
 
+  wsHandler:= zxyWs.New()
+
 	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey, cfg.TmdbAT, cacheRDB)
 	addonuc, err := addonusecase.New(
 		addonRepo,
@@ -150,6 +153,7 @@ func main() {
 		sessionRepo,
 		progressUc,
 		cfg.EncrKey,
+    wsHandler,
 	)
 	defer restInterface.Exit()
 	router := restInterface.SetupRoutes()
