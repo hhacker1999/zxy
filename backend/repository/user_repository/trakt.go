@@ -54,7 +54,7 @@ func (r *Repository) GetProfilesWithTraktExpiry(
 	for rows.Next() {
 		var temp models.ProfileTraktDetails
 		err = rows.Scan(
-      &temp.ProfileId,
+			&temp.ProfileId,
 			&temp.UserId,
 			&temp.Token,
 			&temp.RefreshToken,
@@ -81,12 +81,12 @@ func (r *Repository) SetTraktAuthInvalid(
 		_, err = txn.Exec(`
       update user_profiles set is_trakt_valid = false
       where id = $1 and user_id = $2
-      `,  profileId, userId)
+      `, profileId, userId)
 	} else {
 		_, err = r.db.Exec(`
       update user_profiles set is_trakt_valid = false
       where id = $1 and user_id = $2
-      `,  profileId, userId)
+      `, profileId, userId)
 	}
 	if err != nil {
 		fmt.Println("Error setting trakt auth invalid ", err)
@@ -122,4 +122,37 @@ func (r *Repository) RemoveTraktAuthToken(
 	}
 
 	return err
+}
+
+func (r *Repository) GetUserTraktInfo(
+	userId int, profileId int,
+) (models.ProfileTraktDetails, error) {
+	var res models.ProfileTraktDetails
+	query := `
+  select id, user_id, trakt_token, trakt_expiry, is_trakt_valid
+  from user_profiles where user_id = $1 and id = $2
+  `
+	row := r.db.QueryRow(query, userId, profileId)
+	tokenStr := sql.NullString{}
+	expiry := sql.NullTime{}
+	valid := sql.NullBool{}
+	err := row.Scan(
+		&res.ProfileId,
+		&res.UserId,
+		&tokenStr,
+		&expiry,
+		&valid,
+	)
+	if err != nil {
+		fmt.Println("Error scanning profile trakt details", err)
+		return res, err
+	}
+	if !expiry.Valid || !tokenStr.Valid || !valid.Valid {
+		return res, sql.ErrNoRows
+	}
+	res.Expiry = expiry.Time
+	res.Token = tokenStr.String
+	res.IsTraktValid = valid.Bool
+
+	return res, nil
 }

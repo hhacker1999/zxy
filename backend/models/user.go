@@ -36,4 +36,5 @@ type ProfileTraktDetails struct {
 	Token        string
 	RefreshToken string
 	Expiry       time.Time
+	IsTraktValid bool
 }
