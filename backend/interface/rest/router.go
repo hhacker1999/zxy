@@ -124,7 +124,6 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/login", i.handleLogin)
 	router.Get("/stream", i.handleStream)
 	router.Get("/proxy", i.handleProxy)
-	// router.Get("/ws", i.sockerHandler.HandleClientConnectionRequest)
 	router.Get("/ws", i.SessionHandler(i.sockerHandler.HandleClientConnectionRequest, true))
 	router.Post("/profile/login", i.SessionHandler(i.handleProfileLogin, false))
 	router.Get("/user", i.SessionHandler(i.handleGetUser, false))
@@ -159,6 +158,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Get("/stream_url", i.SessionHandler(i.handleFinalUrl, true))
 	router.Get("/trakt_url", i.SessionHandler(i.HandleGetTraktUrl, true))
 	router.Get("/trakt", i.HandleTraktRedirect)
+	router.Delete("/trakt", i.SessionHandler(i.HandleTraktDelete, true))
 	return router
 }
 

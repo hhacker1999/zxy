@@ -1,7 +1,10 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/service/web_socket.dart';
@@ -27,6 +30,7 @@ class SettingsViewModel extends ChangeNotifier {
   bool get hasLibraryChanges => _hasLibraryChanges;
 
   int? _initializedProfileId;
+  Timer? _traktLoginTimer;
 
   SettingsViewModel(this._authUc, this.wsService);
 
@@ -183,6 +187,36 @@ class SettingsViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> loginTrakt() async {
+    try {
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
+      _context.read<UserBloc>().waitingTraktLogin.value = true;
+      final url = await _authUc.getTraktLoginUrl();
+      await launchUrlString(url, mode: LaunchMode.platformDefault);
+      _traktLoginTimer?.cancel();
+      _traktLoginTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+        final profile = await _authUc.getUserProfile();
+        if (profile.isTraktValid)  {
+        _traktLoginTimer?.cancel();
+        _context.read<UserBloc>().waitingTraktLogin.value = false;
+        _context.read<UserBloc>().profile = profile;
+        }
+      });
+    } catch (e) {
+      showToast(_context, true, e.toString(), "");
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
+    }
+  }
+
+  Future<void> deleteTrakt() async {
+    try {
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
+      await _authUc.deleteTraktLogin();
+    } catch (_) {
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
+    }
+  }
+
   Future<void> deleteProfile(int id) async {
     try {
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
@@ -234,6 +268,7 @@ class SettingsViewModel extends ChangeNotifier {
   @override
   void dispose() {
     apiKeyController.dispose();
+    _traktLoginTimer?.cancel();
     super.dispose();
   }
 }

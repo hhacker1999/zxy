@@ -10,10 +10,14 @@ class UserBloc {
 
   ValueListenable<Profile?> get profileNotifier => _profileNotifier;
 
+  ValueNotifier<bool> waitingTraktLogin = ValueNotifier(false);
+
   set user(User user) => _userNotifier.value = user;
   set profile(Profile f) => _profileNotifier.value = f;
 
   void dispose() {
     _userNotifier.dispose();
+    _profileNotifier.dispose();
+    waitingTraktLogin.dispose();
   }
 }

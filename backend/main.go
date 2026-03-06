@@ -127,7 +127,7 @@ func main() {
 	addonRepo := addonsrepository.New(db)
 	localTmdbRepo := localtmdbrepository.New(localTmdb)
 
-  wsHandler:= zxyWs.New()
+	wsHandler := zxyWs.New()
 
 	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey, cfg.TmdbAT, cacheRDB)
 	addonuc, err := addonusecase.New(
@@ -145,8 +145,15 @@ func main() {
 	}
 
 	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo, addonuc)
-	progressUc := progressusecase.New(db, tmdbUc, playbackRepo)
-  traktUc:= traktusecase.New(cfg.TraktKey, cfg.TraktSecret, userRepo, playbackRepo, cfg.TraktRedirectUri, cacheRDB)
+	traktUc := traktusecase.New(
+		cfg.TraktKey,
+		cfg.TraktSecret,
+		userRepo,
+		playbackRepo,
+		cfg.TraktRedirectUri,
+		cacheRDB,
+	)
+	progressUc := progressusecase.New(db, tmdbUc, playbackRepo, traktUc, watchSessionDB)
 	restInterface := rest.New(
 		addonuc,
 		tmdbUc,
@@ -155,8 +162,8 @@ func main() {
 		sessionRepo,
 		progressUc,
 		cfg.EncrKey,
-    wsHandler,
-    traktUc,
+		wsHandler,
+		traktUc,
 	)
 	defer restInterface.Exit()
 	router := restInterface.SetupRoutes()

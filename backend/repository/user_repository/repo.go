@@ -268,7 +268,9 @@ func (r *Repository) GetUserProfile(
 ) (models.UserProfile, error) {
 	var res models.UserProfile
 	row := r.db.QueryRow(
-		`select id, user_id, debrid_type, debrid_key, name, is_admin,pin_hash,library_items from user_profiles where user_id = $1 and id = $2`,
+		`select id, user_id, debrid_type, debrid_key, name, is_admin,pin_hash,library_items,
+    trakt_expiry, is_trakt_valid
+    from user_profiles where user_id = $1 and id = $2`,
 		userId,
 		profileId,
 	)
@@ -276,6 +278,8 @@ func (r *Repository) GetUserProfile(
 	var typSql sql.NullString
 	var keySql sql.NullString
 	var items *json.RawMessage
+	var traktExpiry sql.NullTime
+	var isTraktValid sql.NullBool
 
 	err := row.Scan(
 		&res.Id,
@@ -286,6 +290,8 @@ func (r *Repository) GetUserProfile(
 		&res.IsAdmin,
 		&res.PinHash,
 		&items,
+		&traktExpiry,
+		&isTraktValid,
 	)
 	if err != nil {
 		fmt.Println("Error getting user profile", err)
@@ -297,6 +303,15 @@ func (r *Repository) GetUserProfile(
 	if keySql.Valid {
 		res.DebridKey = keySql.String
 	}
+
+	if traktExpiry.Valid {
+		res.TraktExpiry = &traktExpiry.Time
+	}
+
+	if isTraktValid.Valid {
+		res.TraktValid = isTraktValid.Bool
+	}
+
 	if items != nil {
 		var lItems []models.ProfileLibraryItem
 		err = json.Unmarshal(*items, &lItems)

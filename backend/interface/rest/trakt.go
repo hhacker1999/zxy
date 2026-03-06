@@ -40,3 +40,20 @@ func (i *RestInterface) HandleTraktRedirect(w http.ResponseWriter, r *http.Reque
 
 	response.StatusCode = http.StatusOK
 }
+
+func (i *RestInterface) HandleTraktDelete(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	profileId := r.Context().Value("profile_id").(int)
+	userId := r.Context().Value("user_id").(int)
+
+	err := i.traktUC.DeleteProfileTraktLogin(userId, profileId)
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+}

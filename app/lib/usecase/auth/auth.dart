@@ -154,6 +154,23 @@ class AuthUsecase {
     );
   }
 
+  Future<String> getTraktLoginUrl() async {
+    final res = await _httpService.get(
+      Uri.parse("${AppConstants.baseUrl}/trakt_url"),
+      auth: RequestAuth.profile,
+    );
+    final body = jsonDecode(res.body);
+    final url = (body as Map<String, dynamic>)["url"] as String;
+    return url;
+  }
+
+  Future<void> deleteTraktLogin() async {
+    await _httpService.delete(
+      Uri.parse("${AppConstants.baseUrl}/trakt"),
+      auth: RequestAuth.profile,
+    );
+  }
+
   Future<void> deleteProfile(int profileId) async {
     await _httpService.delete(
       Uri.parse("${AppConstants.baseUrl}/user/profile?profile_id=$profileId"),

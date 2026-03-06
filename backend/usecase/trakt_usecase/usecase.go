@@ -174,6 +174,15 @@ func (u *Usecase) RetrieveUserAuthTokenFromRefreshToken(
 	return authRes, nil
 }
 
+func (u *Usecase) DeleteProfileTraktLogin(userId int, profileId int) error {
+	err := u.userRepo.RemoveTraktAuthToken(context.Background(), userId, profileId)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	return nil
+}
+
 func (u *Usecase) runRefreshTraktTokensNearExpiryCron() {
 	for {
 		time.Sleep(time.Hour * 1)
