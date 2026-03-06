@@ -75,6 +75,9 @@ class SettingsView extends StatelessWidget {
                                       settingsVm,
                                     )
                                   : null,
+                              onTraktLogin: settingsVm.loginTrakt,
+                              onTraktLogout: settingsVm.deleteTrakt,
+                              waitingTraktLogin: userBloc.waitingTraktLogin,
                             ),
                             const SizedBox(height: AppTheme.spacingXL),
 
@@ -153,11 +156,17 @@ class _AccountCard extends StatelessWidget {
   final VoidCallback onSwitchProfile;
   final VoidCallback onLogout;
   final VoidCallback? onDeleteAccount;
+  final VoidCallback onTraktLogin;
+  final VoidCallback onTraktLogout;
+  final ValueNotifier<bool> waitingTraktLogin;
 
   const _AccountCard({
     required this.profile,
     required this.onSwitchProfile,
     required this.onLogout,
+    required this.onTraktLogin,
+    required this.onTraktLogout,
+    required this.waitingTraktLogin,
     this.onDeleteAccount,
   });
 
@@ -215,6 +224,16 @@ class _AccountCard extends StatelessWidget {
             icon: Icons.people_outline_rounded,
             label: 'Switch Profile',
             onTap: onSwitchProfile,
+          ),
+
+          Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+
+          // ── Trakt ─────────────────────────────────────────────────
+          _TraktRow(
+            profile: profile,
+            onLogin: onTraktLogin,
+            onLogout: onTraktLogout,
+            waitingTraktLogin: waitingTraktLogin,
           ),
 
           Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
@@ -348,6 +367,307 @@ class _ProfileAvatar extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Trakt row (inside Account card) ──────────────────────────────────────────
+
+const _kTraktRed = Color(0xFFED1C24);
+
+class _TraktRow extends StatelessWidget {
+  final Profile profile;
+  final VoidCallback onLogin;
+  final VoidCallback onLogout;
+  final ValueNotifier<bool> waitingTraktLogin;
+
+  const _TraktRow({
+    required this.profile,
+    required this.onLogin,
+    required this.onLogout,
+    required this.waitingTraktLogin,
+  });
+
+  /// Compact Trakt «t» logo drawn with Canvas.
+  Widget _traktLogo({double size = 20}) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _TraktLogoPainter()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: waitingTraktLogin,
+      builder: (_, isWaiting, _) {
+        // ── Waiting ──────────────────────────────────────────────────
+        if (isWaiting) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spacingM,
+              vertical: AppTheme.spacingM,
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: _kTraktRed,
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spacingM),
+                Text(
+                  'Waiting for Trakt login…',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // ── Connected ────────────────────────────────────────────────
+        if (profile.isTraktValid) {
+          return _TraktConnectedRow(
+            traktLogo: _traktLogo(),
+            onLogout: onLogout,
+          );
+        }
+
+        // ── Login / Re-login ─────────────────────────────────────────
+        final isRelogin = profile.traktExpiry != null;
+        return _TraktLoginRow(
+          traktLogo: _traktLogo(),
+          label: isRelogin ? 'Re-login with Trakt' : 'Login with Trakt',
+          onTap: onLogin,
+        );
+      },
+    );
+  }
+}
+
+class _TraktConnectedRow extends StatefulWidget {
+  final Widget traktLogo;
+  final VoidCallback onLogout;
+  const _TraktConnectedRow({required this.traktLogo, required this.onLogout});
+
+  @override
+  State<_TraktConnectedRow> createState() => _TraktConnectedRowState();
+}
+
+class _TraktConnectedRowState extends State<_TraktConnectedRow> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingM,
+        vertical: AppTheme.spacingM,
+      ),
+      child: Row(
+        children: [
+          // Logo badge
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: _kTraktRed.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: _kTraktRed.withValues(alpha: 0.3)),
+            ),
+            alignment: Alignment.center,
+            child: widget.traktLogo,
+          ),
+          const SizedBox(width: AppTheme.spacingM),
+          // Label + status
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Trakt',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4CAF50),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Connected',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Logout button
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _hovered = true),
+            onExit: (_) => setState(() => _hovered = false),
+            child: GestureDetector(
+              onTap: widget.onLogout,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: _hovered
+                      ? _kTraktRed.withValues(alpha: 0.18)
+                      : _kTraktRed.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _kTraktRed.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  'Logout',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _kTraktRed,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TraktLoginRow extends StatefulWidget {
+  final Widget traktLogo;
+  final String label;
+  final VoidCallback onTap;
+  const _TraktLoginRow({
+    required this.traktLogo,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  State<_TraktLoginRow> createState() => _TraktLoginRowState();
+}
+
+class _TraktLoginRowState extends State<_TraktLoginRow> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          color: _hovered
+              ? Colors.white.withValues(alpha: 0.04)
+              : Colors.transparent,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spacingM,
+            vertical: AppTheme.spacingM,
+          ),
+          child: Row(
+            children: [
+              // Logo badge
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: _kTraktRed.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _kTraktRed.withValues(alpha: 0.2)),
+                ),
+                alignment: Alignment.center,
+                child: widget.traktLogo,
+              ),
+              const SizedBox(width: AppTheme.spacingM),
+              Expanded(
+                child: Text(
+                  widget.label,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: AppTheme.textPrimary.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Trakt logo painter ────────────────────────────────────────────────────────
+
+class _TraktLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = _kTraktRed
+      ..style = PaintingStyle.fill;
+
+    // Draw a filled circle background
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    canvas.drawCircle(center, radius, paint);
+
+    // Draw the "T" letter in white
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'T',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: size.width * 0.65,
+          fontWeight: FontWeight.w800,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        (size.width - textPainter.width) / 2,
+        (size.height - textPainter.height) / 2,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TraktLogoPainter oldDelegate) => false;
 }
 
 // ── Delete Account confirmation dialog ────────────────────────────────────────

@@ -51,6 +51,7 @@ class SplashViewModel {
         return;
       }
       showToast(context, true, e.toString(), "");
+      rethrow;
     }
   }
 }

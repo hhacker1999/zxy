@@ -196,14 +196,15 @@ class SettingsViewModel extends ChangeNotifier {
       _traktLoginTimer?.cancel();
       _traktLoginTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
         final profile = await _authUc.getUserProfile();
-        if (profile.isTraktValid)  {
-        _traktLoginTimer?.cancel();
-        _context.read<UserBloc>().waitingTraktLogin.value = false;
-        _context.read<UserBloc>().profile = profile;
+        if (profile.isTraktValid) {
+          _traktLoginTimer?.cancel();
+          _context.read<UserBloc>().waitingTraktLogin.value = false;
+          _context.read<UserBloc>().profile = profile;
         }
       });
     } catch (e) {
       showToast(_context, true, e.toString(), "");
+    } finally {
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
     }
   }
@@ -212,7 +213,11 @@ class SettingsViewModel extends ChangeNotifier {
     try {
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       await _authUc.deleteTraktLogin();
-    } catch (_) {
+      final profile = await _authUc.getUserProfile();
+      _context.read<UserBloc>().profile = profile;
+    } catch (e) {
+      showToast(_context, true, e.toString(), "");
+    } finally {
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
     }
   }

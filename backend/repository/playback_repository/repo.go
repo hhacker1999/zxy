@@ -162,6 +162,7 @@ func (r *Repository) GetProgressMultiple(
 	progressGte float64,
 	isWatched *bool,
 	isVisible *bool,
+	limit int,
 ) ([]ProgressUpdate, error) {
 	var res []ProgressUpdate
 	query := `
@@ -196,6 +197,11 @@ func (r *Repository) GetProgressMultiple(
 
 	query += " order by updated_at desc"
 
+	if limit != 0 {
+		query += fmt.Sprintf(" limit $%d", len(params)+1)
+		params = append(params, limit)
+	}
+
 	rows, err := r.db.Query(
 		query, params...,
 	)
@@ -203,6 +209,7 @@ func (r *Repository) GetProgressMultiple(
 		fmt.Println("Error getting multiple progress", err)
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var temp ProgressUpdate
@@ -248,7 +255,12 @@ func (r *Repository) DeleteProfileProgress(ctx context.Context, userId int, prof
 	return err
 }
 
-func (r *Repository) UpdateProgressVisible(ctx context.Context, userId int, profileId int, mediaId string) error {
+func (r *Repository) UpdateProgressVisible(
+	ctx context.Context,
+	userId int,
+	profileId int,
+	mediaId string,
+) error {
 
 	query := `
   update watch_progress set visible = false where user_id = $1 and profile_id = $2 and media_id = $3
@@ -256,7 +268,7 @@ func (r *Repository) UpdateProgressVisible(ctx context.Context, userId int, prof
 	var err error
 	tx, ok := ctx.Value("txn").(*sql.Tx)
 	if ok {
-		_, err = tx.Exec(query,userId, profileId, mediaId )
+		_, err = tx.Exec(query, userId, profileId, mediaId)
 	} else {
 		_, err = r.db.Exec(query, userId, profileId, mediaId)
 	}

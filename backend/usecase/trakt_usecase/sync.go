@@ -49,6 +49,7 @@ func (u *Usecase) syncTraktData(userId int, profileId int, token string) error {
 		0,
 		&isWatched,
 		nil,
+    0,
 	)
 	if err != nil {
 		return apperrors.SomethingWentWrongError{}
@@ -85,26 +86,6 @@ func (u *Usecase) syncTraktData(userId int, profileId int, token string) error {
 			)
 		}
 	}
-
-	// watchedMapEpisodes := make(map[string]struct{})
-	// watchedEpisodes, err := u.playbackRepo.GetProgressMultiple(
-	// 	userId,
-	// 	profileId,
-	// 	"",
-	// 	true,
-	// 	0,
-	// 	0,
-	// 	&isWatched,
-	// 	nil,
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Println("Got watched shows")
-
-	// for _, v := range watchedEpisodes {
-	// 	watchedMapEpisodes[v.MediaId] = struct{}{}
-	// }
 
 	for _, v := range series {
 		if v.Show.IDS.Tmdb == 0 {
@@ -147,6 +128,7 @@ func (u *Usecase) syncTraktData(userId int, profileId int, token string) error {
 		0,
 		&isWatched,
 		nil,
+    0,
 	)
 	if err != nil {
 		return apperrors.SomethingWentWrongError{}

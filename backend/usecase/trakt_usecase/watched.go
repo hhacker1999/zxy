@@ -29,6 +29,7 @@ func (u *Usecase) getWatchedMovies(token string) ([]models.TraktPlaybackHistoryI
 		fmt.Println("Error sending get watched movies request ", err)
 		return nil, err
 	}
+	defer response.Body.Close()
 	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Error reading get watched movies response body ", err)
@@ -66,6 +67,7 @@ func (u *Usecase) getWatchedSeries(token string) ([]models.TraktPlaybackHistoryI
 		fmt.Println("Error sending get watched shows request ", err)
 		return nil, err
 	}
+	defer response.Body.Close()
 	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Error reading get watched shows response body ", err)
@@ -103,6 +105,7 @@ func (u *Usecase) getPlayback(token string) ([]models.TraktPlaybackResponeElemen
 		fmt.Println("Error sending get playback request ", err)
 		return nil, err
 	}
+	defer response.Body.Close()
 	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Error reading get get playback response body ", err)
@@ -174,14 +177,15 @@ func (u *Usecase) MarkMovieWatched(
 		fmt.Println("Error sending get playback request ", err)
 		return
 	}
+	defer response.Body.Close()
 	bodyBytes, err = io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Error reading post history response body ", err)
 		return
 	}
 
-	if response.StatusCode != http.StatusOK {
-		if response.StatusCode == 400 {
+	if response.StatusCode != http.StatusOK && response.StatusCode != 201 {
+		if response.StatusCode == http.StatusUnauthorized {
 			fmt.Println("User's trakt credentials are expired")
 			u.userRepo.SetTraktAuthInvalid(context.Background(), userId, profileId)
 			return
@@ -248,14 +252,15 @@ func (u *Usecase) MarkSeasonWatched(
 		fmt.Println("Error sending get playback request ", err)
 		return
 	}
+	defer response.Body.Close()
 	bodyBytes, err = io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Error reading get post history response body ", err)
 		return
 	}
 
-	if response.StatusCode != http.StatusOK {
-		if response.StatusCode == 400 {
+	if response.StatusCode != http.StatusOK && response.StatusCode != 201 {
+		if response.StatusCode == http.StatusUnauthorized {
 			fmt.Println("User's trakt credentials are expired")
 			u.userRepo.SetTraktAuthInvalid(context.Background(), userId, profileId)
 			return
@@ -277,6 +282,8 @@ func (u *Usecase) MarkEpisodeWatched(
 	if err != nil {
 		return
 	}
+	fmt.Println(info.IsTraktValid)
+	fmt.Println(info.Expiry)
 	if !info.IsTraktValid || info.Expiry.Before(time.Now()) {
 		fmt.Println("Trakt token is not valid anymore")
 		return
@@ -288,11 +295,15 @@ func (u *Usecase) MarkEpisodeWatched(
 				"ids": map[string]any{
 					"tmdb": tmdbId,
 				},
-				"episodes": []map[string]any{
+				"seasons": []map[string]any{
 					{
-						"season":     seasonNo,
-						"number":     episodeNo,
-						"watched_at": watchedAt,
+						"number": seasonNo,
+						"episodes": []map[string]any{
+							{
+								"number":     episodeNo,
+								"watched_at": watchedAt,
+							},
+						},
 					},
 				},
 			},
@@ -304,6 +315,7 @@ func (u *Usecase) MarkEpisodeWatched(
 		fmt.Println("Error marhsalling trakt sync history body", err)
 		return
 	}
+	fmt.Println(string(bodyBytes))
 
 	client := http.Client{}
 	req, err := http.NewRequest(
@@ -324,14 +336,16 @@ func (u *Usecase) MarkEpisodeWatched(
 		fmt.Println("Error sending post history request ", err)
 		return
 	}
+	defer response.Body.Close()
 	bodyBytes, err = io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Error reading post history response body ", err)
 		return
 	}
+	fmt.Println(string(bodyBytes))
 
-	if response.StatusCode != http.StatusOK {
-		if response.StatusCode == 400 {
+	if response.StatusCode != http.StatusOK && response.StatusCode != 201 {
+		if response.StatusCode == http.StatusUnauthorized {
 			fmt.Println("User's trakt credentials are expired")
 			u.userRepo.SetTraktAuthInvalid(context.Background(), userId, profileId)
 			return
@@ -352,25 +366,25 @@ func (u *Usecase) UpdateProgressTrakt(
 	if err != nil {
 		return
 	}
+	fmt.Println(info.IsTraktValid)
+	fmt.Println(info.Expiry)
 	if !info.IsTraktValid || info.Expiry.Before(time.Now()) {
 		fmt.Println("Trakt token is not valid anymore")
 		return
 	}
 
-	key := "movies"
+	key := "movie"
 	if isEpisode {
-		key = "episodes"
+		key = "episode"
 	}
 
 	body := map[string]any{
-		key: []map[string]any{
-			{
-				"ids": map[string]any{
-					"tmdb": tmdbId,
-				},
-        "progress": progress,
+		key: map[string]any{
+			"ids": map[string]any{
+				"tmdb": tmdbId,
 			},
 		},
+		"progress": progress,
 	}
 
 	bodyBytes, err := json.Marshal(body)
@@ -378,11 +392,12 @@ func (u *Usecase) UpdateProgressTrakt(
 		fmt.Println("Error marshalling trakt sync playback body", err)
 		return
 	}
+	fmt.Println(string(bodyBytes))
 
 	client := http.Client{}
 	req, err := http.NewRequest(
 		http.MethodPost,
-		traktApiUrl+"/sync/playback",
+		traktApiUrl+"/scrobble/pause",
 		bytes.NewBuffer(bodyBytes),
 	)
 	if err != nil {
@@ -398,14 +413,16 @@ func (u *Usecase) UpdateProgressTrakt(
 		fmt.Println("Error sending post playback request ", err)
 		return
 	}
+	defer response.Body.Close()
 	bodyBytes, err = io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Error reading get get playback response body ", err)
 		return
 	}
 
-	if response.StatusCode != http.StatusOK {
-		if response.StatusCode == 400 {
+  fmt.Println(string(bodyBytes))
+	if response.StatusCode != http.StatusOK && response.StatusCode != 201 {
+		if response.StatusCode == http.StatusUnauthorized {
 			fmt.Println("User's trakt credentials are expired")
 			u.userRepo.SetTraktAuthInvalid(context.Background(), userId, profileId)
 			return

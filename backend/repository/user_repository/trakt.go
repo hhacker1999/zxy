@@ -51,6 +51,7 @@ func (r *Repository) GetProfilesWithTraktExpiry(
 		fmt.Println("Error getting user trakt profiles", err)
 		return res, err
 	}
+  defer rows.Close()
 	for rows.Next() {
 		var temp models.ProfileTraktDetails
 		err = rows.Scan(

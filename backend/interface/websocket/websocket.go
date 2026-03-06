@@ -146,7 +146,7 @@ func (h *WSHandler) handleSingleClient(info *ClientInfo) {
 				return
 			}
 		case message := <-info.incomingChannel:
-			fmt.Printf("Raw bytes: %v | String: %s\n", message, string(message))
+			// fmt.Printf("Raw bytes: %v | String: %s\n", message, string(message))
 			if string(message) == "ping" {
 				lastPingTime = time.Now()
 				info.writeMutex.Lock()

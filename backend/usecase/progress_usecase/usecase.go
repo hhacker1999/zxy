@@ -59,6 +59,7 @@ func (u *Usecase) GetContinueWatching(
 		0,
 		&watched,
 		&visible,
+		15,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -86,6 +87,7 @@ func (u *Usecase) GetShowProgress(
 		0,
 		nil,
 		nil,
+		0,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -588,10 +590,9 @@ func (u *Usecase) updateProgressInCacheAndSyncTrakt(
 func (u *Usecase) startCacheProgressSyncCron() {
 	for {
 		time.Sleep(time.Second * 10)
-    fmt.Println("Starting stale progress cache sweep")
+		fmt.Println("Starting stale progress cache sweep")
 		iter := u.progressCache.Scan(context.Background(), 0, "*", 1000).Iterator()
 
-		// 2. Loop through the keys
 		for iter.Next(context.Background()) {
 			key := iter.Val()
 			tempProgressJson, err := u.progressCache.Get(context.Background(), key).Result()

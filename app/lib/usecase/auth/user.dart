@@ -63,7 +63,9 @@ class Profile {
     id: json["id"],
     name: json["name"],
     isPinProtected: json["is_pin_protected"],
-    traktExpiry: DateTime.tryParse(json["trakt_expiry"]),
+    traktExpiry: json["trakt_expiry"] != null
+        ? DateTime.tryParse(json["trakt_expiry"])
+        : null,
     isTraktValid: json["trakt_valid"],
     createdAt: DateTime.parse(json["created_at"]),
     debridType: json["debrid_type"],
