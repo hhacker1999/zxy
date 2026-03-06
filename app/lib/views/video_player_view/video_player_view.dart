@@ -165,7 +165,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       _player,
       configuration: VideoControllerConfiguration(
         // vo: "gpu",
-        hwdec: "auto",
+        hwdec: "videotoolbox",
         enableHardwareAcceleration: true,
       ),
     );
@@ -193,11 +193,14 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       player.setProperty('icc-profile-auto', 'yes'),
       player.setProperty('tone-mapping', 'spline'),
       player.setProperty('hdr-compute-peak', 'yes'),
+
       player.setProperty('tone-mapping-mode', 'luma'),
       player.setProperty('target-peak', 'auto'),
       player.setProperty('gamut-mapping-mode', 'perceptual'),
       player.setProperty('scale', 'ewa_lanczossharp'),
-      player.setProperty('cscale', 'ewa_lanczossharp'),
+      // player.setProperty('cscale', 'ewa_lanczossharp'),
+      player.setProperty('cscale', 'bilinear'),
+      // player.setProperty('cscale', 'spline'),
       if (kDebugMode) player.setProperty('log-level', 'debug'),
     ]);
   }

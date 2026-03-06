@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"time"
 	"zxy/models"
 )
 
@@ -228,34 +227,6 @@ func (r *Repository) CreateUserProfile(
 	return id, err
 }
 
-func (r *Repository) StoreTraktAuthToken(data models.TraktAuthRes) (*time.Time, error) {
-	row := r.db.QueryRow("select trakt_logged_in_at from users where id = 1")
-	var createdAtSql sql.NullTime
-	var createdAt *time.Time
-
-	err := row.Scan(&createdAtSql)
-	if err != nil {
-		fmt.Println("Error getting logged in time ", err)
-		return nil, err
-	}
-	if createdAtSql.Valid {
-		createdAt = &createdAtSql.Time
-		createdAtSql.Value()
-	}
-
-	_, err = r.db.Exec(`
-    insert into users expiry,
-    trakt_refresh_token,
-    trakt_auth_token,
-    trakt_logged_in_at values($1, $2, $3, $4) where id = 1
-    `, data.ExpiresIn, data.RefreshToken, data.AccessToken, data.CreatedAt)
-	if err != nil {
-		fmt.Println("Error inserting trakt auth token ", err)
-	}
-
-	return createdAt, err
-}
-
 func (r *Repository) StoreDebridInfo(
 	ctx context.Context,
 	userId int,
@@ -326,15 +297,15 @@ func (r *Repository) GetUserProfile(
 	if keySql.Valid {
 		res.DebridKey = keySql.String
 	}
-  if items != nil {
-    var lItems []models.ProfileLibraryItem
-    err = json.Unmarshal(*items, &lItems)
-    if err != nil {
-      fmt.Println("Error unmarshalling library items", err)
-      return res, err
-    }
-    res.LibraryItems = lItems
-  }
+	if items != nil {
+		var lItems []models.ProfileLibraryItem
+		err = json.Unmarshal(*items, &lItems)
+		if err != nil {
+			fmt.Println("Error unmarshalling library items", err)
+			return res, err
+		}
+		res.LibraryItems = lItems
+	}
 
 	return res, err
 }
@@ -467,7 +438,7 @@ func (r *Repository) StoreLibraryItems(
 	if ok {
 		_, err = txn.Exec(
 			`update user_profiles set library_items = $1 where user_id = $2 and id = $3`,
-      itemsB,
+			itemsB,
 			userId,
 			profileId,
 		)
@@ -475,7 +446,7 @@ func (r *Repository) StoreLibraryItems(
 
 		_, err = r.db.Exec(
 			`update user_profiles set library_items = $1 where user_id = $2 and id = $3`,
-      itemsB,
+			itemsB,
 			userId,
 			profileId,
 		)

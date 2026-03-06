@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
+import 'package:zxy_app/service/web_socket.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
@@ -11,6 +12,7 @@ import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 
 class SettingsViewModel extends ChangeNotifier {
+  final WebSocketService wsService;
   final AuthUsecase _authUc;
   late BuildContext _context;
   String _selectedDebridType = "";
@@ -26,7 +28,7 @@ class SettingsViewModel extends ChangeNotifier {
 
   int? _initializedProfileId;
 
-  SettingsViewModel(this._authUc);
+  SettingsViewModel(this._authUc, this.wsService);
 
   void init(Profile? currentProfile) {
     if (currentProfile == null) return;
@@ -200,6 +202,7 @@ class SettingsViewModel extends ChangeNotifier {
     try {
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       await _authUc.logout();
+      wsService.clean();
       showToast(_context, false, "Logged out", "");
       Navigator.pushNamedAndRemoveUntil(_context, AppRoutes.loginView, (_) {
         return false;

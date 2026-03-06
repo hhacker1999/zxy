@@ -24,6 +24,16 @@ type UserProfile struct {
 	IsPinProtected bool                 `json:"is_pin_protected"`
 	DebridType     string               `json:"debrid_type"`
 	DebridKey      string               `json:"-"`
+	TraktExpiry    *time.Time           `json:"trakt_expiry"`
+	TraktValid     bool                 `json:"trakt_valid"`
 	IsAdmin        bool                 `json:"is_admin"`
 	LibraryItems   []ProfileLibraryItem `json:"library_items"`
+}
+
+type ProfileTraktDetails struct {
+	UserId       int
+	ProfileId    int
+	Token        string
+	RefreshToken string
+	Expiry       time.Time
 }

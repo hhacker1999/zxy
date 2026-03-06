@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 	apperrors "zxy/app_errors"
 	"zxy/models"
@@ -14,6 +13,7 @@ import (
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
 	addonusecase "zxy/usecase/addon_usecase"
+	"zxy/utils"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -121,7 +121,7 @@ func (u *Usecase) LogInUser(email string, pwd string) (models.User, string, erro
 		return user, "", apperrors.InvalidInput{Err: "Invalid password"}
 	}
 
-	token := GetRandomString(50)
+	token := utils.GetRandomString(50)
 	err = u.sessionRepo.CreateUserSession(models.Session{
 		UserId: user.Id,
 		Expiry: time.Now(),
@@ -192,7 +192,7 @@ func (u *Usecase) LogInProfile(
 		return "", apperrors.SomethingWentWrongError{}
 	}
 
-	token := GetRandomString(50)
+	token := utils.GetRandomString(50)
 	err = u.sessionRepo.CreateProfileSession(ctx, models.ProfileSession{
 		ProfileId:    profileId,
 		SessionId:    sessionId,
@@ -320,19 +320,6 @@ func (u *Usecase) CreateUserProfile(profileInput CreateProfileInput) error {
 	}
 
 	return nil
-}
-
-func GetRandomString(length int) string {
-	const input = "abdcefghijklmnopqrstuvwxyz1234567890"
-	var res string
-
-	for range length {
-		index := rand.Intn(len(input))
-
-		res += string(input[index])
-	}
-
-	return res
 }
 
 func (u *Usecase) UpdateUserProfile(profileInput CreateProfileInput) error {

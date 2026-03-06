@@ -73,7 +73,8 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
         },
       ),
       ChangeNotifierProvider<SettingsViewModel>(
-        create: (_) => SettingsViewModel(widget.deps.authUc),
+        create: (_) =>
+            SettingsViewModel(widget.deps.authUc, widget.deps.wsService),
         builder: (_, _) {
           return SettingsView();
         },

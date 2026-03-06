@@ -195,7 +195,7 @@ func (h *WSHandler) SendMessage(userId int, profileId int, message []byte) error
 	}
 	client.writeMutex.Lock()
 	defer client.writeMutex.Unlock()
-	err := client.conn.WriteMessage(websocket.BinaryMessage, message)
+	err := client.conn.WriteMessage(websocket.TextMessage, message)
 	if err != nil {
 		fmt.Println("Error sending message ", err)
 		select {

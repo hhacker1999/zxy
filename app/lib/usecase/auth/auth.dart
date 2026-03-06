@@ -2,15 +2,21 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/service/http_service.dart';
+import 'package:zxy_app/service/web_socket.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
 
 class AuthUsecase {
   late final HttpService _httpService;
   final FlutterSecureStorage _storage;
+  late final WebSocketService _wsService;
 
-  AuthUsecase(FlutterSecureStorage storage, HttpService service)
-    : _storage = storage,
-      _httpService = service;
+  AuthUsecase(
+    FlutterSecureStorage storage,
+    HttpService service,
+    WebSocketService wsService,
+  ) : _storage = storage,
+      _httpService = service,
+      _wsService = wsService;
 
   Future<bool> initialise() async {
     String? st;
@@ -24,6 +30,7 @@ class AuthUsecase {
 
     if (pt != null) {
       _httpService.pt = pt;
+      await _wsService.connect(pt);
     }
     return st != null && pt != null;
   }
@@ -81,6 +88,7 @@ class AuthUsecase {
     }
     _httpService.pt = stCookie[1];
     await _storage.write(key: "pt", value: stCookie[1]);
+    await _wsService.connect(stCookie[1]);
   }
 
   Future<User> getUser() async {

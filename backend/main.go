@@ -19,6 +19,7 @@ import (
 	addonusecase "zxy/usecase/addon_usecase"
 	progressusecase "zxy/usecase/progress_usecase"
 	tmdbusecase "zxy/usecase/tmdb_usecase"
+	traktusecase "zxy/usecase/trakt_usecase"
 	userusecase "zxy/usecase/user_usecase"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -145,6 +146,7 @@ func main() {
 
 	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo, addonuc)
 	progressUc := progressusecase.New(db, tmdbUc, playbackRepo)
+  traktUc:= traktusecase.New(cfg.TraktKey, cfg.TraktSecret, userRepo, playbackRepo, cfg.TraktRedirectUri, cacheRDB)
 	restInterface := rest.New(
 		addonuc,
 		tmdbUc,
@@ -154,6 +156,7 @@ func main() {
 		progressUc,
 		cfg.EncrKey,
     wsHandler,
+    traktUc,
 	)
 	defer restInterface.Exit()
 	router := restInterface.SetupRoutes()

@@ -9,6 +9,7 @@ type TraktAuthRes struct {
 	RefreshToken string `json:"refresh_token"`
 	Scope        string `json:"scope"`
 	CreatedAt    int64  `json:"created_at"`
+	Expiry       time.Time
 }
 
 type TraktPlaybackHistoryItem struct {
@@ -22,8 +23,8 @@ type TraktPlaybackHistoryItem struct {
 }
 
 type TraktSeason struct {
-	Number   int64     `json:"number"`
-	Episodes []Episode `json:"episodes"`
+	Number   int64          `json:"number"`
+	Episodes []TraktEpisode `json:"episodes"`
 }
 
 type TraktEpisode struct {
@@ -89,3 +90,46 @@ type Plex struct {
 	Slug string `json:"slug"`
 }
 
+type TraktPlaybackResponeElement struct {
+	Progress float64      `json:"progress"`
+	PausedAt time.Time    `json:"paused_at"`
+	ID       int64        `json:"id"`
+	Type     string       `json:"type"`
+	Movie    MovieClass   `json:"movie"`
+	Episode  EpisodeClass `json:"episode"`
+	Show     Show         `json:"show"`
+}
+
+type EpisodeClass struct {
+	Season int64      `json:"season"`
+	Number int64      `json:"number"`
+	Title  string     `json:"title"`
+	IDS    EpisodeIDS `json:"ids"`
+}
+
+type EpisodeIDS struct {
+	Trakt int64   `json:"trakt"`
+	Tvdb  *int64  `json:"tvdb"`
+	Imdb  string  `json:"imdb"`
+	Tmdb  int64   `json:"tmdb"`
+	Slug  *string `json:"slug,omitempty"`
+}
+
+type MovieClass struct {
+	Title string   `json:"title"`
+	Year  int64    `json:"year"`
+	IDS   MovieIDS `json:"ids"`
+}
+
+type MovieIDS struct {
+	Trakt int64  `json:"trakt"`
+	Slug  string `json:"slug"`
+	Imdb  string `json:"imdb"`
+	Tmdb  int64  `json:"tmdb"`
+}
+
+type Show struct {
+	Title string     `json:"title"`
+	Year  int64      `json:"year"`
+	IDS   EpisodeIDS `json:"ids"`
+}

@@ -23,6 +23,7 @@ type Config struct {
 	RedisPassword       string
 	RedisCacheDb        string
 	RedisWatchSessionDb string
+	TraktRedirectUri    string
 }
 
 func GetConfig(filePath string) (Config, error) {
@@ -49,6 +50,7 @@ func GetConfig(filePath string) (Config, error) {
 	config.RedisCacheDb = configMap["REDIS_CACHE_DB"]
 	config.RedisWatchSessionDb = configMap["REDIS_WATCH_SESSION_DB"]
 	config.RedisPassword = configMap["REDIS_PASSWORD"]
+  config.TraktRedirectUri = configMap["TRAKT_REDIRECT_URI"]
 
 	return config, nil
 }

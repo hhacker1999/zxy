@@ -49,7 +49,7 @@ func (r *Repository) UpdateProgress(ctx context.Context, updates []ProgressUpdat
 	}
 
 	if err != nil {
-		fmt.Println("Error updating watch progress")
+		fmt.Println("Error updating watch progress", err)
 	}
 
 	return err

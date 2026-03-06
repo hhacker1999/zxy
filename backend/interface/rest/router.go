@@ -16,6 +16,7 @@ import (
 	addonusecase "zxy/usecase/addon_usecase"
 	progressusecase "zxy/usecase/progress_usecase"
 	tmdbusecase "zxy/usecase/tmdb_usecase"
+	traktusecase "zxy/usecase/trakt_usecase"
 	userusecase "zxy/usecase/user_usecase"
 
 	"github.com/go-chi/chi/v5"
@@ -46,6 +47,7 @@ type RestInterface struct {
 	userRepo      *userrepository.Repository
 	sessionRepo   *sessionrepository.Repository
 	progressUC    *progressusecase.Usecase
+	traktUC       *traktusecase.Usecase
 	encrKey       string
 	proxy         *httputil.ReverseProxy
 	client        *http.Client
@@ -64,6 +66,7 @@ func New(
 	progressUC *progressusecase.Usecase,
 	encrKey string,
 	sockerHandler *zxyWs.WSHandler,
+	traktUC *traktusecase.Usecase,
 ) *RestInterface {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -80,6 +83,7 @@ func New(
 		urlMap:        map[string]RedirectUrlInfo{},
 		mtx:           &sync.RWMutex{},
 		sockerHandler: sockerHandler,
+		traktUC:       traktUC,
 	}
 }
 
@@ -153,6 +157,8 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/show/{id}/watched", i.SessionHandler(i.handleShowWatched, true))
 	router.Delete("/continue_watching/{id}", i.SessionHandler(i.handleDeleteContinueWatching, true))
 	router.Get("/stream_url", i.SessionHandler(i.handleFinalUrl, true))
+	router.Get("/trakt_url", i.SessionHandler(i.HandleGetTraktUrl, true))
+	router.Get("/trakt", i.HandleTraktRedirect)
 	return router
 }
 

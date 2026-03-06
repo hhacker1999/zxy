@@ -12,7 +12,7 @@ import (
 func (u *Usecase) getWatchedMovies(token string) ([]models.TraktPlaybackHistoryItem, error) {
 	var res []models.TraktPlaybackHistoryItem
 	client := http.Client{}
-	req, err := http.NewRequest(http.MethodGet, traktUrl+"/sync/watched/movies", nil)
+	req, err := http.NewRequest(http.MethodGet, traktApiUrl+"/sync/watched/movies", nil)
 	if err != nil {
 		fmt.Println("Error creating get watched movies request ", err)
 		return nil, err
@@ -37,7 +37,7 @@ func (u *Usecase) getWatchedMovies(token string) ([]models.TraktPlaybackHistoryI
 		return nil, apperrors.SomethingWentWrongError{}
 	}
 
-	err = json.Unmarshal(bodyBytes, res)
+	err = json.Unmarshal(bodyBytes, &res)
 	if err != nil {
 		fmt.Println("Error marshalling get watched movies response body ", err)
 		return nil, err
@@ -49,7 +49,7 @@ func (u *Usecase) getWatchedMovies(token string) ([]models.TraktPlaybackHistoryI
 func (u *Usecase) getWatchedSeries(token string) ([]models.TraktPlaybackHistoryItem, error) {
 	var res []models.TraktPlaybackHistoryItem
 	client := http.Client{}
-	req, err := http.NewRequest(http.MethodGet, traktUrl+"/sync/watched/shows", nil)
+	req, err := http.NewRequest(http.MethodGet, traktApiUrl+"/sync/watched/shows", nil)
 	if err != nil {
 		fmt.Println("Error creating get watched shows request ", err)
 		return nil, err
@@ -74,9 +74,48 @@ func (u *Usecase) getWatchedSeries(token string) ([]models.TraktPlaybackHistoryI
 		return nil, apperrors.SomethingWentWrongError{}
 	}
 
-	err = json.Unmarshal(bodyBytes, res)
+	err = json.Unmarshal(bodyBytes, &res)
 	if err != nil {
 		fmt.Println("Error marshalling get watched shows response body ", err)
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (u *Usecase) getPlayback(token string) ([]models.TraktPlaybackResponeElement, error) {
+	var res []models.TraktPlaybackResponeElement
+	client := http.Client{}
+	req, err := http.NewRequest(http.MethodGet, traktApiUrl+"/sync/playback", nil)
+	if err != nil {
+		fmt.Println("Error creating get playback request ", err)
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Add("trakt-api-version", "2")
+	req.Header.Add("trakt-api-key", u.clientId)
+	response, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error sending get playback request ", err)
+		return nil, err
+	}
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println("Error reading get get playback response body ", err)
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		fmt.Println("Invalid status code ", response.StatusCode, string(bodyBytes))
+		return nil, apperrors.SomethingWentWrongError{}
+	}
+	// fmt.Println(string(bodyBytes))
+	// return res, nil
+
+	err = json.Unmarshal(bodyBytes, &res)
+	if err != nil {
+		fmt.Println("Error marshalling get playback response body ", err)
 		return nil, err
 	}
 
