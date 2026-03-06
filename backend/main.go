@@ -167,7 +167,7 @@ func main() {
 	)
 	defer restInterface.Exit()
 	router := restInterface.SetupRoutes()
-	err = http.ListenAndServe(":6969", router)
+	err = http.ListenAndServe(fmt.Sprintf(":%s",cfg.Port), router)
 	if err != nil {
 		fmt.Println("Error creating http server ", err)
 	}
