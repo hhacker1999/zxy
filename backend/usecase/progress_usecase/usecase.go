@@ -589,7 +589,7 @@ func (u *Usecase) updateProgressInCacheAndSyncTrakt(
 
 func (u *Usecase) startCacheProgressSyncCron() {
 	for {
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 30)
 		fmt.Println("Starting stale progress cache sweep")
 		iter := u.progressCache.Scan(context.Background(), 0, "*", 1000).Iterator()
 
