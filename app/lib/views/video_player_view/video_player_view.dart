@@ -166,7 +166,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       _player,
       configuration: VideoControllerConfiguration(
         // vo: "gpu",
-        hwdec: "videotoolbox",
+        hwdec: "auto",
         enableHardwareAcceleration: true,
       ),
     );
