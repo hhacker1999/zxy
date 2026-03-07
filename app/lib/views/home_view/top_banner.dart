@@ -11,6 +11,7 @@ import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/shared/zxy_button.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
+import 'package:zxy_app/extensions.dart';
 
 class TopBanner extends StatefulWidget {
   final List<ZxyMedia> media;
@@ -164,7 +165,7 @@ class _BannerSlide extends StatelessWidget {
     final overview = media.overview;
 
     // Get logo path - always prefer logo
-    final logo = _getLogo(isMobile);
+    final logo = media.images?.logos?.getLogo();
     // final posterBanner = _getPosterOrBanner(isMobile);
     final imagePath = isMobile
         ? (media.posterPath.isNotEmpty
@@ -332,19 +333,6 @@ class _BannerSlide extends StatelessWidget {
         .map((id) => genreMap[id]?.name ?? '')
         .where((name) => name.isNotEmpty)
         .toList();
-  }
-
-  Backdrop? _getLogo(bool mobile) {
-    final logos = media.images?.logos;
-    if (logos != null && logos.isNotEmpty) {
-      // Prefer English logo
-      final englishLogo = logos.firstWhere(
-        (logo) => logo.iso6391 == 'en',
-        orElse: () => logos.first,
-      );
-      return englishLogo;
-    }
-    return null;
   }
 
   Backdrop? _getPosterOrBanner(bool mobile) {

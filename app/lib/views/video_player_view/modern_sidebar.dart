@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -573,7 +575,11 @@ class _ModernSidebarState extends State<ModernSidebar>
                               child: GestureDetector(
                                 onTap: () {
                                   Clipboard.setData(
-                                    ClipboardData(text: stream.url),
+                                    ClipboardData(
+                                      text: kDebugMode
+                                          ? jsonEncode(stream.toJson())
+                                          : stream.url,
+                                    ),
                                   );
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(

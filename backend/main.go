@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"zxy/config"
 	"zxy/interface/rest"
+	zxyWs "zxy/interface/websocket"
 	addonsrepository "zxy/repository/addons_repository"
 	localtmdbrepository "zxy/repository/local_tmdb_repository"
 	playbackrepository "zxy/repository/playback_repository"
@@ -16,12 +19,14 @@ import (
 	addonusecase "zxy/usecase/addon_usecase"
 	progressusecase "zxy/usecase/progress_usecase"
 	tmdbusecase "zxy/usecase/tmdb_usecase"
+	traktusecase "zxy/usecase/trakt_usecase"
 	userusecase "zxy/usecase/user_usecase"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -80,13 +85,51 @@ func main() {
 	}
 	defer localTmdb.Close()
 
+	cacheDBID, err := strconv.Atoi(cfg.RedisCacheDb)
+	if err != nil {
+		fmt.Println("Invalid redis cache db")
+		return
+	}
+
+	cacheRDB := redis.NewClient(&redis.Options{
+		Addr:     cfg.RedisAddress,
+		Password: cfg.RedisPassword,
+		DB:       cacheDBID,
+	})
+	defer cacheRDB.Close()
+	_, err = cacheRDB.Ping(context.Background()).Result()
+	if err != nil {
+		fmt.Println("Unable to connect to cache redis db", err)
+		return
+	}
+
+	watchSessionDBID, err := strconv.Atoi(cfg.RedisWatchSessionDb)
+	if err != nil {
+		fmt.Println("Invalid redis watch session db")
+		return
+	}
+
+	watchSessionDB := redis.NewClient(&redis.Options{
+		Addr:     cfg.RedisAddress,
+		Password: cfg.RedisPassword,
+		DB:       watchSessionDBID,
+	})
+	defer watchSessionDB.Close()
+	_, err = watchSessionDB.Ping(context.Background()).Result()
+	if err != nil {
+		fmt.Println("Unable to connect to watch session redis db", err)
+		return
+	}
+
 	userRepo := userrepository.New(db)
 	sessionRepo := sessionrepository.New(db)
 	playbackRepo := playbackrepository.New(db)
 	addonRepo := addonsrepository.New(db)
 	localTmdbRepo := localtmdbrepository.New(localTmdb)
 
-	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey, cfg.TmdbAT)
+	wsHandler := zxyWs.New()
+
+	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey, cfg.TmdbAT, cacheRDB)
 	addonuc, err := addonusecase.New(
 		addonRepo,
 		cfg.AIOTemplatePath,
@@ -102,7 +145,15 @@ func main() {
 	}
 
 	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo, addonuc)
-	progressUc := progressusecase.New(db, tmdbUc, playbackRepo)
+	traktUc := traktusecase.New(
+		cfg.TraktKey,
+		cfg.TraktSecret,
+		userRepo,
+		playbackRepo,
+		cfg.TraktRedirectUri,
+		cacheRDB,
+	)
+	progressUc := progressusecase.New(db, tmdbUc, playbackRepo, traktUc, watchSessionDB)
 	restInterface := rest.New(
 		addonuc,
 		tmdbUc,
@@ -111,10 +162,12 @@ func main() {
 		sessionRepo,
 		progressUc,
 		cfg.EncrKey,
+		wsHandler,
+		traktUc,
 	)
 	defer restInterface.Exit()
 	router := restInterface.SetupRoutes()
-	err = http.ListenAndServe(":6969", router)
+	err = http.ListenAndServe(fmt.Sprintf(":%s",cfg.Port), router)
 	if err != nil {
 		fmt.Println("Error creating http server ", err)
 	}

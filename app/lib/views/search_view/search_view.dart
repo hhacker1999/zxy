@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
@@ -86,17 +87,25 @@ class _SearchViewState extends State<SearchView> {
               },
               child: LayoutBuilder(
                 builder: (_, constr) {
-                  double width = 160 + AppTheme.spacingL;
-                  double ct = constr.maxWidth / width;
-                  ct = ct.floorToDouble();
-                  final widthUtilised = ct * width;
-                  if ((constr.maxWidth - widthUtilised) > width / 2) {
-                    width = constr.maxWidth / (ct + 1);
-                    ct += 1;
-                  }
-                  final itemAspectRatio = 2 / 3.8;
-                  final imageHeight = width / (2.2 / 3);
-                  final height = width / itemAspectRatio;
+                  // double width = 160 + AppTheme.spacingL;
+                  // double ct = constr.maxWidth / width;
+                  // ct = ct.floorToDouble();
+                  // final widthUtilised = ct * width;
+                  // if ((constr.maxWidth - widthUtilised) > width / 2) {
+                  //   width = constr.maxWidth / (ct + 1);
+                  //   ct += 1;
+                  // }
+                  // final itemAspectRatio = 2 / 3.8;
+                  // final imageHeight = width / (2.2 / 3);
+                  // final height = width / itemAspectRatio;
+
+                  final ScreenData screenData = Screen.of(context);
+                  final double width = screenData.shouldRenderMobile
+                      ? 120
+                      : 160;
+                  final double imageHeight = width / AppConstants.posterAspectRatio;
+                  final double itemHeight =
+                      imageHeight + (screenData.shouldRenderMobile ? 50 : 58);
                   return ValueListenableBuilder(
                     valueListenable: vm.itemsState,
                     builder: (_, itemState, _) {
@@ -124,12 +133,23 @@ class _SearchViewState extends State<SearchView> {
                         padding: EdgeInsets.zero,
                         controller: scrollController,
                         itemCount: items.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisSpacing: AppTheme.spacingL,
-                          mainAxisSpacing: AppTheme.spacingM,
-                          childAspectRatio: itemAspectRatio,
-                          crossAxisCount: ct.toInt(),
+
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: width,
+                          crossAxisSpacing: screenData.shouldRenderMobile
+                              ? AppTheme.spacingS
+                              : AppTheme.spacingL,
+                          mainAxisSpacing: screenData.shouldRenderMobile
+                              ? AppTheme.spacingXS
+                              : AppTheme.spacingM,
+                          childAspectRatio: width / itemHeight,
                         ),
+                        // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        //   crossAxisSpacing: AppTheme.spacingL,
+                        //   mainAxisSpacing: AppTheme.spacingM,
+                        //   childAspectRatio: itemAspectRatio,
+                        //   crossAxisCount: ct.toInt(),
+                        // ),
                         itemBuilder: (_, index) {
                           return ClipRect(
                             key: ValueKey(items[index].id),
@@ -157,7 +177,7 @@ class _SearchViewState extends State<SearchView> {
                                   );
                                 },
                                 width: width,
-                                height: height,
+                                height: itemHeight,
                                 imageHeight: imageHeight,
                               ),
                             ),

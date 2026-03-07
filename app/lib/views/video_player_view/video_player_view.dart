@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, avoid_print
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -165,7 +166,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       _player,
       configuration: VideoControllerConfiguration(
         // vo: "gpu",
-        hwdec: "auto",
+        hwdec: "videotoolbox",
         enableHardwareAcceleration: true,
       ),
     );
@@ -182,22 +183,44 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     await Future.wait([
       //NOTE: settings for faster first frame load times
       player.setProperty('vd-lavc-threads', 'auto'),
-      player.setProperty('demuxer-lavf-analyzeduration', '0.1'),
+      player.setProperty('demuxer-lavf-analyzeduration', '2'),
+      player.setProperty('demuxer-lavf-probesize', '64000000'),
       player.setProperty('cache-pause', 'no'),
       player.setProperty('cache', 'yes'),
-      player.setProperty('demuxer-max-bytes', '500MiB'),
-      player.setProperty('demuxer-max-back-bytes', '50MiB'),
-      player.setProperty('demuxer-readahead-secs', '300'),
+      if (Platform.isIOS || Platform.isAndroid) ...[
+        player.setProperty('demuxer-max-bytes', '300MiB'),
+        player.setProperty('demuxer-max-back-bytes', '10MiB'),
+        player.setProperty('demuxer-readahead-secs', '120'),
+      ],
+
+      if (Platform.isMacOS || Platform.isWindows) ...[
+        player.setProperty('demuxer-max-bytes', '500MiB'),
+        player.setProperty('demuxer-max-back-bytes', '50MiB'),
+        player.setProperty('demuxer-readahead-secs', '300'),
+      ],
 
       // HDR to SDR tonemapping settings
       player.setProperty('icc-profile-auto', 'yes'),
-      player.setProperty('tone-mapping', 'spline'),
+      if (Platform.isIOS || Platform.isAndroid) ...[
+        player.setProperty('tone-mapping', 'spline'),
+      ],
+      if (Platform.isWindows || Platform.isMacOS) ...[
+        player.setProperty('tone-mapping', 'mobius'),
+        player.setProperty('tone-mapping-param', '0.4'),
+      ],
+
+      player.setProperty('tone-mapping-mode', 'auto'),
       player.setProperty('hdr-compute-peak', 'yes'),
-      player.setProperty('tone-mapping-mode', 'luma'),
       player.setProperty('target-peak', 'auto'),
       player.setProperty('gamut-mapping-mode', 'perceptual'),
-      player.setProperty('scale', 'ewa_lanczossharp'),
-      player.setProperty('cscale', 'ewa_lanczossharp'),
+      if (Platform.isIOS || Platform.isAndroid) ...[
+        player.setProperty('scale', 'bilinear'),
+        player.setProperty('cscale', 'bilinear'),
+      ],
+      if (Platform.isWindows || Platform.isMacOS) ...[
+        player.setProperty('scale', 'ewa_lanczossharp'),
+        player.setProperty('cscale', 'ewa_lanczossharp'),
+      ],
       if (kDebugMode) player.setProperty('log-level', 'debug'),
     ]);
   }
@@ -282,7 +305,8 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       (track) =>
           track.language != null &&
           LanguageMapper.getNameFromCode(track.language!) ==
-              _settingBloc.langNotifier.value && track.codec?.toLowerCase() != "truehd",
+              _settingBloc.langNotifier.value &&
+          track.codec?.toLowerCase() != "truehd",
     );
     _state.audioDetails.value = (
       audioTracks,
@@ -308,6 +332,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     });
 
     _playbackSub = _player.stream.position.listen((position) {
+      if (position == Duration.zero) {
+        return;
+      }
       _state.seekInfo.value = _state.seekInfo.value.copyWith(current: position);
       widget.handler.onProgress(position);
     });

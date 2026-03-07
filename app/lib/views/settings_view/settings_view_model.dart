@@ -1,9 +1,13 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
+import 'package:zxy_app/service/web_socket.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
@@ -11,6 +15,7 @@ import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 
 class SettingsViewModel extends ChangeNotifier {
+  final WebSocketService wsService;
   final AuthUsecase _authUc;
   late BuildContext _context;
   String _selectedDebridType = "";
@@ -25,8 +30,9 @@ class SettingsViewModel extends ChangeNotifier {
   bool get hasLibraryChanges => _hasLibraryChanges;
 
   int? _initializedProfileId;
+  Timer? _traktLoginTimer;
 
-  SettingsViewModel(this._authUc);
+  SettingsViewModel(this._authUc, this.wsService);
 
   void init(Profile? currentProfile) {
     if (currentProfile == null) return;
@@ -181,6 +187,43 @@ class SettingsViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> loginTrakt() async {
+    try {
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
+      _context.read<UserBloc>().waitingTraktLogin.value = true;
+      final url = await _authUc.getTraktLoginUrl();
+      await launchUrlString(url, mode: LaunchMode.platformDefault);
+      _traktLoginTimer?.cancel();
+      _traktLoginTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+        final profile = await _authUc.getUserProfile();
+        if (profile.isTraktValid) {
+          _traktLoginTimer?.cancel();
+          _context.read<UserBloc>().waitingTraktLogin.value = false;
+          _context.read<UserBloc>().profile = profile;
+          // NOTE: Update continue watching now
+          _context.read<HomeViewModel>().initialiseContinueWatching();
+        }
+      });
+    } catch (e) {
+      showToast(_context, true, e.toString(), "");
+    } finally {
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
+    }
+  }
+
+  Future<void> deleteTrakt() async {
+    try {
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
+      await _authUc.deleteTraktLogin();
+      final profile = await _authUc.getUserProfile();
+      _context.read<UserBloc>().profile = profile;
+    } catch (e) {
+      showToast(_context, true, e.toString(), "");
+    } finally {
+      _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
+    }
+  }
+
   Future<void> deleteProfile(int id) async {
     try {
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
@@ -200,6 +243,7 @@ class SettingsViewModel extends ChangeNotifier {
     try {
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
       await _authUc.logout();
+      wsService.clean();
       showToast(_context, false, "Logged out", "");
       Navigator.pushNamedAndRemoveUntil(_context, AppRoutes.loginView, (_) {
         return false;
@@ -231,6 +275,7 @@ class SettingsViewModel extends ChangeNotifier {
   @override
   void dispose() {
     apiKeyController.dispose();
+    _traktLoginTimer?.cancel();
     super.dispose();
   }
 }

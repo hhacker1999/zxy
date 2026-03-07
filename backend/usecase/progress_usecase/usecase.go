@@ -3,6 +3,7 @@ package progressusecase
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -11,25 +12,35 @@ import (
 	"zxy/models"
 	playbackrepository "zxy/repository/playback_repository"
 	tmdbusecase "zxy/usecase/tmdb_usecase"
+	traktusecase "zxy/usecase/trakt_usecase"
+
+	"github.com/redis/go-redis/v9"
 )
 
 const layout = "2006-01-02"
 const continueWatchingThreshold = 90.00
 
-const at = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
-
 type Usecase struct {
-	db     *sql.DB
-	tmdbUC *tmdbusecase.Usecase
-	pbr    *playbackrepository.Repository
+	db            *sql.DB
+	tmdbUC        *tmdbusecase.Usecase
+	pbr           *playbackrepository.Repository
+	trakcUC       *traktusecase.Usecase
+	progressCache *redis.Client
 }
 
-func New(db *sql.DB, tmdbUC *tmdbusecase.Usecase, pbr *playbackrepository.Repository) *Usecase {
-	return &Usecase{
-		db:     db,
-		tmdbUC: tmdbUC,
-		pbr:    pbr,
+func New(db *sql.DB, tmdbUC *tmdbusecase.Usecase, pbr *playbackrepository.Repository,
+	trakcUC *traktusecase.Usecase,
+	progressCache *redis.Client,
+) *Usecase {
+	usecase := &Usecase{
+		db:            db,
+		tmdbUC:        tmdbUC,
+		pbr:           pbr,
+		trakcUC:       trakcUC,
+		progressCache: progressCache,
 	}
+	go usecase.startCacheProgressSyncCron()
+	return usecase
 }
 
 func (u *Usecase) GetContinueWatching(
@@ -48,6 +59,7 @@ func (u *Usecase) GetContinueWatching(
 		0,
 		&watched,
 		&visible,
+		15,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -75,6 +87,7 @@ func (u *Usecase) GetShowProgress(
 		0,
 		nil,
 		nil,
+		0,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -117,6 +130,8 @@ func (u *Usecase) UpdatePlaybackProgress(
 	if len(mediaId) == 0 {
 		return apperrors.InvalidInput{Err: "Invalid Media Id"}
 	}
+
+	go u.updateProgressInCacheAndSyncTrakt(userId, profileId, mediaId, progress)
 
 	watched := progress > continueWatchingThreshold
 	splitted := strings.Split(mediaId, ":")
@@ -161,15 +176,6 @@ func (u *Usecase) UpdatePlaybackProgress(
 		fmt.Println("Invalid episode number", splitted[2])
 		return nil
 	}
-
-	// showProgress, err := u.GetShowProgress(userId, profileId, splitted[0])
-	// if err != nil {
-	// 	return nil
-	// }
-	// mp := make(map[string]bool)
-	// for _, v := range showProgress {
-	// 	mp[v.MediaId] = v.IsWatched
-	// }
 
 	for si, v := range show.Seasons {
 		if v.SeasonNumber == int64(season) {
@@ -222,6 +228,11 @@ func (u *Usecase) MarkMovieWatched(
 		return apperrors.SomethingWentWrongError{}
 	}
 
+	tmdbId, err := strconv.Atoi(movieId)
+	if err == nil {
+		go u.trakcUC.MarkMovieWatched(userId, profileId, tmdbId, time.Now())
+	}
+
 	return nil
 }
 
@@ -242,8 +253,6 @@ func (u *Usecase) MarkShowWatched(
 	}
 
 	var progressInput []playbackrepository.ProgressUpdate
-
-	// completelyWatched := true
 
 	for _, v := range show.Seasons {
 		if v.SeasonNumber == 0 {
@@ -280,22 +289,6 @@ func (u *Usecase) MarkShowWatched(
 		return apperrors.SomethingWentWrongError{}
 	}
 
-	// if completelyWatched {
-	// 	err = u.pbr.UpdateWatched(ctx, []playbackrepository.ProgressUpdate{
-	// 		{
-	// 			UserId:    userId,
-	// 			MediaId:   showId,
-	// 			ProfileId: profileId,
-	// 			Progress:  100,
-	// 			IsWatched: true,
-	// 		},
-	// 	})
-	// 	if err != nil {
-	// 		fmt.Println("Error comitting transaction", err)
-	// 		return apperrors.SomethingWentWrongError{}
-	// 	}
-	//
-	// }
 	err = tx.Commit()
 	if err != nil {
 		fmt.Println("Error comitting transaction", err)
@@ -324,8 +317,6 @@ func (u *Usecase) MarkSeasonWatched(
 
 	var progressInput []playbackrepository.ProgressUpdate
 
-	// TODO: Add support for season tracking so we can mark show watched based on season watched
-	// completelyWatched := false
 	var si int
 	var ei int
 
@@ -343,7 +334,6 @@ func (u *Usecase) MarkSeasonWatched(
 			}
 			notReleased := date.UTC().Compare(time.Now().UTC()) == 1
 			if notReleased {
-				// completelyWatched = false
 				continue
 			}
 			temp := playbackrepository.ProgressUpdate{
@@ -373,26 +363,15 @@ func (u *Usecase) MarkSeasonWatched(
 
 	u.setContinueWatchingForNextEpisode(show, showId, userId, profileId, si, ei)
 
-	// if completelyWatched {
-	// 	err = u.pbr.UpdateWatched(ctx, []playbackrepository.ProgressUpdate{
-	// 		{
-	// 			UserId:    userId,
-	// 			MediaId:   showId,
-	// 			ProfileId: profileId,
-	// 			Progress:  100,
-	// 			IsWatched: true,
-	// 		},
-	// 	})
-	// 	if err != nil {
-	// 		fmt.Println("Error comitting transaction", err)
-	// 		return apperrors.SomethingWentWrongError{}
-	// 	}
-	//
-	// }
 	err = tx.Commit()
 	if err != nil {
 		fmt.Println("Error comitting transaction", err)
 		return apperrors.SomethingWentWrongError{}
+	}
+
+	tmdbId, err := strconv.Atoi(showId)
+	if err == nil {
+		go u.trakcUC.MarkSeasonWatched(userId, profileId, tmdbId, season, time.Now())
 	}
 
 	return nil
@@ -436,6 +415,11 @@ func (u *Usecase) MarkEpisodeWatched(
 				}
 			}
 		}
+	}
+
+	tmdbId, err := strconv.Atoi(showId)
+	if err == nil {
+		go u.trakcUC.MarkEpisodeWatched(userId, profileId, tmdbId, season, episode, time.Now())
 	}
 
 	return err
@@ -511,4 +495,187 @@ func (u *Usecase) RemoveFromContinueWatching(
 	}
 
 	return nil
+}
+
+func (u *Usecase) updateProgressInCacheAndSyncTrakt(
+	userId int,
+	profileId int,
+	mediaId string,
+	progress float64,
+) {
+	key := fmt.Sprintf("%d:%d", userId, profileId)
+	foundOldProgress := true
+	tempProgressJson, err := u.progressCache.Get(context.Background(), key).Result()
+	if err != nil {
+		foundOldProgress = false
+	}
+
+	newTempProgress := TempProgress{
+		MediaId:   mediaId,
+		Progress:  progress,
+		UpdatedAt: time.Now(),
+	}
+	newTempProgressBytes, err := json.Marshal(newTempProgress)
+	if err != nil {
+		fmt.Println("Error marshalling user's temp progress", err)
+	} else {
+		u.progressCache.Set(context.Background(), key, string(newTempProgressBytes), 0)
+	}
+	if !foundOldProgress {
+		return
+	}
+
+	// NOTE: We found user's progress
+	tempProgress := TempProgress{}
+	err = json.Unmarshal([]byte(tempProgressJson), &tempProgress)
+	if err != nil {
+		fmt.Println("Error unmarhsalling user's temp progress", err)
+		return
+	}
+	// NOTE: User is just updating progress for the same item
+	if tempProgress.MediaId == mediaId {
+		return
+	}
+
+	// NOTE: User has switched his progress, this means we can now sync old progress with trakt
+	splittedMediaId := strings.Split(tempProgress.MediaId, ":")
+
+	// NOTE: Media is a movie
+	watched := tempProgress.Progress > continueWatchingThreshold
+	tmdbId, err := strconv.Atoi(splittedMediaId[0])
+	if err != nil {
+		fmt.Println("Error converting media id to tmdbId", err)
+	}
+	if len(splittedMediaId) == 1 {
+		if watched {
+			u.trakcUC.MarkMovieWatched(userId, profileId, tmdbId, tempProgress.UpdatedAt)
+		} else {
+			u.trakcUC.UpdateProgressTrakt(userId, profileId, tmdbId, tempProgress.Progress, false)
+		}
+	} else {
+		// NOTE: Media is an episode
+		season, err := strconv.Atoi(splittedMediaId[1])
+		if err != nil {
+			fmt.Println("Error converting media id to tmdbId", err)
+		}
+		episode, err := strconv.Atoi(splittedMediaId[2])
+		if err != nil {
+			fmt.Println("Error converting media id to tmdbId", err)
+		}
+		if watched {
+			u.trakcUC.MarkEpisodeWatched(userId, profileId, tmdbId, season, episode, tempProgress.UpdatedAt)
+		} else {
+			show, err := u.tmdbUC.GetShowDetails(splittedMediaId[0])
+			if err != nil {
+				fmt.Println("Unable to get show details for playback sync with trak", err)
+				return
+			}
+			// NOTE: sync api uses episode id instead of number, searching episode id from season
+			// and episode index
+		outer:
+			for _, v := range show.Seasons {
+				if v.SeasonNumber == int64(season) {
+					for _, e := range v.Episodes {
+						if e.EpisodeNumber == int64(episode) {
+							u.trakcUC.UpdateProgressTrakt(userId, profileId, int(e.ID), tempProgress.Progress, true)
+							break outer
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+func (u *Usecase) startCacheProgressSyncCron() {
+	for {
+		time.Sleep(time.Second * 30)
+		fmt.Println("Starting stale progress cache sweep")
+		iter := u.progressCache.Scan(context.Background(), 0, "*", 1000).Iterator()
+
+		for iter.Next(context.Background()) {
+			key := iter.Val()
+			tempProgressJson, err := u.progressCache.Get(context.Background(), key).Result()
+			if err != nil {
+				continue
+			}
+			tempProgress := TempProgress{}
+			err = json.Unmarshal([]byte(tempProgressJson), &tempProgress)
+			if err != nil {
+				fmt.Println("Error unmarhsalling user's temp progress", err)
+				continue
+			}
+			// NOTE: This progress session is old and maybe not in use anymore
+			// we will update its progress in trakt and remove from out database
+			if time.Now().Sub(tempProgress.UpdatedAt) > (time.Minute * 1) {
+				fmt.Println("Found stale progress cache")
+				splittedKey := strings.Split(key, ":")
+				userId, _ := strconv.Atoi(splittedKey[0])
+				profileId, _ := strconv.Atoi(splittedKey[1])
+
+				// NOTE: Remove key from the database
+				u.progressCache.Del(context.Background(), key)
+
+				// NOTE: User has switched his progress, this means we can now sync old progress with trakt
+				splittedMediaId := strings.Split(tempProgress.MediaId, ":")
+
+				// NOTE: Media is a movie
+				watched := tempProgress.Progress > continueWatchingThreshold
+				tmdbId, err := strconv.Atoi(splittedMediaId[0])
+				if err != nil {
+					fmt.Println("Error converting media id to tmdbId", err)
+				}
+				if len(splittedMediaId) == 1 {
+					if watched {
+						u.trakcUC.MarkMovieWatched(
+							userId,
+							profileId,
+							tmdbId,
+							tempProgress.UpdatedAt,
+						)
+					} else {
+						u.trakcUC.UpdateProgressTrakt(userId, profileId, tmdbId, tempProgress.Progress, false)
+					}
+				} else {
+					// NOTE: Media is an episode
+					season, err := strconv.Atoi(splittedMediaId[1])
+					if err != nil {
+						fmt.Println("Error converting media id to tmdbId", err)
+					}
+					episode, err := strconv.Atoi(splittedMediaId[2])
+					if err != nil {
+						fmt.Println("Error converting media id to tmdbId", err)
+					}
+					if watched {
+						u.trakcUC.MarkEpisodeWatched(userId, profileId, tmdbId, season, episode, tempProgress.UpdatedAt)
+					} else {
+						show, err := u.tmdbUC.GetShowDetails(splittedMediaId[0])
+						if err != nil {
+							fmt.Println("Unable to get show details for playback sync with trak", err)
+							return
+						}
+						// NOTE: sync api uses episode id instead of number, searching episode id from season
+						// and episode index
+					outer:
+						for _, v := range show.Seasons {
+							if v.SeasonNumber == int64(season) {
+								for _, e := range v.Episodes {
+									if e.EpisodeNumber == int64(episode) {
+										u.trakcUC.UpdateProgressTrakt(userId, profileId, int(e.ID), tempProgress.Progress, true)
+										break outer
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// 3. Check for errors during iteration
+		if err := iter.Err(); err != nil {
+			fmt.Println("Error when iterating keys from redis", err)
+		}
+
+	}
 }

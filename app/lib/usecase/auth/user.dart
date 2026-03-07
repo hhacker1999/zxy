@@ -44,6 +44,8 @@ class Profile {
   final bool isAdmin;
   final List<ProfileLibraryItem> libraryItems;
   final DateTime createdAt;
+  final DateTime? traktExpiry;
+  final bool isTraktValid;
 
   Profile({
     required this.id,
@@ -53,12 +55,18 @@ class Profile {
     required this.isAdmin,
     required this.libraryItems,
     required this.createdAt,
+    this.traktExpiry,
+    required this.isTraktValid,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
     id: json["id"],
     name: json["name"],
     isPinProtected: json["is_pin_protected"],
+    traktExpiry: json["trakt_expiry"] != null
+        ? DateTime.tryParse(json["trakt_expiry"])
+        : null,
+    isTraktValid: json["trakt_valid"],
     createdAt: DateTime.parse(json["created_at"]),
     debridType: json["debrid_type"],
     isAdmin: json["is_admin"],

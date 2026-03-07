@@ -193,7 +193,6 @@ func (i *RestInterface) HandleGetGenre(w http.ResponseWriter, r *http.Request) {
 }
 
 func (i *RestInterface) HandleGetConfiguration(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Getting config")
 	response := &ApiResponse{}
 	defer response.SendResponse(w)
 
@@ -205,7 +204,6 @@ func (i *RestInterface) HandleGetConfiguration(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	fmt.Println("got config")
 	response.StatusCode = http.StatusOK
 	response.Data = config
 }

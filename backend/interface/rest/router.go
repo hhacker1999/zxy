@@ -9,12 +9,14 @@ import (
 	"net/url"
 	"sync"
 	"time"
+	zxyWs "zxy/interface/websocket"
 	"zxy/models"
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
 	addonusecase "zxy/usecase/addon_usecase"
 	progressusecase "zxy/usecase/progress_usecase"
 	tmdbusecase "zxy/usecase/tmdb_usecase"
+	traktusecase "zxy/usecase/trakt_usecase"
 	userusecase "zxy/usecase/user_usecase"
 
 	"github.com/go-chi/chi/v5"
@@ -39,18 +41,20 @@ type RedirectUrlInfo struct {
 }
 
 type RestInterface struct {
-	addonuc     *addonusecase.Usecase
-	tmdbUc      *tmdbusecase.Usecase
-	userUC      *userusecase.Usecase
-	userRepo    *userrepository.Repository
-	sessionRepo *sessionrepository.Repository
-	progressUC  *progressusecase.Usecase
-	encrKey     string
-	proxy       *httputil.ReverseProxy
-	client      *http.Client
-	urlMap      map[string]RedirectUrlInfo
-	mtx         *sync.RWMutex
-	cronCancel  context.CancelFunc
+	addonuc       *addonusecase.Usecase
+	tmdbUc        *tmdbusecase.Usecase
+	userUC        *userusecase.Usecase
+	userRepo      *userrepository.Repository
+	sessionRepo   *sessionrepository.Repository
+	progressUC    *progressusecase.Usecase
+	traktUC       *traktusecase.Usecase
+	encrKey       string
+	proxy         *httputil.ReverseProxy
+	client        *http.Client
+	urlMap        map[string]RedirectUrlInfo
+	mtx           *sync.RWMutex
+	cronCancel    context.CancelFunc
+	sockerHandler *zxyWs.WSHandler
 }
 
 func New(
@@ -61,21 +65,25 @@ func New(
 	sessionRepo *sessionrepository.Repository,
 	progressUC *progressusecase.Usecase,
 	encrKey string,
+	sockerHandler *zxyWs.WSHandler,
+	traktUC *traktusecase.Usecase,
 ) *RestInterface {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
 	return &RestInterface{
-		addonuc:     addonuc,
-		tmdbUc:      tmdbUc,
-		userUC:      userUC,
-		userRepo:    userRepo,
-		sessionRepo: sessionRepo,
-		progressUC:  progressUC,
-		encrKey:     encrKey,
-		client:      client,
-		urlMap:      map[string]RedirectUrlInfo{},
-		mtx:         &sync.RWMutex{},
+		addonuc:       addonuc,
+		tmdbUc:        tmdbUc,
+		userUC:        userUC,
+		userRepo:      userRepo,
+		sessionRepo:   sessionRepo,
+		progressUC:    progressUC,
+		encrKey:       encrKey,
+		client:        client,
+		urlMap:        map[string]RedirectUrlInfo{},
+		mtx:           &sync.RWMutex{},
+		sockerHandler: sockerHandler,
+		traktUC:       traktUC,
 	}
 }
 
@@ -116,6 +124,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/login", i.handleLogin)
 	router.Get("/stream", i.handleStream)
 	router.Get("/proxy", i.handleProxy)
+	router.Get("/ws", i.SessionHandler(i.sockerHandler.HandleClientConnectionRequest, true))
 	router.Post("/profile/login", i.SessionHandler(i.handleProfileLogin, false))
 	router.Get("/user", i.SessionHandler(i.handleGetUser, false))
 	router.Get("/user/profile", i.SessionHandler(i.handleGetUserProfile, true))
@@ -147,6 +156,9 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/show/{id}/watched", i.SessionHandler(i.handleShowWatched, true))
 	router.Delete("/continue_watching/{id}", i.SessionHandler(i.handleDeleteContinueWatching, true))
 	router.Get("/stream_url", i.SessionHandler(i.handleFinalUrl, true))
+	router.Get("/trakt_url", i.SessionHandler(i.HandleGetTraktUrl, true))
+	router.Get("/trakt", i.HandleTraktRedirect)
+	router.Delete("/trakt", i.SessionHandler(i.HandleTraktDelete, true))
 	return router
 }
 

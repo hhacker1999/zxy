@@ -192,7 +192,7 @@ class ImageBloc {
   }) async {
     try {
       final res = await _client.get(
-        Uri.parse("${AppConstants.imageConfig.secureBaseUrl}/$size/$path}"),
+        Uri.parse("${AppConstants.imageConfig.secureBaseUrl}$size$path}"),
       );
       if (res.statusCode == 200) {
         if (!dontGetColor) {
@@ -202,7 +202,7 @@ class ImageBloc {
         notifier.value = MemoryImage(res.bodyBytes);
       } else {
         if (kDebugMode) {
-          print("Error getting image: ${res.statusCode}");
+          print("Error getting image: ${res.statusCode}, ${AppConstants.imageConfig.secureBaseUrl}/$size/$path}");
         }
       }
     } catch (e) {

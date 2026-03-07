@@ -18,6 +18,7 @@ class SplashViewModel {
   const SplashViewModel(this.authUc);
 
   Future<void> initialise(BuildContext context) async {
+    bool userFound = false;
     try {
       await context.read<ImageBloc>().initialise();
       await context.read<SettingsBloc>().initialise(context);
@@ -32,13 +33,21 @@ class SplashViewModel {
         return;
       }
       var userRes = await authUc.getUser();
-      var userProfile = await authUc.getUserProfile();
+      userFound = true;
       context.read<UserBloc>().user = userRes;
+      var userProfile = await authUc.getUserProfile();
       context.read<UserBloc>().profile = userProfile;
       Navigator.pushReplacementNamed(context, AppRoutes.baseHomeView);
     } catch (e) {
       if (e is HttpUnAuthorised) {
-        Navigator.pushReplacementNamed(context, AppRoutes.loginView);
+        if (!userFound) {
+          Navigator.pushReplacementNamed(context, AppRoutes.loginView);
+        } else {
+          Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.profileSelectionView,
+          );
+        }
         return;
       }
       showToast(context, true, e.toString(), "");

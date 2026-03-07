@@ -18,7 +18,6 @@ func (i *RestInterface) HandleGetContinueWatching(w http.ResponseWriter, r *http
 	userId := r.Context().Value("user_id").(int)
 	profileId := r.Context().Value("profile_id").(int)
 
-	// at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
 
 	data, err := i.progressUC.GetContinueWatching(userId, profileId)
 
@@ -146,7 +145,6 @@ func (i *RestInterface) HandleGetShowProgress(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
 
 	data, err := i.progressUC.GetShowProgress(userId, profileId, showId)
 
@@ -174,7 +172,6 @@ func (i *RestInterface) HandleGetMovieProgress(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// at := "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NWJjYTJhN2NhODdkNTZkZGZlMDgyZDAzOWNiZjk1ZiIsIm5iZiI6MTY1MDA0MzA3My4wMTksInN1YiI6IjYyNTlhOGMxZWNhZWY1MTVmZjY3OGY3MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.EppXuTBWBa1uXJgfie3m7lKAEpspRwnc_aHr33UBkHU"
 
 	data, err := i.progressUC.GetMovieProgress(userId, profileId, movieId)
 

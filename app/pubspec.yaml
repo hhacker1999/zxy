@@ -2,7 +2,7 @@ name: zxy_app
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.2+8
+version: 1.0.3+9
 
 environment:
   sdk: ^3.10.4
@@ -27,6 +27,7 @@ dependencies:
   lottie: ^3.3.2
   window_manager: ^0.5.1
   rename_app: ^1.6.5
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
