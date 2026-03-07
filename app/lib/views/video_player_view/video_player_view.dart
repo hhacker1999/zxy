@@ -201,10 +201,16 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
 
       // HDR to SDR tonemapping settings
       player.setProperty('icc-profile-auto', 'yes'),
-      player.setProperty('tone-mapping', 'spline'),
-      player.setProperty('hdr-compute-peak', 'yes'),
+      if (Platform.isIOS || Platform.isAndroid) ...[
+        player.setProperty('tone-mapping', 'spline'),
+      ],
+      if (Platform.isWindows || Platform.isMacOS) ...[
+        player.setProperty('tone-mapping', 'mobius'),
+        player.setProperty('tone-mapping-param', '0.4'),
+      ],
 
-      player.setProperty('tone-mapping-mode', 'luma'),
+      player.setProperty('tone-mapping-mode', 'auto'),
+      player.setProperty('hdr-compute-peak', 'yes'),
       player.setProperty('target-peak', 'auto'),
       player.setProperty('gamut-mapping-mode', 'perceptual'),
       if (Platform.isIOS || Platform.isAndroid) ...[

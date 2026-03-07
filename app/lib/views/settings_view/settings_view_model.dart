@@ -200,6 +200,8 @@ class SettingsViewModel extends ChangeNotifier {
           _traktLoginTimer?.cancel();
           _context.read<UserBloc>().waitingTraktLogin.value = false;
           _context.read<UserBloc>().profile = profile;
+          // NOTE: Update continue watching now
+          _context.read<HomeViewModel>().initialiseContinueWatching();
         }
       });
     } catch (e) {
