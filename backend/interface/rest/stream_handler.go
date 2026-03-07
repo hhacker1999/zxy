@@ -21,6 +21,16 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 
 	profileId := r.Context().Value("profile_id").(int)
 
+  fmt.Println("--------------------------------------------------")
+	fmt.Println(r.Header.Get("X-Real-IP"))
+	fmt.Println(r.Header.Get("X-Forwarded-For"))
+	fmt.Println(r.Header.Get("X-Client-Ip"))
+  fmt.Println("--------------------------------------------------")
+  for k,v := range r.Header {
+    fmt.Println(k, v)
+  }
+  
+
 	params := r.URL.Query()
 	streamType := params.Get("type")
 	if len(streamType) == 0 || (streamType != "movie" && streamType != "series") {
@@ -279,7 +289,7 @@ func (i *RestInterface) resolveInternalURL(initial string) (string, error) {
 
 func (i *RestInterface) handleFinalUrl(w http.ResponseWriter, r *http.Request) {
 	var res ApiResponse
-  defer res.SendResponse(w)
+	defer res.SendResponse(w)
 	tempUrl := r.URL.Query().Get("temp_url")
 	if len(tempUrl) == 0 {
 		res.StatusCode = http.StatusBadRequest
