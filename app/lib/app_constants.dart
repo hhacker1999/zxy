@@ -111,8 +111,8 @@ class FilterValue {
 }
 
 class AppConstants {
-  static const String hostName = "zxy-staging.tooharsh.co.in";
-  // static const String hostName = "zxyapi.tooharsh.co.in";
+  // static const String hostName = "zxy-staging.tooharsh.co.in";
+  static const String hostName = "zxyapi.tooharsh.co.in";
   static const String baseUrl = "https://$hostName";
   static const String wsUrl = "wss://$hostName/ws";
   // static const String baseUrl = "http://10.8.0.1:6969";
