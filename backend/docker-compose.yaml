@@ -52,7 +52,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
+      redis-server:
         condition: service_healthy
     volumes:
       - .env:/app/.env
