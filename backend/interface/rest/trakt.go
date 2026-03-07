@@ -233,21 +233,6 @@ func (i *RestInterface) HandleTraktRedirect(w http.ResponseWriter, r *http.Reque
 
 	err := i.traktUC.RetrieveUserAuthToken(code, state)
 	if err != nil {
-		response.Error = err.Error()
-		response.StatusCode = http.StatusBadRequest
-		return
-	}
-
-	response.StatusCode = http.StatusOK
-}
-
-func (i *RestInterface) HandleTraktDelete(w http.ResponseWriter, r *http.Request) {
-
-	profileId := r.Context().Value("profile_id").(int)
-	userId := r.Context().Value("user_id").(int)
-
-	err := i.traktUC.DeleteProfileTraktLogin(userId, profileId)
-	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, failed)
@@ -257,4 +242,21 @@ func (i *RestInterface) HandleTraktDelete(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, success)
+}
+
+func (i *RestInterface) HandleTraktDelete(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	profileId := r.Context().Value("profile_id").(int)
+	userId := r.Context().Value("user_id").(int)
+
+	err := i.traktUC.DeleteProfileTraktLogin(userId, profileId)
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusBadRequest
+		return
+	}
+
+	response.StatusCode = http.StatusOK
 }
