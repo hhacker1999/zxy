@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 	zxyWs "zxy/interface/websocket"
@@ -21,6 +22,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 )
+
+type RedirectError struct {
+	URL        string
+	StatusCode int
+	Message    string
+}
+
+func (e *RedirectError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Message, e.URL)
+}
 
 type AnonymizerTransport struct {
 	RoundTripper http.RoundTripper
@@ -70,6 +81,19 @@ func New(
 ) *RestInterface {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			splittedHost := strings.Split(req.URL.Host, ":")
+			fmt.Println(req.URL.Host)
+			if len(splittedHost) > 1 {
+				fmt.Println("Found non internal host")
+				return &RedirectError{
+					URL:        req.URL.String(),
+					StatusCode: 200, // You can define your own logic here
+					Message:    "Found final url",
+				}
+			}
+			return nil
+		},
 	}
 	return &RestInterface{
 		addonuc:       addonuc,

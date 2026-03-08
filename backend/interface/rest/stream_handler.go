@@ -6,30 +6,39 @@ import (
 	"crypto/cipher"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 	"zxy/models"
 )
+
+var ipRequestHeaders = []string{
+	"X-Client-Ip",         // Amazon EC2 / Heroku / others
+	"Cf-Connecting-Ip",    // Cloudflare
+	"Do-Connecting-Ip",    // DigitalOcean
+	"Fastly-Client-Ip",    // Fastly / Firebase
+	"True-Client-Ip",      // Akamai / Cloudflare
+	"X-Real-Ip",           // nginx
+	"X-Cluster-Client-Ip", // Rackspace LB / Riverbed's Stingray
+	"X-Forwarded",
+	"X-Forwarded-For", // Load-balancers (AWS ELB) / proxies.
+	"Forwarded-For",
+	"Forwarded",
+	"X-Appengine-User-Ip", // Google Cloud App Engine
+	"Cf-Pseudo-IPv4",      // Cloudflare fallback
+}
 
 func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) {
 	response := &ApiResponse{}
 	defer response.SendResponse(w)
 
 	profileId := r.Context().Value("profile_id").(int)
-
-  fmt.Println("--------------------------------------------------")
-	fmt.Println(r.Header.Get("X-Real-IP"))
-	fmt.Println(r.Header.Get("X-Forwarded-For"))
-	fmt.Println(r.Header.Get("X-Client-Ip"))
-  fmt.Println("--------------------------------------------------")
-  for k,v := range r.Header {
-    fmt.Println(k, v)
-  }
-  
 
 	params := r.URL.Query()
 	streamType := params.Get("type")
@@ -46,6 +55,9 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 	}
 	var data models.ZxyStreamsRes
 	var err error
+
+	userIp := GetRequestIP(r)
+	fmt.Println("User IP found is ", userIp)
 
 	if streamType == "series" {
 		season := params.Get("season")
@@ -73,9 +85,9 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 			response.StatusCode = http.StatusBadRequest
 			return
 		}
-		data, err = i.addonuc.GetSeriesStreamProfile(id, seasonInt, episodeInt, profileId)
+		data, err = i.addonuc.GetSeriesStreamProfile(id, seasonInt, episodeInt, profileId, userIp)
 	} else {
-		data, err = i.addonuc.GetMovieStreamProfile(id, profileId)
+		data, err = i.addonuc.GetMovieStreamProfile(id, profileId, userIp)
 	}
 
 	if err != nil {
@@ -200,10 +212,21 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.Header.Set("Range", "bytes=0-0")
+	// req.Header.Set("Range", "bytes=0-0")
 
 	resp, err := i.client.Do(req)
 	if err != nil {
+		var resErr *RedirectError
+		if errors.As(err, &resErr) {
+			finalURL := resErr.URL
+			i.urlMap[initial] = RedirectUrlInfo{
+				FinalUrl: finalURL,
+				UrlTime:  time.Now(),
+			}
+
+			http.Redirect(w, r, finalURL, http.StatusFound)
+			return
+		}
 		res.StatusCode = http.StatusBadGateway
 		res.Error = "Source resolution failed"
 		res.SendResponse(w)
@@ -211,14 +234,18 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	finalURL := resp.Request.URL.String()
-	fmt.Println("final url ", finalURL)
-	i.urlMap[initial] = RedirectUrlInfo{
-		FinalUrl: finalURL,
-		UrlTime:  time.Now(),
-	}
+	res.StatusCode = http.StatusBadGateway
+	res.Error = "Source resolution failed"
+	res.SendResponse(w)
 
-	http.Redirect(w, r, finalURL, http.StatusFound)
+	// finalURL := resp.Request.URL.String()
+	// fmt.Println("final url ", finalURL)
+	// i.urlMap[initial] = RedirectUrlInfo{
+	// 	FinalUrl: finalURL,
+	// 	UrlTime:  time.Now(),
+	// }
+	//
+	// http.Redirect(w, r, finalURL, http.StatusFound)
 }
 
 func (i *RestInterface) handleProxy(w http.ResponseWriter, r *http.Request) {
@@ -345,11 +372,29 @@ func (i *RestInterface) handleFinalUrl(w http.ResponseWriter, r *http.Request) {
 		res.Error = "Invalid url"
 		return
 	}
+	userIp := GetRequestIP(r)
+	req.Header.Set("X-Forwarded-For", userIp)
+	req.Header.Set("X-Real-IP", userIp)
+	req.Header.Set("X-Client-Ip", userIp)
 
-	req.Header.Set("Range", "bytes=0-0")
+	// req.Header.Set("Range", "bytes=0-0")
 
 	resp, err := i.client.Do(req)
 	if err != nil {
+		var resErr *RedirectError
+		if errors.As(err, &resErr) {
+			finalURL := resErr.URL
+			i.urlMap[initial] = RedirectUrlInfo{
+				FinalUrl: finalURL,
+				UrlTime:  time.Now(),
+			}
+
+			res.StatusCode = http.StatusOK
+			res.Data = Response{
+				Url: finalURL,
+			}
+			return
+		}
 		res.StatusCode = http.StatusBadGateway
 		res.Error = "Source resolution failed"
 		return
@@ -367,4 +412,43 @@ func (i *RestInterface) handleFinalUrl(w http.ResponseWriter, r *http.Request) {
 	res.Data = Response{
 		Url: finalURL,
 	}
+}
+
+// NOTE: Logic stolen from [https://github.com/MunifTanjim/stremthru]
+func GetRequestIP(r *http.Request) string {
+	for _, header := range ipRequestHeaders {
+		switch header {
+		case "X-Forwarded-For":
+			if host, ok := getClientIPFromXForwardedFor(r.Header.Get(header)); ok {
+				return host
+			}
+		default:
+			if host := r.Header.Get(header); isCorrectIP(host) {
+				return host
+			}
+		}
+	}
+
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil && isCorrectIP(host) {
+		return host
+	}
+
+	return ""
+}
+
+func isCorrectIP(input string) bool {
+	ip := net.ParseIP(input)
+	return ip != nil && !ip.IsPrivate() && !ip.IsLoopback()
+}
+
+func getClientIPFromXForwardedFor(headers string) (string, bool) {
+	if headers == "" {
+		return "", false
+	}
+	for ip := range strings.SplitSeq(headers, ",") {
+		if ip, _, _ := strings.Cut(strings.TrimSpace(ip), ":"); isCorrectIP(ip) {
+			return ip, true
+		}
+	}
+	return "", false
 }

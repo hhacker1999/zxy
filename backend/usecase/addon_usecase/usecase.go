@@ -323,7 +323,11 @@ func (u *Usecase) GetSeriesStream(
 	return finalResult, nil
 }
 
-func (u *Usecase) GetMovieStreamProfile(id string, profileId int) (models.ZxyStreamsRes, error) {
+func (u *Usecase) GetMovieStreamProfile(
+	id string,
+	profileId int,
+	userIp string,
+) (models.ZxyStreamsRes, error) {
 	var res models.ZxyStreamsRes
 	var aioRes models.AddonStreamResponse
 
@@ -332,12 +336,22 @@ func (u *Usecase) GetMovieStreamProfile(id string, profileId int) (models.ZxyStr
 		return res, err
 	}
 
-	addonResponse, err := http.DefaultClient.Get(
-		strings.Replace(
-			addonUrl,
-			"manifest.json",
-			fmt.Sprintf("stream/movie/%s.json", id), 1,
-		),
+	req, err := http.NewRequest(http.MethodGet, strings.Replace(
+		addonUrl,
+		"manifest.json",
+		fmt.Sprintf("stream/movie/%s.json", id), 1,
+	), nil)
+	if err != nil {
+		fmt.Println("Error creating movie stream request ", err)
+		return res, apperrors.SomethingWentWrongError{}
+	}
+
+	req.Header.Set("X-Forwarded-For", userIp)
+	req.Header.Set("X-Real-IP", userIp)
+	req.Header.Set("X-Client-Ip", userIp)
+
+	addonResponse, err := http.DefaultClient.Do(
+		req,
 	)
 	if err != nil {
 		fmt.Println("Error sending movie stream request ", err)
@@ -374,6 +388,7 @@ func (u *Usecase) GetSeriesStreamProfile(
 	season int,
 	episode int,
 	profileId int,
+	userIp string,
 ) (models.ZxyStreamsRes, error) {
 	var res models.ZxyStreamsRes
 	var aioRes models.AddonStreamResponse
@@ -382,12 +397,23 @@ func (u *Usecase) GetSeriesStreamProfile(
 	if err != nil {
 		return res, err
 	}
-	addonResponse, err := http.DefaultClient.Get(
-		strings.Replace(
+
+	req, err := http.NewRequest(http.MethodGet, strings.Replace(
 			addonUrl,
 			"manifest.json",
 			fmt.Sprintf("stream/series/%s:%d:%d.json", id, season, episode), 1,
-		),
+		), nil)
+	if err != nil {
+		fmt.Println("Error creating series stream request ", err)
+		return res, apperrors.SomethingWentWrongError{}
+	}
+
+	req.Header.Set("X-Forwarded-For", userIp)
+	req.Header.Set("X-Real-IP", userIp)
+	req.Header.Set("X-Client-Ip", userIp)
+
+	addonResponse, err := http.DefaultClient.Do(
+		req,
 	)
 	if err != nil {
 		fmt.Println("Error sending series stream request ", err)
@@ -531,7 +557,7 @@ func (u *Usecase) StoreAddonFromApiKeyContext(
 func (u *Usecase) encryptURL(url string) (string, error) {
 	key, err := hex.DecodeString(u.encrKey)
 	if err != nil {
-    return "",err
+		return "", err
 	}
 
 	block, err := aes.NewCipher(key)
