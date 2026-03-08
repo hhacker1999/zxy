@@ -82,9 +82,10 @@ func New(
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+      fmt.Println("We are inside redirect")
 			splittedHost := strings.Split(req.URL.Host, ":")
-			fmt.Println(req.URL.Host)
-			if len(splittedHost) > 1 {
+			fmt.Println(req.URL.String())
+			if len(splittedHost) == 1 {
 				fmt.Println("Found non internal host")
 				return &RedirectError{
 					URL:        req.URL.String(),
