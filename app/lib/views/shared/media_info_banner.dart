@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
-import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/extensions.dart';
@@ -70,8 +69,41 @@ class _MediaInfoBannerState extends State<MediaInfoBanner> {
     return isMovie ? movie.genres : series.genres;
   }
 
+  /// Format movie runtime (total minutes) as "2h 14m" or "45m".
+  String _formatMovieRuntime(int minutes) {
+    if (minutes <= 0) return '';
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    if (h == 0) return '${m}m';
+    if (m == 0) return '${h}h';
+    return '${h}h ${m}m';
+  }
+
+  /// Returns a human-readable runtime string, or null if unavailable.
+  String? _getRuntimeLabel() {
+    if (isMovie) {
+      final rt = movie.runtime;
+      if (rt <= 0) return null;
+      return _formatMovieRuntime(rt);
+    } else {
+      // Prefer episodeRunTime list, fall back to lastEpisode runtime
+      final rts = series.episodeRunTime;
+      if (rts != null && rts.isNotEmpty) {
+        final rt = rts.first as int?;
+        if (rt != null && rt > 0) return _formatMovieRuntime(rt);
+      }
+      final epRt = series.lastEpisodeToAir?.runtime;
+      if (epRt != null && epRt > 0) return _formatMovieRuntime(epRt);
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final genres = _getGenres();
+    final year = _getYear();
+    final runtime = _getRuntimeLabel();
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -123,33 +155,87 @@ class _MediaInfoBannerState extends State<MediaInfoBanner> {
                   ),
                 ),
               ),
-              AppTheme.boxHeightM,
+              AppTheme.boxHeightS,
+
               Row(
-                spacing: AppTheme.spacingM,
                 children: [
-                  Text(
-                    "${_getYear()}",
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                      color: AppTheme.textSecondary,
+                  if (year != null)
+                    Text(
+                      '$year',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
+                  if (year != null && runtime != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacingS,
+                      ),
+                      child: Text(
+                        '·',
+                        style: TextStyle(
+                          color: AppTheme.textDisabled,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (runtime != null)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 4,
+                      children: [
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 13,
+                          color: AppTheme.textDisabled,
+                        ),
+                        Text(
+                          runtime,
+                          style: Theme.of(context).textTheme.labelLarge!
+                              .copyWith(
+                                color: AppTheme.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
               AppTheme.boxHeightM,
-              Row(
-                spacing: AppTheme.spacingS,
-                children: List.generate(_getGenres().length, (index) {
-                  var genres = _getGenres();
-                  var genre = genres[index];
-                  return Text(
-                    "${genre.name}${index != genres.length - 1 ? ',' : ''}",
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-                  );
-                }).toList(),
-              ),
-              AppTheme.boxHeightXS,
+
+              if (genres.isNotEmpty)
+                Wrap(
+                  spacing: AppTheme.spacingXS,
+                  runSpacing: AppTheme.spacingXS,
+                  children: genres.map((genre) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.18),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        genre.name,
+                        style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                          color: Colors.white.withOpacity(0.85),
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              AppTheme.boxHeightS,
+
               Row(
                 spacing: AppTheme.spacingXS,
                 children: [
@@ -170,8 +256,10 @@ class _MediaInfoBannerState extends State<MediaInfoBanner> {
                 ],
               ),
               AppTheme.boxHeightL,
+
               widget.streamRow,
               AppTheme.boxHeightM,
+
               SizedBox(
                 width: widget.width * 0.5,
                 child: Text(
@@ -194,7 +282,7 @@ class _MediaInfoBannerState extends State<MediaInfoBanner> {
             onPressed: () {
               Navigator.pop(context);
             },
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
           ),
         ),
       ],
