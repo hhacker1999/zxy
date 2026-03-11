@@ -237,15 +237,6 @@ func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {
 	res.StatusCode = http.StatusBadGateway
 	res.Error = "Source resolution failed"
 	res.SendResponse(w)
-
-	// finalURL := resp.Request.URL.String()
-	// fmt.Println("final url ", finalURL)
-	// i.urlMap[initial] = RedirectUrlInfo{
-	// 	FinalUrl: finalURL,
-	// 	UrlTime:  time.Now(),
-	// }
-	//
-	// http.Redirect(w, r, finalURL, http.StatusFound)
 }
 
 func (i *RestInterface) handleProxy(w http.ResponseWriter, r *http.Request) {

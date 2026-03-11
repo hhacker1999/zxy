@@ -8,7 +8,7 @@ class MovieDetails {
   final Collection? collection;
   final int? budget;
   final Credits? credits;
-  final List<Genre>? genres;
+  final List<Genre> genres;
   final String? homepage;
   final int id;
   final String imdbId;
@@ -42,7 +42,7 @@ class MovieDetails {
     this.belongsToCollection,
     this.collection,
     this.budget,
-    this.genres,
+    required this.genres,
     this.homepage,
     required this.externalIds,
     required this.id,
@@ -110,7 +110,7 @@ class MovieDetails {
               (x) => ProductionCountry.fromJson(x),
             ),
           ),
-    releaseDate: DateTime.tryParse(json["release_date"])?? DateTime.now(),
+    releaseDate: DateTime.tryParse(json["release_date"]) ?? DateTime.now(),
     revenue: json["revenue"],
     runtime: json["runtime"],
     spokenLanguages: json["spoken_languages"] == null
