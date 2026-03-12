@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
@@ -18,6 +20,7 @@ import 'package:zxy_app/views/shared/drop_down.dart';
 import 'package:zxy_app/views/shared/library_list.dart';
 import 'package:zxy_app/views/shared/media_info_banner.dart';
 import 'package:zxy_app/views/shared/media_info_poster.dart';
+import 'package:zxy_app/views/shared/overlay_play_button.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
@@ -351,62 +354,83 @@ class EpisodesList extends StatelessWidget {
       builder: (_, progressMap, _) {
         // ── Mobile: vertical list ──────────────────────────────────────────
         if (renderMobile) {
-          return Column(
-            spacing: AppTheme.spacingS,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: List.generate(season.episodes.length, (index) {
-              final episode = season.episodes[index];
-              final seasonsKey = "$id:${season.seasonNumber}";
-              final mapKey =
-                  "$id:${season.seasonNumber}:${episode.episodeNumber}";
-              final bool isUpcoming = episode.airDate == null ||
-                  episode.airDate!.isAfter(DateTime.now());
-              return GestureDetector(
-                key: ValueKey(mapKey),
-                onLongPressStart: (details) {
-                  if (isUpcoming) return;
-                  _showWatchedContextMenu(
-                    context,
-                    details.globalPosition,
-                    () => vm.onMarkWatched(mapKey),
-                    () => vm.onMarkWatched(seasonsKey),
-                  );
-                },
-                onSecondaryTapUp: (details) {
-                  if (isUpcoming) return;
-                  _showWatchedContextMenu(
-                    context,
-                    details.globalPosition,
-                    () => vm.onMarkWatched(mapKey),
-                    () => vm.onMarkWatched(seasonsKey),
-                  );
-                },
-                onTap: () {
-                  vm.onEpisodeSelect(index);
-                  if (context
-                      .read<UserBloc>()
-                      .profileNotifier
-                      .value!
-                      .debridType
-                      .isEmpty) {
-                    showToast(context, true, "Setup debrid service first", "");
-                    return;
-                  }
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.videoPlayerView,
-                    arguments: vm,
-                  );
-                },
-                child: _MobileEpisodeRow(
-                  episode: episode,
-                  episodeWidth: episodeWidth,
-                  episodeHeight: episodeHeight,
-                  progress: progressMap[mapKey],
-                  isUpcoming: isUpcoming,
-                ),
-              );
-            }),
+          // ── Mobile: horizontal scrolling carousel ─────────────────────────
+          final double cardWidth = MediaQuery.of(context).size.width * 0.78;
+          final double thumbH = cardWidth * (9 / 16);
+          return SizedBox(
+            height: thumbH + 130, // thumbnail + info panel
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.zero,
+              clipBehavior: Clip.none,
+              itemCount: season.episodes.length,
+              itemBuilder: (ctx, index) {
+                final episode = season.episodes[index];
+                final seasonsKey = "$id:${season.seasonNumber}";
+                final mapKey =
+                    "$id:${season.seasonNumber}:${episode.episodeNumber}";
+                final bool isUpcoming =
+                    episode.airDate == null ||
+                    episode.airDate!.isAfter(DateTime.now());
+                return Padding(
+                  padding: EdgeInsets.only(
+                    right: AppTheme.spacingS,
+                    left: index == 0 ? 0 : 0,
+                  ),
+                  child: AbsorbPointer(
+                    absorbing: isUpcoming,
+                    child: GestureDetector(
+                      key: ValueKey(mapKey),
+                      onLongPressStart: (details) {
+                        _showWatchedContextMenu(
+                          context,
+                          details.globalPosition,
+                          () => vm.onMarkWatched(mapKey),
+                          () => vm.onMarkWatched(seasonsKey),
+                        );
+                      },
+                      onSecondaryTapUp: (details) {
+                        _showWatchedContextMenu(
+                          context,
+                          details.globalPosition,
+                          () => vm.onMarkWatched(mapKey),
+                          () => vm.onMarkWatched(seasonsKey),
+                        );
+                      },
+                      onTap: () {
+                        vm.onEpisodeSelect(index);
+                        if (context
+                            .read<UserBloc>()
+                            .profileNotifier
+                            .value!
+                            .debridType
+                            .isEmpty) {
+                          showToast(
+                            context,
+                            true,
+                            "Setup debrid service first",
+                            "",
+                          );
+                          return;
+                        }
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.videoPlayerView,
+                          arguments: vm,
+                        );
+                      },
+                      child: _MobileEpisodeCard(
+                        episode: episode,
+                        progress: progressMap[mapKey],
+                        isUpcoming: isUpcoming,
+                        cardWidth: cardWidth,
+                        thumbHeight: thumbH,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           );
         }
 
@@ -420,7 +444,8 @@ class EpisodesList extends StatelessWidget {
             final seasonsKey = "$id:${season.seasonNumber}";
             final mapKey =
                 "$id:${season.seasonNumber}:${episode.episodeNumber}";
-            final bool isUpcoming = episode.airDate == null ||
+            final bool isUpcoming =
+                episode.airDate == null ||
                 episode.airDate!.isAfter(DateTime.now());
             return _DesktopEpisodeCard(
               key: ValueKey(mapKey),
@@ -440,6 +465,10 @@ class EpisodesList extends StatelessWidget {
                   showToast(context, true, "Setup debrid service first", "");
                   return;
                 }
+                if (isUpcoming) {
+                  return;
+                }
+
                 Navigator.pushNamed(
                   context,
                   AppRoutes.videoPlayerView,
@@ -494,9 +523,11 @@ class EpisodesList extends StatelessWidget {
           child: Row(
             spacing: AppTheme.spacingS,
             children: [
-              Icon(Icons.check_circle_outline, size: 18, color: AppTheme.successColor),
-              Text("Mark as Watched",
-                  style: TextStyle(color: AppTheme.textPrimary)),
+              Icon(Icons.check_circle_outline, size: 18, color: Colors.white),
+              Text(
+                "Mark as Watched",
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
             ],
           ),
         ),
@@ -505,9 +536,11 @@ class EpisodesList extends StatelessWidget {
           child: Row(
             spacing: AppTheme.spacingS,
             children: [
-              Icon(Icons.done_all, size: 18, color: AppTheme.successColor),
-              Text("Mark Rest as Watched",
-                  style: TextStyle(color: AppTheme.textPrimary)),
+              Icon(Icons.done_all, size: 18, color: Colors.white),
+              Text(
+                "Mark Rest as Watched",
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
             ],
           ),
         ),
@@ -517,178 +550,236 @@ class EpisodesList extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mobile: horizontal thumbnail + info row
+// Mobile: Apple TV-style horizontal card (thumbnail + info panel below)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _MobileEpisodeRow extends StatelessWidget {
-  const _MobileEpisodeRow({
+class _MobileEpisodeCard extends StatelessWidget {
+  const _MobileEpisodeCard({
     required this.episode,
-    required this.episodeWidth,
-    required this.episodeHeight,
     required this.progress,
     required this.isUpcoming,
+    required this.cardWidth,
+    required this.thumbHeight,
   });
 
   final Episode episode;
-  final double episodeWidth;
-  final double episodeHeight;
   final ValueNotifier<WatchProgress>? progress;
   final bool isUpcoming;
+  final double cardWidth;
+  final double thumbHeight;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: AppTheme.roundedMedium,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          height: episodeHeight,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.06),
-            borderRadius: AppTheme.roundedMedium,
-            border: Border.all(
-              color: Colors.white.withOpacity(0.10),
-              width: 0.8,
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return SizedBox(
+      width: cardWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Thumbnail ────────────────────────────────────────────────────
+          Stack(
             children: [
-              // Thumbnail
-              Stack(
-                children: [
-                  EpisodeImage(
-                    episode: episode,
-                    progress: progress,
-                    episodeWidth: episodeWidth,
-                    episodeHeight: episodeHeight,
-                    size: "w185",
-                  ),
-                  if (isUpcoming)
-                    Positioned(
-                      top: AppTheme.spacingS,
-                      left: AppTheme.spacingS,
-                      child: _UpcomingBadge(),
-                    ),
-                ],
+              ClipRRect(
+                borderRadius: AppTheme.roundedMedium,
+                child: ZxyImage(
+                  radius: AppTheme.roundedMedium,
+                  enableShadow: true,
+                  animate: false,
+                  width: cardWidth,
+                  height: thumbHeight,
+                  path: episode.stillPath ?? "",
+                  size: "w300",
+                  fit: BoxFit.cover,
+                ),
               ),
-              // Info
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacingS,
-                    vertical: AppTheme.spacingS,
+              // Progress bar pinned to bottom of thumbnail
+              if (progress != null)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: ValueListenableBuilder(
+                    valueListenable: progress!,
+                    builder: (_, prog, _) {
+                      if (prog.progress == 0) return const SizedBox.shrink();
+                      return ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(AppTheme.radiusMedium),
+                          bottomRight: Radius.circular(AppTheme.radiusMedium),
+                        ),
+                        child: LinearProgressIndicator(
+                          value: prog.progress / 100,
+                          backgroundColor: Colors.white.withOpacity(0.12),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color(0xFF3D9BE9),
+                          ),
+                          minHeight: 3,
+                        ),
+                      );
+                    },
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Episode badge + title
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
+                ),
+              // Watched badge
+              if (progress != null)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: ValueListenableBuilder(
+                    valueListenable: progress!,
+                    builder: (_, prog, _) {
+                      if (!prog.isWatched) return const SizedBox.shrink();
+                      return Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF3D9BE9),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF3D9BE9).withOpacity(0.5),
+                              blurRadius: 8,
+                              spreadRadius: 1,
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
-                              borderRadius: AppTheme.roundedXSmall,
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          size: 11,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              // Upcoming pill (top-left)
+              if (isUpcoming)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.55),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: 4,
+                          children: [
+                            const Icon(
+                              Icons.lock_clock,
+                              size: 10,
+                              color: Colors.white70,
                             ),
-                            child: Text(
-                              "E${episode.episodeNumber}",
+                            Text(
+                              episode.airDate != null
+                                  ? DateFormat(
+                                      'MMM d',
+                                    ).format(episode.airDate!)
+                                  : 'UPCOMING',
                               style: const TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,
-                                color: AppTheme.textSecondary,
-                                letterSpacing: 0.5,
+                                color: Colors.white,
+                                letterSpacing: 0.4,
                               ),
                             ),
-                          ),
-                          AppTheme.boxWidthXS,
-                          Expanded(
-                            child: Text(
-                              episode.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.textPrimary,
-                                height: 1.3,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      AppTheme.boxHeightXS,
-                      // Overview
-                      Expanded(
-                        child: Text(
-                          episode.overview,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppTheme.textSecondary.withOpacity(0.85),
-                            height: 1.5,
-                          ),
+                          ],
                         ),
                       ),
-                      // Runtime · Air date  (single row)
-                      Row(
-                        spacing: 4,
-                        children: [
-                          if (episode.runtime != null) ...[
-                            Icon(
-                              Icons.schedule_rounded,
-                              size: 10,
-                              color: AppTheme.textDisabled,
-                            ),
-                            Text(
-                              "${episode.runtime}m",
-                              style: const TextStyle(
-                                fontSize: 9,
-                                color: AppTheme.textDisabled,
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                          ],
-                          if (episode.runtime != null && episode.airDate != null)
-                            Text(
-                              "·",
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: AppTheme.textDisabled.withOpacity(0.6),
-                              ),
-                            ),
-                          if (episode.airDate != null) ...[
-                            Icon(
-                              Icons.calendar_today_rounded,
-                              size: 10,
-                              color: AppTheme.textDisabled,
-                            ),
-                            Flexible(
-                              child: Text(
-                                DateFormat('MMM d, yyyy').format(episode.airDate!),
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 9,
-                                  color: AppTheme.textDisabled,
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
-        ),
+          // ── Info panel ────────────────────────────────────────────────────
+          const SizedBox(height: 8),
+          // "EPISODE X" label
+          Text(
+            "EPISODE ${episode.episodeNumber}",
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textSecondary.withOpacity(0.7),
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 3),
+          // Title
+          Text(
+            episode.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+              height: 1.25,
+            ),
+          ),
+          if (episode.overview.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              episode.overview,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                color: AppTheme.textSecondary.withOpacity(0.75),
+                height: 1.45,
+              ),
+            ),
+          ],
+          const SizedBox(height: 5),
+          // Runtime · date
+          Row(
+            spacing: 4,
+            children: [
+              if (episode.runtime != null) ...[
+                Icon(
+                  Icons.play_circle_outline_rounded,
+                  size: 11,
+                  color: AppTheme.textDisabled,
+                ),
+                Text(
+                  "${episode.runtime}m",
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textDisabled,
+                  ),
+                ),
+              ],
+              if (episode.runtime != null &&
+                  episode.airDate != null &&
+                  !isUpcoming)
+                Text(
+                  "·",
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textDisabled.withOpacity(0.5),
+                  ),
+                ),
+              if (episode.airDate != null && !isUpcoming)
+                Text(
+                  DateFormat('MMM d, yyyy').format(episode.airDate!),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textDisabled,
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -754,7 +845,7 @@ class _DesktopEpisodeCardState extends State<_DesktopEpisodeCard> {
                       Positioned.fill(
                         child: EpisodeImage(
                           progress: widget.progress,
-                          size: "w300",
+                          size: "w780",
                           episodeWidth: widget.episodeWidth,
                           episodeHeight: widget.episodeHeight,
                           episode: widget.episode,
@@ -775,30 +866,7 @@ class _DesktopEpisodeCardState extends State<_DesktopEpisodeCard> {
                               ],
                             ),
                           ),
-                          child: Center(
-                            child: ClipOval(
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                                child: Container(
-                                  height: 44,
-                                  width: 44,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.white.withOpacity(0.18),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.35),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.play_arrow_rounded,
-                                    color: Colors.white,
-                                    size: 26,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                          child: OverlayPlayButton(),
                         ),
                       ),
                       // Upcoming badge
@@ -858,7 +926,7 @@ class _DesktopEpisodeCardState extends State<_DesktopEpisodeCard> {
                         ),
                         // Runtime · Air date (single row)
                         if (widget.episode.runtime != null ||
-                            widget.episode.airDate != null) ...[  
+                            widget.episode.airDate != null) ...[
                           const SizedBox(height: 3),
                           Row(
                             spacing: 4,
@@ -884,7 +952,9 @@ class _DesktopEpisodeCardState extends State<_DesktopEpisodeCard> {
                                   "·",
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: AppTheme.textDisabled.withOpacity(0.6),
+                                    color: AppTheme.textDisabled.withOpacity(
+                                      0.6,
+                                    ),
                                   ),
                                 ),
                               if (widget.episode.airDate != null) ...[
@@ -894,7 +964,9 @@ class _DesktopEpisodeCardState extends State<_DesktopEpisodeCard> {
                                   color: AppTheme.textDisabled,
                                 ),
                                 Text(
-                                  DateFormat('MMM d, yyyy').format(widget.episode.airDate!),
+                                  DateFormat(
+                                    'MMM d, yyyy',
+                                  ).format(widget.episode.airDate!),
                                   style: const TextStyle(
                                     fontSize: 10,
                                     color: AppTheme.textDisabled,
@@ -911,7 +983,7 @@ class _DesktopEpisodeCardState extends State<_DesktopEpisodeCard> {
                 ],
               ),
               // Overview — fixed 2-line clamp, no layout shift
-              if (widget.episode.overview.isNotEmpty) ...[  
+              if (widget.episode.overview.isNotEmpty) ...[
                 const SizedBox(height: 5),
                 Text(
                   widget.episode.overview,
@@ -999,7 +1071,7 @@ class EpisodeImage extends StatelessWidget {
           Positioned.fill(
             child: ZxyImage(
               radius: AppTheme.roundedMedium,
-              enableShadow: false,
+              enableShadow: true,
               animate: false,
               width: episodeWidth,
               height: episodeHeight,

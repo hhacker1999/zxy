@@ -7,6 +7,7 @@ import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
+import 'package:zxy_app/views/shared/overlay_play_button.dart';
 
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
@@ -132,39 +133,8 @@ class ContinueWatchingCard extends StatelessWidget {
                       ),
                     ),
 
-                    // Centered Play Icon
-                    Center(
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.black.withOpacity(0.5),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.5),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: SvgPicture.asset(
-                            AppIcons.play,
-                            colorFilter: const ColorFilter.mode(
-                              Colors.white,
-                              BlendMode.srcIn,
-                            ),
-                            width: 20,
-                            height: 20,
-                          ),
-                        ),
-                      ),
-                    ),
+                    // Play Button
+                    OverlayPlayButton(),
 
                     // Info Overlay (Bottom of Image)
                     Positioned(
