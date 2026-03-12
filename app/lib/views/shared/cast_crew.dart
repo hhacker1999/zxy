@@ -28,7 +28,7 @@ class CastAndCrew extends StatelessWidget {
           ),
           AppTheme.boxHeightM,
           SizedBox(
-            height: renderMobile ? 140 : 200,
+            height: renderMobile ? 150 : 210,
             child: ListView.separated(
               separatorBuilder: (_, _) {
                 return AppTheme.boxWidthL;
@@ -51,18 +51,45 @@ class CastAndCrew extends StatelessWidget {
                         path:
                             "https://image.tmdb.org/t/p/w185/${castList[index].profilePath}",
                       ),
-                      Text(
-                        castList[index].name,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        style: renderMobile
-                            ? Theme.of(context).textTheme.bodySmall!.copyWith(
-                                color: AppTheme.textPrimary,
-                              )
-                            : Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: AppTheme.textPrimary,
-                              ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            castList[index].name,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            style: renderMobile
+                                ? Theme.of(context).textTheme.bodySmall!.copyWith(
+                                      color: AppTheme.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    )
+                                : Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                      color: AppTheme.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                          ),
+                          if (castList[index].character != null ||
+                              castList[index].job != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              castList[index].character ??
+                                  castList[index].job ??
+                                  '',
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              style: renderMobile
+                                  ? Theme.of(context).textTheme.bodySmall!.copyWith(
+                                        color: AppTheme.textSecondary,
+                                        fontSize: 10,
+                                      )
+                                  : Theme.of(context).textTheme.bodySmall!.copyWith(
+                                        color: AppTheme.textSecondary,
+                                      ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
