@@ -592,28 +592,37 @@ class _MobileEpisodeCard extends StatelessWidget {
                   fit: BoxFit.cover,
                 ),
               ),
-              // Progress bar pinned to bottom of thumbnail
+              // Progress bar floating at bottom of thumbnail
               if (progress != null)
                 Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
+                  bottom: 8,
+                  left: 8,
+                  right: 8,
                   child: ValueListenableBuilder(
                     valueListenable: progress!,
                     builder: (_, prog, _) {
                       if (prog.progress == 0) return const SizedBox.shrink();
-                      return ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(AppTheme.radiusMedium),
-                          bottomRight: Radius.circular(AppTheme.radiusMedium),
+                      return Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(100),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        child: LinearProgressIndicator(
-                          value: prog.progress / 100,
-                          backgroundColor: Colors.white.withOpacity(0.12),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color(0xFF3D9BE9),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: LinearProgressIndicator(
+                            value: prog.progress / 100,
+                            backgroundColor: Colors.white.withOpacity(0.3),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                            minHeight: 4.5,
                           ),
-                          minHeight: 3,
                         ),
                       );
                     },
@@ -632,19 +641,19 @@ class _MobileEpisodeCard extends StatelessWidget {
                         padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFF3D9BE9),
+                          color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF3D9BE9).withOpacity(0.5),
-                              blurRadius: 8,
-                              spreadRadius: 1,
+                              color: Colors.black.withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
                         child: const Icon(
                           Icons.check_rounded,
                           size: 11,
-                          color: Colors.white,
+                          color: Colors.black,
                         ),
                       );
                     },
@@ -1079,52 +1088,42 @@ class EpisodeImage extends StatelessWidget {
               size: size,
             ),
           ),
-          // ── Progress bar (bottom gradient strip) ───────────────────────
-          if (progress != null)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: ValueListenableBuilder(
-                valueListenable: progress!,
-                builder: (_, prog, _) {
-                  if (prog.progress == 0) return const SizedBox.shrink();
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // subtle gradient fade before the bar
-                      Container(
-                        height: 28,
+              // Progress bar floating at bottom of thumbnail
+              if (progress != null)
+                Positioned(
+                  bottom: isMobile ? 6 : 8,
+                  left: isMobile ? 6 : 8,
+                  right: isMobile ? 6 : 8,
+                  child: ValueListenableBuilder(
+                    valueListenable: progress!,
+                    builder: (_, prog, _) {
+                      if (prog.progress == 0) return const SizedBox.shrink();
+                      return Container(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.6),
-                            ],
+                          borderRadius: BorderRadius.circular(100),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: LinearProgressIndicator(
+                            value: prog.progress / 100,
+                            backgroundColor: Colors.white.withOpacity(0.3),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                            minHeight: 4.5,
                           ),
                         ),
-                      ),
-                      ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(AppTheme.radiusMedium),
-                          bottomRight: Radius.circular(AppTheme.radiusMedium),
-                        ),
-                        child: LinearProgressIndicator(
-                          value: prog.progress / 100,
-                          backgroundColor: Colors.white.withOpacity(0.15),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color(0xFF3D9BE9), // matches watched badge
-                          ),
-                          minHeight: 3,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
+                      );
+                    },
+                  ),
+                ),
           // ── Watched check badge ─────────────────────────────────────────
           if (progress != null)
             Positioned(
@@ -1134,26 +1133,23 @@ class EpisodeImage extends StatelessWidget {
                 valueListenable: progress!,
                 builder: (_, prog, _) {
                   if (!prog.isWatched) return const SizedBox.shrink();
-                  // Electric blue — visually distinct from green foliage
-                  // in episode thumbnails and from the upcoming badge
-                  const Color watchedColor = Color(0xFF3D9BE9);
                   return Container(
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: watchedColor,
+                      color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: watchedColor.withOpacity(0.55),
-                          blurRadius: 10,
-                          spreadRadius: 1,
+                          color: Colors.black.withOpacity(0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
                     child: Icon(
                       Icons.check_rounded,
                       size: isMobile ? 10 : 13,
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                   );
                 },
