@@ -11,10 +11,10 @@ import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const double _kCollapsedWidth = 72.0;
-const double _kExpandedWidth = 230.0;
+const double _kCollapsedWidth = 76.0;
+const double _kExpandedWidth = 240.0;
 const Duration _kExpandDuration = Duration(milliseconds: 300);
-const Curve _kExpandCurve = Curves.easeInOutCubic;
+const Curve _kExpandCurve = Curves.easeOutCubic;
 
 // ---------------------------------------------------------------------------
 // ModernNavigationDrawer
@@ -52,7 +52,7 @@ class _ModernNavigationDrawerState extends State<ModernNavigationDrawer> {
       onExit: (_) => setState(() => _expanded = false),
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(
-          begin: _expanded ? _kCollapsedWidth : _kExpandedWidth,
+          begin: _kCollapsedWidth,
           end: _expanded ? _kExpandedWidth : _kCollapsedWidth,
         ),
         duration: _kExpandDuration,
@@ -60,71 +60,72 @@ class _ModernNavigationDrawerState extends State<ModernNavigationDrawer> {
         builder: (context, width, _) {
           // Show labels once the drawer is meaningfully open
           final showLabels = width > (_kCollapsedWidth + 40);
-          return SizedBox(
-            width: width,
-            child: ValueListenableBuilder<int>(
-              valueListenable: widget.vm.selectedIndex,
-              builder: (_, selectedIndex, _) {
-                return ValueListenableBuilder<Color?>(
-                  valueListenable: context.read<ImageBloc>().bgGradColor,
-                  builder: (_, accentColor, _) {
-                    final accent = accentColor ?? Colors.white;
-                    return _DrawerShell(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // ── Logo ────────────────────────────────────────
-                          _LogoHeader(expanded: showLabels),
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: width,
+              child: ValueListenableBuilder<int>(
+                valueListenable: widget.vm.selectedIndex,
+                builder: (_, selectedIndex, _) {
+                  return ValueListenableBuilder<Color?>(
+                    valueListenable: context.read<ImageBloc>().bgGradColor,
+                    builder: (_, accentColor, _) {
+                      final accent = accentColor ?? Colors.white;
+                      return _DrawerShell(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ── Logo ────────────────────────────────────────
+                            _LogoHeader(expanded: showLabels),
 
-                          const SizedBox(height: 24),
+                            const SizedBox(height: 16),
 
-                          // ── Main nav items ───────────────────────────
-                          ...List.generate(_mainItems.length, (i) {
-                            return _NavItem(
-                              title: _mainItems[i].$1,
-                              iconPath: _mainItems[i].$2,
-                              isSelected: selectedIndex == i,
+                            // ── Main nav items ───────────────────────────
+                            ...List.generate(_mainItems.length, (i) {
+                              return _NavItem(
+                                title: _mainItems[i].$1,
+                                iconPath: _mainItems[i].$2,
+                                isSelected: selectedIndex == i,
+                                expanded: showLabels,
+                                accent: accent,
+                                onTap: () => widget.vm.selectedIndex.value = i,
+                              );
+                            }),
+
+                            const Spacer(),
+
+                            // ── Divider ────────────────────────────────────
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Divider(
+                                color: Colors.white.withOpacity(0.08),
+                                thickness: 1,
+                                height: 1,
+                              ),
+                            ),
+
+                            // ── Settings (pinned bottom) ───────────────────
+                            _NavItem(
+                              title: _bottomItem.$1,
+                              iconPath: _bottomItem.$2,
+                              isSelected: selectedIndex == _bottomItemIndex,
                               expanded: showLabels,
                               accent: accent,
-                              onTap: () => widget.vm.selectedIndex.value = i,
-                            );
-                          }),
-
-                          const Spacer(),
-
-                          // ── Divider ────────────────────────────────────
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
+                              onTap: () => widget.vm.selectedIndex.value =
+                                  _bottomItemIndex,
                             ),
-                            child: Divider(
-                              color: Colors.white.withValues(alpha: 0.08),
-                              thickness: 1,
-                              height: 1,
-                            ),
-                          ),
 
-                          const SizedBox(height: 4),
-
-                          // ── Settings (pinned bottom) ───────────────────
-                          _NavItem(
-                            title: _bottomItem.$1,
-                            iconPath: _bottomItem.$2,
-                            isSelected: selectedIndex == _bottomItemIndex,
-                            expanded: showLabels,
-                            accent: accent,
-                            onTap: () => widget.vm.selectedIndex.value =
-                                _bottomItemIndex,
-                          ),
-
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           );
         },
@@ -144,21 +145,42 @@ class _DrawerShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          height: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.55),
-            border: Border(
-              right: BorderSide(
-                color: Colors.white.withOpacity(0.07),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 30,
+            spreadRadius: 4,
+            offset: const Offset(4, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: Container(
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.12),
                 width: 1,
               ),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.1),
+                  Colors.black.withOpacity(0.4),
+                ],
+              ),
             ),
+            child: child,
           ),
-          child: child,
         ),
       ),
     );
@@ -177,13 +199,12 @@ class _LogoHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 72,
-      // Overflow.clip so the wordmark never bleeds out during animation
+      height: 80,
       child: OverflowBox(
         alignment: Alignment.centerLeft,
         maxWidth: _kExpandedWidth,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -195,9 +216,9 @@ class _LogoHeader extends StatelessWidget {
               if (expanded)
                 AnimatedOpacity(
                   opacity: 1.0,
-                  duration: _kExpandDuration,
+                  duration: const Duration(milliseconds: 200),
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 10),
+                    padding: const EdgeInsets.only(left: 14),
                     child: Text(
                       'ZXY',
                       style: GoogleFonts.poppins(
@@ -225,16 +246,23 @@ class _ZxyIconMark extends StatelessWidget {
       height: 36,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.white.withOpacity(0.2),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
       ),
       alignment: Alignment.center,
       child: Text(
         'Z',
         style: GoogleFonts.poppins(
-          fontSize: 18,
+          fontSize: 20,
           fontWeight: FontWeight.w900,
           color: Colors.black,
-          height: 1,
+          height: 1.1,
         ),
       ),
     );
@@ -277,14 +305,14 @@ class _NavItemState extends State<_NavItem> {
     final Color contentColor = isSelected
         ? Colors.white
         : isHovered
-        ? Colors.white.withValues(alpha: 0.85)
-        : Colors.white.withValues(alpha: 0.4);
+            ? Colors.white.withOpacity(0.9)
+            : Colors.white.withOpacity(0.45);
 
     final Color bgColor = isSelected
-        ? widget.accent.withValues(alpha: 0.15)
+        ? widget.accent.withOpacity(0.15)
         : isHovered
-        ? Colors.white.withValues(alpha: 0.06)
-        : Colors.transparent;
+            ? Colors.white.withOpacity(0.08)
+            : Colors.transparent;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -294,66 +322,79 @@ class _NavItemState extends State<_NavItem> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
             height: 48,
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
             ),
-            // Clip so nothing bleeds outside the pill during animation
             clipBehavior: Clip.hardEdge,
             child: Row(
               mainAxisSize: MainAxisSize.max,
               children: [
-                // ── Active indicator bar ────────────────────────────────
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  width: 3,
-                  height: isSelected ? 24 : 0,
-                  margin: const EdgeInsets.only(left: 2, right: 11),
-                  decoration: BoxDecoration(
-                    color: widget.accent,
-                    borderRadius: BorderRadius.circular(2),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: widget.accent.withValues(alpha: 0.5),
-                              blurRadius: 8,
-                              spreadRadius: 1,
+                // ── Fixed width container for icon & active indicator ──
+                SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Active indicator bar
+                      Positioned(
+                        left: 0,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOut,
+                          width: 4,
+                          height: isSelected ? 24 : 0,
+                          decoration: BoxDecoration(
+                            color: widget.accent,
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(4),
+                              bottomRight: Radius.circular(4),
                             ),
-                          ]
-                        : [],
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: widget.accent.withOpacity(0.5),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                        ),
+                      ),
+                      // Icon
+                      SvgPicture.asset(
+                        widget.iconPath,
+                        width: 24,
+                        height: 24,
+                        colorFilter:
+                            ColorFilter.mode(contentColor, BlendMode.srcIn),
+                      ),
+                    ],
                   ),
                 ),
 
-                // ── Icon ───────────────────────────────────────────────
-                SvgPicture.asset(
-                  widget.iconPath,
-                  width: 22,
-                  height: 22,
-                  colorFilter: ColorFilter.mode(contentColor, BlendMode.srcIn),
-                ),
-
-                // ── Label — Expanded fills remaining width so the
-                //    background pill always stretches edge-to-edge.
-                //    Only inserted into tree when expanded.
+                // ── Label ──
                 if (widget.expanded)
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 14),
+                      padding: const EdgeInsets.only(left: 6, right: 12),
                       child: Text(
                         widget.title,
                         style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
+                          fontSize: 15,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
                           color: contentColor,
-                          letterSpacing: 0.1,
+                          letterSpacing: 0.2,
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -362,6 +403,7 @@ class _NavItemState extends State<_NavItem> {
                   ),
               ],
             ),
+          ),
           ),
         ),
       ),
