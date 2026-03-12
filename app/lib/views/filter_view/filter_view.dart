@@ -138,8 +138,17 @@ class _FilterViewState extends State<FilterView> {
                       : 160;
                   final double imageHeight =
                       width / AppConstants.posterAspectRatio;
-                  final double itemHeight =
-                      imageHeight + (screenData.shouldRenderMobile ? 50 : 58);
+                  final double textHeight = screenData.shouldRenderMobile
+                      ? 40
+                      : 50;
+                  final double spacing = screenData.shouldRenderMobile
+                      ? AppTheme.spacingS
+                      : AppTheme.spacingL;
+                  final double itemHeight = imageHeight + textHeight;
+                  int crossAxisCount =
+                      ((constr.maxWidth + spacing) / (width + spacing)).floor();
+                  // Ensure at least 1 column
+                  crossAxisCount = crossAxisCount.clamp(1, 99);
                   return ValueListenableBuilder(
                     valueListenable: vm.mediaItems,
                     builder: (_, items, _) {
@@ -150,14 +159,11 @@ class _FilterViewState extends State<FilterView> {
                         padding: EdgeInsets.zero,
                         controller: _controller,
                         itemCount: items.length,
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: width,
-                          crossAxisSpacing: screenData.shouldRenderMobile
-                              ? AppTheme.spacingS
-                              : AppTheme.spacingL,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
                           mainAxisSpacing: screenData.shouldRenderMobile
                               ? AppTheme.spacingXS
-                              : AppTheme.spacingM,
+                              : AppTheme.spacingS,
                           childAspectRatio: width / itemHeight,
                         ),
                         itemBuilder: (_, index) {
@@ -180,6 +186,7 @@ class _FilterViewState extends State<FilterView> {
                               width: width,
                               imageHeight: imageHeight,
                               height: itemHeight,
+                              textHeight: textHeight,
                             ),
                           );
                         },

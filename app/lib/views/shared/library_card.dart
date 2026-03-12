@@ -71,6 +71,7 @@ class LibraryCard extends StatelessWidget {
   final double width;
   final bool updateColorOnHover;
   final bool showRatings;
+  final double? textHeight;
   const LibraryCard({
     super.key,
     required this.resource,
@@ -80,6 +81,7 @@ class LibraryCard extends StatelessWidget {
     this.width = 160,
     this.showRatings = true,
     required this.updateColorOnHover,
+    this.textHeight,
   });
 
   final ZxyMedia resource;
@@ -91,7 +93,10 @@ class LibraryCard extends StatelessWidget {
       hoverColor: Colors.transparent,
       onHover: (entered) {
         if (entered && updateColorOnHover) {
-          context.read<ImageBloc>().setGradColorFromImage(resource.posterPath, context);
+          context.read<ImageBloc>().setGradColorFromImage(
+            resource.posterPath,
+            context,
+          );
         }
       },
       onTap: () {
@@ -124,21 +129,48 @@ class LibraryCard extends StatelessWidget {
                 ],
               ),
             ),
-            Screen.of(context).shouldRenderMobile
-                ? AppTheme.boxHeightS
-                : AppTheme.boxHeightM,
-            Text(
-              resource.name ?? resource.title ?? "",
-              maxLines: 2,
-              textAlign: TextAlign.left,
-              overflow: TextOverflow.ellipsis,
-              style: Screen.of(context).shouldRenderMobile
-                  ? Theme.of(context).textTheme.labelSmall!.copyWith(
-                      color: AppTheme.textSecondary,
-                    )
-                  : Theme.of(context).textTheme.labelMedium!.copyWith(
-                      color: AppTheme.textSecondary,
+            if (textHeight == null)
+              Screen.of(context).shouldRenderMobile
+                  ? AppTheme.boxHeightS
+                  : AppTheme.boxHeightM,
+            Visibility(
+              visible: textHeight == null,
+              replacement: Builder(
+                builder: (_) {
+                  return SizedBox(
+                    height: textHeight!,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        resource.name ?? resource.title ?? "",
+                        maxLines: 2,
+                        textAlign: TextAlign.left,
+                        overflow: TextOverflow.ellipsis,
+                        style: Screen.of(context).shouldRenderMobile
+                            ? Theme.of(context).textTheme.labelSmall!.copyWith(
+                                color: AppTheme.textSecondary,
+                              )
+                            : Theme.of(context).textTheme.labelMedium!.copyWith(
+                                color: AppTheme.textSecondary,
+                              ),
+                      ),
                     ),
+                  );
+                }
+              ),
+              child: Text(
+                resource.name ?? resource.title ?? "",
+                maxLines: 2,
+                textAlign: TextAlign.left,
+                overflow: TextOverflow.ellipsis,
+                style: Screen.of(context).shouldRenderMobile
+                    ? Theme.of(context).textTheme.labelSmall!.copyWith(
+                        color: AppTheme.textSecondary,
+                      )
+                    : Theme.of(context).textTheme.labelMedium!.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+              ),
             ),
           ],
         ),
