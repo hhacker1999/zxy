@@ -47,6 +47,7 @@ class _HomeViewState extends State<HomeView> {
       builder: (_, homeLists, _) {
         final listLength = homeLists.length + 3;
         return ListView.separated(
+          controller: _scrollController,
           padding: EdgeInsets.zero,
           separatorBuilder: (_, _) {
             return screenData.shouldRenderMobile
@@ -56,17 +57,9 @@ class _HomeViewState extends State<HomeView> {
           itemCount: homeLists.length + 3,
           itemBuilder: (_, index) {
             if (index == 0) {
-              return ValueListenableBuilder(
-                valueListenable: homeViewModel.topBannerState,
-                builder: (_, state, _) {
-                  if (state is! ItemLoaded<List<ZxyMedia>>) {
-                    return SizedBox.shrink();
-                  }
-                  return TopBanner(
-                    media: state.data,
-                    parentScrollController: _scrollController,
-                  );
-                },
+              return TopBanner(
+                parentScrollController: _scrollController,
+                vm: homeViewModel,
               );
             }
             if (index == 1) {
