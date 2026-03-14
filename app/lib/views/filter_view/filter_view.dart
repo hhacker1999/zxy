@@ -134,7 +134,7 @@ class _FilterViewState extends State<FilterView> {
                 builder: (_, constr) {
                   final ScreenData screenData = Screen.of(context);
                   final double width = screenData.shouldRenderMobile
-                      ? 120
+                      ? 110
                       : 160;
                   final double imageHeight =
                       width / AppConstants.posterAspectRatio;

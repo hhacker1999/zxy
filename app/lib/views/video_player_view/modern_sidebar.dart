@@ -520,12 +520,117 @@ class _ModernSidebarState extends State<ModernSidebar>
             return ValueListenableBuilder<int>(
               valueListenable: widget.selectedStreamNotifier,
               builder: (_, selectedIdx, _) {
+                final formatted = widget.settingsBloc.showFormattedStreams.value;
                 return Column(
                   children: streams.asMap().entries.map((e) {
                     final index = e.key;
                     final stream = e.value;
-                    final sizeGB = (stream.size ?? 0) / (1024 * 1024 * 1024);
                     final isSelected = selectedIdx == index;
+
+                    if (formatted) {
+                      return GestureDetector(
+                        onTap: () {
+                          if (!isSelected) {
+                            widget.selectedStreamNotifier.value = index;
+                            widget.onVideoStreamChanged(stream);
+                          }
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppTheme.accentColor.withOpacity(0.15)
+                                : Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: isSelected
+                                ? Border.all(
+                                    color:
+                                        AppTheme.accentColor.withOpacity(0.5))
+                                : Border.all(color: Colors.transparent),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              if (stream.name.isNotEmpty)
+                                Flexible(
+                                  flex: 0,
+                                  child: Text(
+                                    stream.name,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.white70,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              if (stream.name.isNotEmpty &&
+                                  stream.description.isNotEmpty)
+                                const SizedBox(width: 8),
+                              if (stream.description.isNotEmpty)
+                                Expanded(
+                                  child: Text(
+                                    stream.description,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white70
+                                          : Colors.white38,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              if (isSelected) ...[
+                                const SizedBox(width: 8),
+                                MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Clipboard.setData(
+                                        ClipboardData(
+                                          text: kDebugMode
+                                              ? jsonEncode(stream.toJson())
+                                              : stream.url,
+                                        ),
+                                      );
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Stream link copied to clipboard",
+                                          ),
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    },
+                                    child: const Icon(
+                                      Icons.copy_rounded,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppTheme.accentColor,
+                                    size: 20,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    final sizeGB = (stream.size ?? 0) / (1024 * 1024 * 1024);
 
                     String subtitle = "${sizeGB.toStringAsFixed(2)} GB";
                     // Only show visual tags in subtitle, quality is in trailing chip

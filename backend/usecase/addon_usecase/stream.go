@@ -213,11 +213,6 @@ func (u *Usecase) getResponseStreamFromAioStream(
 		if v.URL == "" {
 			continue
 		}
-		mp := make(map[string]any)
-		err := json.Unmarshal([]byte(v.Name), &mp)
-		if err != nil {
-			fmt.Println("Error unmarshalling stream name", err)
-		}
 
 		var temp models.ZxyResolutionResponse
 		temp.VisualTags = v.StreamData.ParsedFile.VisualTags
@@ -236,6 +231,10 @@ func (u *Usecase) getResponseStreamFromAioStream(
 			u.zxyUrl,
 			encrypted,
 		)
+
+    temp.Name = v.Name
+    temp.Description = v.Description
+
 		temp.Resolution = v.StreamData.ParsedFile.Resolution
 		if temp.Resolution == "2160p" {
 			uhd = append(uhd, temp)
@@ -246,8 +245,6 @@ func (u *Usecase) getResponseStreamFromAioStream(
 		} else {
 			fmt.Println("resolution not found")
 		}
-		temp.Name = v.Name
-		temp.Description = v.Description
 	}
 
 	res.UHD = uhd

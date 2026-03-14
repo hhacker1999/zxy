@@ -127,9 +127,7 @@ class ImageBloc {
   }
 
   Future<void> setGradColorFromImage(String path, BuildContext context) async {
-    if (Platform.isAndroid ||
-        Platform.isIOS ||
-        !context.read<SettingsBloc>().isDynamic.value) {
+    if (!context.read<SettingsBloc>().isDynamic.value) {
       return;
     }
     if (_images.containsKey(path)) {
@@ -202,7 +200,9 @@ class ImageBloc {
         notifier.value = MemoryImage(res.bodyBytes);
       } else {
         if (kDebugMode) {
-          print("Error getting image: ${res.statusCode}, ${AppConstants.imageConfig.secureBaseUrl}/$size/$path}");
+          print(
+            "Error getting image: ${res.statusCode}, ${AppConstants.imageConfig.secureBaseUrl}/$size/$path}",
+          );
         }
       }
     } catch (e) {

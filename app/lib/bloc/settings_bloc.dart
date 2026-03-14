@@ -11,7 +11,7 @@ class SettingsBloc {
   final ValueNotifier<bool> isAmoled = ValueNotifier(true);
   final ValueNotifier<bool> isDynamic = ValueNotifier(true);
   final ValueNotifier<bool> showPosterRatings = ValueNotifier(true);
-  final ValueNotifier<bool> showFormattedStreams = ValueNotifier(false);
+  final ValueNotifier<bool> showFormattedStreams = ValueNotifier(true);
   final ValueNotifier<double> volume = ValueNotifier(100);
   late final ValueNotifier<SubtitleFontStyle> subFontStyle;
   final ValueNotifier<int> skipDuration = ValueNotifier(30);
@@ -135,8 +135,8 @@ class SettingsBloc {
       langNotifier.value = lang;
     }
 
-    if (formattedStream == "true") {
-      showFormattedStreams.value = true;
+    if (formattedStream == "false") {
+      showFormattedStreams.value = false;
     }
 
     if (resolution != null) {
