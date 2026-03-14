@@ -185,6 +185,8 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Get("/trakt_url", i.SessionHandler(i.HandleGetTraktUrl, true))
 	router.Get("/trakt", i.HandleTraktRedirect)
 	router.Delete("/trakt", i.SessionHandler(i.HandleTraktDelete, true))
+	router.Post("/user/source", i.SessionHandler(i.HandleAddSource, true))
+	router.Delete("/user/source", i.SessionHandler(i.HandleRemoveSource, true))
 	return router
 }
 

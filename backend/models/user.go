@@ -28,6 +28,9 @@ type UserProfile struct {
 	TraktValid     bool                 `json:"trakt_valid"`
 	IsAdmin        bool                 `json:"is_admin"`
 	LibraryItems   []ProfileLibraryItem `json:"library_items"`
+	Webstreamr     bool                 `json:"webstreamr"`
+	Torbox         string               `json:"torbox"`
+	RealDebrid     string               `json:"real_debrid"`
 }
 
 type ProfileTraktDetails struct {

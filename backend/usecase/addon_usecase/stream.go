@@ -20,33 +20,11 @@ func (u *Usecase) GetMovieStreamZxy(
 	var res models.ZxyStreamsRes
 	var aioRes models.AddonStreamResponse
 
-	profile, err := u.userRepo.GetUserProfile(context.Background(), userId, profileId)
+	reqBody, err := u.getReqBodyForStreams(userId, profileId)
 	if err != nil {
 		return res, err
 	}
-	debrid := "realdebrid"
-	if profile.DebridType == "tb" {
-		debrid = "torbox"
-	}
-	key := profile.DebridKey
-	if len(key) == 0 {
-		return res, apperrors.InvalidInput{Err: "Add debrid key first"}
-	}
-	reqBody, err := json.Marshal(map[string]any{
-		"services": []map[string]any{
-			{
-				"id":      debrid,
-				"enabled": true,
-				"credentials": map[string]any{
-					"apiKey": key,
-				},
-			},
-		},
-	})
-	if err != nil {
-		fmt.Println("Error marshalling request body", err)
-		return res, apperrors.SomethingWentWrongError{}
-	}
+
 	url :=
 		fmt.Sprintf(
 			"%s/zxy/streams/movie/%s?uid=%s&pwd=%s",
@@ -115,33 +93,9 @@ func (u *Usecase) GetSeriesStreamZxy(
 	var res models.ZxyStreamsRes
 	var aioRes models.AddonStreamResponse
 
-	profile, err := u.userRepo.GetUserProfile(context.Background(), userId, profileId)
+	reqBody, err := u.getReqBodyForStreams(userId, profileId)
 	if err != nil {
 		return res, err
-	}
-	debrid := "realdebrid"
-	if profile.DebridType == "tb" {
-		debrid = "torbox"
-	}
-	key := profile.DebridKey
-	if len(key) == 0 {
-		return res, apperrors.InvalidInput{Err: "Add debrid key first"}
-	}
-
-	reqBody, err := json.Marshal(map[string]any{
-		"services": []map[string]any{
-			{
-				"id":      debrid,
-				"enabled": true,
-				"credentials": map[string]any{
-					"apiKey": key,
-				},
-			},
-		},
-	})
-	if err != nil {
-		fmt.Println("Error marshalling request body", err)
-		return res, apperrors.SomethingWentWrongError{}
 	}
 
 	req, err := http.NewRequest(
@@ -200,6 +154,57 @@ func (u *Usecase) GetSeriesStreamZxy(
 	return u.getResponseStreamFromAioStream(aioRes)
 }
 
+func (u *Usecase) getReqBodyForStreams(userId int, profileId int) ([]byte, error) {
+	var res []byte
+	profile, err := u.userRepo.GetUserProfile(context.Background(), userId, profileId)
+	if err != nil {
+		return res, err
+	}
+	foundSource := false
+	services := []map[string]any{}
+	if len(profile.RealDebrid) != 0 {
+		foundSource = true
+		services = append(services, map[string]any{
+			"id":      "realdebrid",
+			"enabled": true,
+			"credentials": map[string]any{
+				"apiKey": profile.RealDebrid,
+			},
+		})
+	}
+	if len(profile.Torbox) != 0 {
+		foundSource = true
+		services = append(services, map[string]any{
+			"id":      "torbox",
+			"enabled": true,
+			"credentials": map[string]any{
+				"apiKey": profile.Torbox,
+			},
+		})
+	}
+
+	disabled := []string{}
+	if profile.Webstreamr {
+		foundSource = true
+	} else {
+		disabled = append(disabled, "webstreamr")
+	}
+	if !foundSource {
+		return nil, apperrors.InvalidInput{Err: "No sources found"}
+	}
+
+	res, err = json.Marshal(map[string]any{
+		"services": services,
+		"disabled": disabled,
+	})
+	if err != nil {
+		fmt.Println("Error marshalling request body", err)
+		return res, apperrors.SomethingWentWrongError{}
+	}
+
+	return res, nil
+}
+
 func (u *Usecase) getResponseStreamFromAioStream(
 	aioRes models.AddonStreamResponse,
 ) (models.ZxyStreamsRes, error) {
@@ -232,8 +237,8 @@ func (u *Usecase) getResponseStreamFromAioStream(
 			encrypted,
 		)
 
-    temp.Name = v.Name
-    temp.Description = v.Description
+		temp.Name = v.Name
+		temp.Description = v.Description
 
 		temp.Resolution = v.StreamData.ParsedFile.Resolution
 		if temp.Resolution == "2160p" {
