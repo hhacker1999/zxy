@@ -1,12 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
-import 'package:zxy_app/usecase/resource/movie_details.dart';
-import 'package:zxy_app/usecase/resource/tv_details.dart';
-import 'package:zxy_app/views/continue_watching_card.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/home_view/continue_watching.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
@@ -14,6 +10,7 @@ import 'package:zxy_app/views/home_view/top_banner.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/shared/library_list.dart';
+import 'package:zxy_app/views/shared/shimmer_loading.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class HomeView extends StatefulWidget {
@@ -79,11 +76,17 @@ class _HomeViewState extends State<HomeView> {
               valueListenable: item.state,
               builder: (_, value, _) {
                 if (value is ItemLoading) {
-                  return const Center(child: CupertinoActivityIndicator());
+                  return Padding(
+                    padding: EdgeInsets.only(left: AppTheme.spacingM),
+                    child: _LibraryListShimmer(
+                      isMobile: screenData.shouldRenderMobile,
+                    ),
+                  );
                 }
                 if (value is ItemError) {
                   return Center(child: Text(value.error));
                 }
+
                 final List<ZxyMedia> resourceList =
                     (value as ItemLoaded<List<ZxyMedia>>).data;
                 return Padding(
@@ -117,3 +120,88 @@ class _HomeViewState extends State<HomeView> {
   }
 }
 
+class _LibraryListShimmer extends StatelessWidget {
+  final bool isMobile;
+
+  const _LibraryListShimmer({required this.isMobile});
+
+  static const _posterAspectRatio = 2 / 3;
+
+  @override
+  Widget build(BuildContext context) {
+    final double cardWidth = isMobile ? 120 : 160;
+    final double imageHeight = cardWidth / _posterAspectRatio;
+    final double itemHeight = imageHeight + (isMobile ? 42 : 50);
+    final double separatorWidth = isMobile
+        ? AppTheme.spacingM
+        : AppTheme.spacingXL;
+
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final int itemCount = ((screenWidth + separatorWidth) / (cardWidth + separatorWidth)).ceil() + 1;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title placeholder
+        Container(
+          width: isMobile ? 100 : 140,
+          height: isMobile ? 18 : 22,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            color: Colors.white.withValues(alpha: 0.08),
+          ),
+        ),
+        SizedBox(height: isMobile ? AppTheme.spacingS : AppTheme.spacingL),
+        SizedBox(
+          height: itemHeight,
+          child: ShimmerLoading(
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: itemCount,
+              separatorBuilder: (_, _) => SizedBox(width: separatorWidth),
+              itemBuilder: (_, index) {
+                return SizedBox(
+                  width: cardWidth,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Poster placeholder
+                      Container(
+                        height: imageHeight,
+                        width: cardWidth,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusMedium,
+                          ),
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
+                      ),
+                      SizedBox(
+                        height: isMobile
+                            ? AppTheme.spacingS
+                            : AppTheme.spacingM,
+                      ),
+                      // Title placeholder
+                      Container(
+                        width: cardWidth * 0.7,
+                        height: isMobile ? 12 : 14,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusXSmall,
+                          ),
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
