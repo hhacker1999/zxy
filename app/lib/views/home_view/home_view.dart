@@ -41,82 +41,84 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      controller: _scrollController,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: AppTheme.spacingXL),
-        child: ValueListenableBuilder(
-          valueListenable: homeViewModel.homeViewLists,
-          builder: (_, list, _) {
-            return Column(
-              children: [
-                if (!Screen.of(context).shouldRenderMobile) AppTheme.boxHeightM,
-                ValueListenableBuilder(
-                  valueListenable: homeViewModel.topBannerState,
-                  builder: (_, state, _) {
-                    if (state is! ItemLoaded<List<ZxyMedia>>) {
-                      return SizedBox.shrink();
-                    }
-                    return TopBanner(
-                      media: state.data,
-                      parentScrollController: _scrollController,
-                    );
-                  },
-                ),
-                Padding(
+    final screenData = Screen.of(context);
+    return ValueListenableBuilder(
+      valueListenable: homeViewModel.homeViewLists,
+      builder: (_, homeLists, _) {
+        final listLength = homeLists.length + 3;
+        return ListView.separated(
+          padding: EdgeInsets.zero,
+          separatorBuilder: (_, _) {
+            return screenData.shouldRenderMobile
+                ? AppTheme.boxHeightM
+                : AppTheme.boxHeightL;
+          },
+          itemCount: homeLists.length + 3,
+          itemBuilder: (_, index) {
+            if (index == 0) {
+              return ValueListenableBuilder(
+                valueListenable: homeViewModel.topBannerState,
+                builder: (_, state, _) {
+                  if (state is! ItemLoaded<List<ZxyMedia>>) {
+                    return SizedBox.shrink();
+                  }
+                  return TopBanner(
+                    media: state.data,
+                    parentScrollController: _scrollController,
+                  );
+                },
+              );
+            }
+            if (index == 1) {
+              return Padding(
+                padding: EdgeInsets.only(left: AppTheme.spacingM),
+                child: ContinueWatchingHeader(homeViewModel: homeViewModel),
+              );
+            }
+            if (index == (listLength - 1)) {
+              return AppTheme.boxHeightXXXL;
+            }
+
+            final listIndex = index - 2;
+            final item = homeLists[listIndex];
+            return ValueListenableBuilder<ViewItemState>(
+              valueListenable: item.state,
+              builder: (_, value, _) {
+                if (value is ItemLoading) {
+                  return const Center(child: CupertinoActivityIndicator());
+                }
+                if (value is ItemError) {
+                  return Center(child: Text(value.error));
+                }
+                final List<ZxyMedia> resourceList =
+                    (value as ItemLoaded<List<ZxyMedia>>).data;
+                return Padding(
                   padding: EdgeInsets.only(left: AppTheme.spacingM),
-                  child: ContinueWatchingHeader(homeViewModel: homeViewModel),
-                ),
-                AppTheme.boxHeightS,
-                Padding(
-                  padding: EdgeInsets.only(left: AppTheme.spacingM),
-                  child: Column(
-                    spacing: Screen.of(context).shouldRenderMobile
-                        ? AppTheme.spacingM
-                        : AppTheme.spacingXL,
-                    children: list.map((item) {
-                      return ValueListenableBuilder<ViewItemState>(
-                        valueListenable: item.state,
-                        builder: (_, value, _) {
-                          if (value is ItemLoading) {
-                            return const Center(
-                              child: CupertinoActivityIndicator(),
-                            );
-                          }
-                          if (value is ItemError) {
-                            return Center(child: Text(value.error));
-                          }
-                          final List<ZxyMedia> resourceList =
-                              (value as ItemLoaded<List<ZxyMedia>>).data;
-                          return LibraryList(
-                            resource: resourceList,
-                            title: item.title,
-                            onTap: (res) {
-                              if (item.type == ZxyMediaType.movie) {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.movieView,
-                                  arguments: res.id,
-                                );
-                              } else {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.seriesView,
-                                  arguments: SeriesViewData(id: res.id),
-                                );
-                              }
-                            },
-                          );
-                        },
-                      );
-                    }).toList(),
+                  child: LibraryList(
+                    resource: resourceList,
+                    title: item.title,
+                    onTap: (res) {
+                      if (item.type == ZxyMediaType.movie) {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.movieView,
+                          arguments: res.id,
+                        );
+                      } else {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.seriesView,
+                          arguments: SeriesViewData(id: res.id),
+                        );
+                      }
+                    },
                   ),
-                ),
-              ],
+                );
+              },
             );
           },
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -201,15 +203,17 @@ class ContinueWatchingHeader extends StatelessWidget {
                           final splitted = data[index].progress.mediaId.split(
                             ":",
                           );
-                          final seasonIndex = (int.tryParse(splitted[1]) ?? 0) - 1;
-                          final episodeIndex = (int.tryParse(splitted[2]) ?? 0) - 1;
+                          final seasonIndex =
+                              (int.tryParse(splitted[1]) ?? 0) - 1;
+                          final episodeIndex =
+                              (int.tryParse(splitted[2]) ?? 0) - 1;
                           Navigator.pushNamed(
                             context,
                             AppRoutes.seriesView,
                             arguments: SeriesViewData(
                               id: (data[index].media as SeriesDetails).id,
                               seasonIndex: seasonIndex,
-                              episodeIndex: episodeIndex
+                              episodeIndex: episodeIndex,
                             ),
                           );
                         } else {
