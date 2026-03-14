@@ -100,6 +100,80 @@ func (i *RestInterface) HandleGetStream(w http.ResponseWriter, r *http.Request) 
 	response.Data = data
 }
 
+func (i *RestInterface) HandleGetStreamV2(w http.ResponseWriter, r *http.Request) {
+	response := &ApiResponse{}
+	defer response.SendResponse(w)
+
+	userId := r.Context().Value("user_id").(int)
+	profileId := r.Context().Value("profile_id").(int)
+
+	params := r.URL.Query()
+	streamType := params.Get("type")
+	if len(streamType) == 0 || (streamType != "movie" && streamType != "series") {
+		response.Error = "Invalid stream type"
+		response.StatusCode = http.StatusBadRequest
+		return
+	}
+	id := params.Get("id")
+	if len(id) == 0 {
+		response.Error = "Invalid id"
+		response.StatusCode = http.StatusBadRequest
+		return
+	}
+	var data models.ZxyStreamsRes
+	var err error
+
+	userIp := GetRequestIP(r)
+	fmt.Println("User IP found is ", userIp)
+
+	if streamType == "series" {
+		season := params.Get("season")
+		if len(season) == 0 {
+			response.Error = "Invalid season"
+			response.StatusCode = http.StatusBadRequest
+			return
+		}
+		seasonInt, errr := strconv.Atoi(season)
+		if errr != nil {
+			response.Error = "Invalid season"
+			response.StatusCode = http.StatusBadRequest
+			return
+		}
+
+		episode := params.Get("episode")
+		if len(episode) == 0 {
+			response.Error = "Invalid episode"
+			response.StatusCode = http.StatusBadRequest
+			return
+		}
+		episodeInt, errr := strconv.Atoi(episode)
+		if errr != nil {
+			response.Error = "Invalid episode"
+			response.StatusCode = http.StatusBadRequest
+			return
+		}
+		data, err = i.addonuc.GetSeriesStreamZxy(
+			id,
+			seasonInt,
+			episodeInt,
+			userId,
+			profileId,
+			userIp,
+		)
+	} else {
+		data, err = i.addonuc.GetMovieStreamZxy(id, userId, profileId, userIp)
+	}
+
+	if err != nil {
+		response.Error = err.Error()
+		response.StatusCode = http.StatusInternalServerError
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+	response.Data = data
+}
+
 func (i *RestInterface) HandleAddDebridKey(w http.ResponseWriter, r *http.Request) {
 	response := &ApiResponse{}
 	defer response.SendResponse(w)
@@ -338,12 +412,12 @@ func (i *RestInterface) handleFinalUrl(w http.ResponseWriter, r *http.Request) {
 
 	i.mtx.RLock()
 	defer i.mtx.RUnlock()
-	url, ok := i.urlMap[initial]
+	cachedUrl, ok := i.urlMap[initial]
 	if ok {
-		fmt.Println("Found url in cache", url.FinalUrl)
+		fmt.Println("Found url in cache", cachedUrl.FinalUrl)
 		res.StatusCode = http.StatusOK
 		res.Data = Response{
-			Url: url.FinalUrl,
+			Url: cachedUrl.FinalUrl,
 		}
 		return
 	}
@@ -356,6 +430,18 @@ func (i *RestInterface) handleFinalUrl(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("Initial decoded url", plainText)
+	uri, err := url.Parse(plainText)
+	if err == nil {
+		splittedHost := strings.Split(uri.Host, ":")
+		// NOTE: Initial url is final url
+		if len(splittedHost) == 1 {
+			res.StatusCode = http.StatusOK
+			res.Data = Response{
+				Url: plainText,
+			}
+			return
+		}
+	}
 
 	req, err := http.NewRequest("GET", plainText, nil)
 	if err != nil {

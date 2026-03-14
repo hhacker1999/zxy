@@ -72,6 +72,8 @@ class ZxyStreamResponse {
 }
 
 class ZxyResolutionItem {
+  final String name;
+  final String description;
   final List<String> visualTags;
   final List<String> audioTags;
   final String? fileName;
@@ -82,6 +84,8 @@ class ZxyResolutionItem {
   final String resolution;
 
   ZxyResolutionItem({
+    required this.name,
+    required this.description,
     required this.visualTags,
     required this.audioTags,
     this.fileName,
@@ -107,6 +111,8 @@ class ZxyResolutionItem {
 
   factory ZxyResolutionItem.fromJson(Map<String, dynamic> json) {
     return ZxyResolutionItem(
+      name: json["name"] ?? "",
+      description: json["description"] ?? "",
       visualTags: json["visual_tags"] == null
           ? []
           : List<String>.from(json["visual_tags"]!.map((x) => x)),

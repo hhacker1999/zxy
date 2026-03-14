@@ -22,15 +22,18 @@ import (
 const userPath = "api/v1/user"
 
 type Usecase struct {
-	addonUrl  string
-	addonRepo *addonsrepository.Repository
-	template  string
-	instances []string
-	tmdbAt    string
-	db        *sql.DB
-	userRepo  *userrepository.Repository
-	zxyUrl    string
-	encrKey   string
+	addonUrl       string
+	addonRepo      *addonsrepository.Repository
+	template       string
+	instances      []string
+	tmdbAt         string
+	db             *sql.DB
+	userRepo       *userrepository.Repository
+	zxyUrl         string
+	encrKey        string
+	zxyAioInstance string
+	zxyAioUid      string
+	zxyAioPwd      string
 }
 
 func New(
@@ -42,6 +45,9 @@ func New(
 	userRepo *userrepository.Repository,
 	zxyUrl string,
 	encrKey string,
+	zxyAioInstance string,
+	zxyAioUid string,
+	zxyAioPwd string,
 ) (*Usecase, error) {
 
 	byte, err := os.ReadFile(templatePath)
@@ -57,14 +63,17 @@ func New(
 	}
 
 	return &Usecase{
-		addonRepo: addonRepo,
-		template:  string(byte),
-		instances: instancesSplitted,
-		tmdbAt:    tmdbAt,
-		db:        db,
-		userRepo:  userRepo,
-		zxyUrl:    zxyUrl,
-		encrKey:   encrKey,
+		addonRepo:      addonRepo,
+		template:       string(byte),
+		instances:      instancesSplitted,
+		tmdbAt:         tmdbAt,
+		db:             db,
+		userRepo:       userRepo,
+		zxyUrl:         zxyUrl,
+		encrKey:        encrKey,
+		zxyAioInstance: zxyAioInstance,
+		zxyAioUid:      zxyAioUid,
+		zxyAioPwd:      zxyAioPwd,
 	}, nil
 }
 
@@ -399,10 +408,10 @@ func (u *Usecase) GetSeriesStreamProfile(
 	}
 
 	req, err := http.NewRequest(http.MethodGet, strings.Replace(
-			addonUrl,
-			"manifest.json",
-			fmt.Sprintf("stream/series/%s:%d:%d.json", id, season, episode), 1,
-		), nil)
+		addonUrl,
+		"manifest.json",
+		fmt.Sprintf("stream/series/%s:%d:%d.json", id, season, episode), 1,
+	), nil)
 	if err != nil {
 		fmt.Println("Error creating series stream request ", err)
 		return res, apperrors.SomethingWentWrongError{}
@@ -645,7 +654,7 @@ func (u *Usecase) getStreamUrlCommon(
 		}
 		size, ok := dataMap["size"].(float64)
 		if ok {
-			temp.Size = size
+			temp.Size = int(size)
 		}
 		encrypted, err := u.encryptURL(v.URL)
 		if err != nil {

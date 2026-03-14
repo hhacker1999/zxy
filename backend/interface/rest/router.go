@@ -82,7 +82,7 @@ func New(
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-      fmt.Println("We are inside redirect")
+			fmt.Println("We are inside redirect")
 			splittedHost := strings.Split(req.URL.Host, ":")
 			fmt.Println(req.URL.String())
 			if len(splittedHost) == 1 {
@@ -159,6 +159,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Delete("/user/profile", i.SessionHandler(i.handleDeleteUserProfile, true))
 	router.Delete("/user", i.SessionHandler(i.handleDeleteUser, true))
 	router.Get("/streams", i.SessionHandler(i.HandleGetStream, true))
+	router.Get("/v2/streams", i.SessionHandler(i.HandleGetStreamV2, true))
 	router.Get("/discover/movies", i.SessionHandler(i.HandleDiscoverMovies, true))
 	router.Get("/discover/shows", i.SessionHandler(i.HandleDiscoverShows, true))
 	router.Get("/trending/movies", i.SessionHandler(i.HandleGetTrendingMovies, true))

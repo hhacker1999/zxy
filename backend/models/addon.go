@@ -13,6 +13,7 @@ type AddonStream struct {
 	Description   string        `json:"description"`
 	URL           string        `json:"url"`
 	BehaviorHints BehaviorHints `json:"behaviorHints"`
+	StreamData    StreamData    `json:"streamData"`
 }
 
 type StreamResult struct {
@@ -36,10 +37,12 @@ type ZxyResolutionResponse struct {
 	AudioTags     []string `json:"audio_tags"`
 	FileName      string   `json:"file_name"`
 	LanguageCodes []string `json:"language_codes"`
-	Size          float64  `json:"size"`
+	Size          int      `json:"size"`
 	Url           string   `json:"url"`
 	Quality       string   `json:"quality"`
 	Resolution    string   `json:"resolution"`
+	Name          string   `json:"name"`
+	Description   string   `json:"description"`
 }
 
 type BehaviorHints struct {
@@ -66,4 +69,44 @@ type AIOResponse struct {
 type Data struct {
 	UUID              string `json:"uuid"`
 	EncryptedPassword string `json:"encryptedPassword"`
+}
+
+type StreamData struct {
+	Type       string     `json:"type"`
+	Proxied    bool       `json:"proxied,omitempty"`
+	Indexer    string     `json:"indexer,omitempty"`
+	Duration   int64      `json:"duration,omitempty"`
+	Library    bool       `json:"library,omitempty"`
+	Size       int64      `json:"size,omitempty"`
+	Addon      string     `json:"addon"`
+	Filename   string     `json:"filename,omitempty"`
+	Service    Service    `json:"service"`
+	ParsedFile ParsedFile `json:"parsedFile"`
+	ID         string     `json:"id"`
+}
+
+type ErrorClass struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
+type ParsedFile struct {
+	Title         string   `json:"title"`
+	Year          string   `json:"year"`
+	Resolution    string   `json:"resolution"`
+	Quality       string   `json:"quality,omitempty"`
+	ReleaseGroup  string   `json:"releaseGroup,omitempty"`
+	Container     string   `json:"container"`
+	Extension     string   `json:"extension,omitempty"`
+	VisualTags    []string `json:"visualTags"`
+	AudioTags     []string `json:"audioTags"`
+	AudioChannels []string `json:"audioChannels"`
+	Languages     []string `json:"languages"`
+	SeasonPack    bool     `json:"seasonPack"`
+	Encode        string   `json:"encode,omitempty"`
+}
+
+type Service struct {
+	ID     string `json:"id"`
+	Cached bool   `json:"cached"`
 }

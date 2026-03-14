@@ -132,17 +132,13 @@ class _ModernSidebarState extends State<ModernSidebar>
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
-                  children: widget.handler.isMovie()
-                      ? [
-                          _buildMovieInfoTab(),
-                          _buildMediaTab(),
-                          _buildSettingsTab(),
-                        ]
-                      : [
-                          _buildEpisodesTab(),
-                          _buildMediaTab(),
-                          _buildSettingsTab(),
-                        ],
+                  children: [
+                    widget.handler.isMovie()
+                        ? _buildMovieInfoTab()
+                        : _buildEpisodesTab(),
+                    _buildMediaTab(),
+                    _buildSettingsTab(),
+                  ],
                 ),
               ),
             ],
@@ -491,7 +487,7 @@ class _ModernSidebarState extends State<ModernSidebar>
         const SizedBox(height: 10),
         ValueListenableBuilder(
           valueListenable: widget.streamNotifier,
-          builder: (_, state, __) {
+          builder: (_, state, _) {
             if (state is ItemLoading) {
               return const Center(
                 child: Padding(
