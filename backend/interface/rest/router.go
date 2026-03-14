@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 	zxyWs "zxy/interface/websocket"
@@ -21,6 +22,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 )
+
+type RedirectError struct {
+	URL        string
+	StatusCode int
+	Message    string
+}
+
+func (e *RedirectError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Message, e.URL)
+}
 
 type AnonymizerTransport struct {
 	RoundTripper http.RoundTripper
@@ -70,6 +81,20 @@ func New(
 ) *RestInterface {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			fmt.Println("We are inside redirect")
+			splittedHost := strings.Split(req.URL.Host, ":")
+			fmt.Println(req.URL.String())
+			if len(splittedHost) == 1 {
+				fmt.Println("Found non internal host")
+				return &RedirectError{
+					URL:        req.URL.String(),
+					StatusCode: 200, // You can define your own logic here
+					Message:    "Found final url",
+				}
+			}
+			return nil
+		},
 	}
 	return &RestInterface{
 		addonuc:       addonuc,
@@ -134,6 +159,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Delete("/user/profile", i.SessionHandler(i.handleDeleteUserProfile, true))
 	router.Delete("/user", i.SessionHandler(i.handleDeleteUser, true))
 	router.Get("/streams", i.SessionHandler(i.HandleGetStream, true))
+	router.Get("/v2/streams", i.SessionHandler(i.HandleGetStreamV2, true))
 	router.Get("/discover/movies", i.SessionHandler(i.HandleDiscoverMovies, true))
 	router.Get("/discover/shows", i.SessionHandler(i.HandleDiscoverShows, true))
 	router.Get("/trending/movies", i.SessionHandler(i.HandleGetTrendingMovies, true))
@@ -159,6 +185,8 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Get("/trakt_url", i.SessionHandler(i.HandleGetTraktUrl, true))
 	router.Get("/trakt", i.HandleTraktRedirect)
 	router.Delete("/trakt", i.SessionHandler(i.HandleTraktDelete, true))
+	router.Post("/user/source", i.SessionHandler(i.HandleAddSource, true))
+	router.Delete("/user/source", i.SessionHandler(i.HandleRemoveSource, true))
 	return router
 }
 

@@ -25,6 +25,9 @@ type Config struct {
 	RedisWatchSessionDb string
 	TraktRedirectUri    string
 	Port                string
+	AioConfigUid        string
+	AioConfigPwd        string
+	ZxyAioInstance      string
 }
 
 func GetConfig(filePath string) (Config, error) {
@@ -53,6 +56,9 @@ func GetConfig(filePath string) (Config, error) {
 	config.RedisPassword = configMap["REDIS_PASSWORD"]
 	config.TraktRedirectUri = configMap["TRAKT_REDIRECT_URI"]
 	config.Port = configMap["PORT"]
+	config.AioConfigPwd = configMap["AIOCONFIG_PWD"]
+	config.AioConfigUid = configMap["AIOCONFIG_UID"]
+	config.ZxyAioInstance = configMap["ZXY_AIO_INSTANCE"]
 
 	return config, nil
 }

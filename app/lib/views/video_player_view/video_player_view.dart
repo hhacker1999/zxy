@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -12,11 +13,9 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:zxy_app/app_constants.dart';
-
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/service/http_proxy.dart';
-
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
@@ -24,8 +23,8 @@ import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/glass_container.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/video_handler.dart';
-import 'package:zxy_app/views/view_item_state.dart';
 import 'package:zxy_app/views/video_player_view/modern_sidebar.dart';
+import 'package:zxy_app/views/view_item_state.dart';
 
 import 'mobile_player_hud.dart';
 
@@ -201,25 +200,19 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
 
       // HDR to SDR tonemapping settings
       player.setProperty('icc-profile-auto', 'yes'),
-      if (Platform.isIOS || Platform.isAndroid) ...[
-        player.setProperty('tone-mapping', 'spline'),
-      ],
-      if (Platform.isWindows || Platform.isMacOS) ...[
-        player.setProperty('tone-mapping', 'mobius'),
-        player.setProperty('tone-mapping-param', '0.4'),
-      ],
-
+      player.setProperty('tone-mapping', 'bt.2446a'),
       player.setProperty('tone-mapping-mode', 'auto'),
       player.setProperty('hdr-compute-peak', 'yes'),
-      player.setProperty('target-peak', 'auto'),
+      player.setProperty('target-peak', '150'),
       player.setProperty('gamut-mapping-mode', 'perceptual'),
+
       if (Platform.isIOS || Platform.isAndroid) ...[
         player.setProperty('scale', 'bilinear'),
         player.setProperty('cscale', 'bilinear'),
       ],
       if (Platform.isWindows || Platform.isMacOS) ...[
-        player.setProperty('scale', 'ewa_lanczossharp'),
-        player.setProperty('cscale', 'ewa_lanczossharp'),
+        player.setProperty('scale', 'spline36'),
+        player.setProperty('cscale', 'spline36'),
       ],
       if (kDebugMode) player.setProperty('log-level', 'debug'),
     ]);

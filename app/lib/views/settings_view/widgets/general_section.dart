@@ -26,7 +26,7 @@ class GeneralSection extends StatelessWidget {
       ),
       child: Column(
         children: [
-          if (!isMobile) ...[
+          // if (!isMobile) ...[
             ModernSettingTile(
               title: 'Dynamic Theme',
               subtitle: 'Extract color info from context image',
@@ -37,7 +37,7 @@ class GeneralSection extends StatelessWidget {
               isLast: false,
             ),
             Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
-          ],
+          // ],
           ModernSettingTile(
             title: 'Show Poster Ratings',
             subtitle: 'Display ratings on movie and TV show posters',
@@ -74,6 +74,14 @@ class GeneralSection extends StatelessWidget {
               }
             },
             itemToString: (String val) => val,
+          ),
+          Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+          ModernSettingTile(
+            title: 'Show Formatted Streams',
+            subtitle: 'Display streams in a formatted layout',
+            icon: Icons.view_list_rounded,
+            valueNotifier: settingsBloc.showFormattedStreams,
+            onChanged: (value) => settingsBloc.showFormattedStreams = value,
             isLast: true,
           ),
         ],

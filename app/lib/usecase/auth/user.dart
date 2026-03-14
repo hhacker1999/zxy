@@ -46,6 +46,9 @@ class Profile {
   final DateTime createdAt;
   final DateTime? traktExpiry;
   final bool isTraktValid;
+  final String realDebrid;
+  final String torbox;
+  final bool webstreamr;
 
   Profile({
     required this.id,
@@ -57,11 +60,17 @@ class Profile {
     required this.createdAt,
     this.traktExpiry,
     required this.isTraktValid,
+    required this.realDebrid,
+    required this.torbox,
+    required this.webstreamr,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
     id: json["id"],
     name: json["name"],
+    torbox: json["torbox"],
+    realDebrid: json["real_debrid"],
+    webstreamr: json["webstreamr"],
     isPinProtected: json["is_pin_protected"],
     traktExpiry: json["trakt_expiry"] != null
         ? DateTime.tryParse(json["trakt_expiry"])

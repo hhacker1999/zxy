@@ -5,7 +5,7 @@ import 'package:zxy_app/service/http_service.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 
 class StreamUsecase {
-  static const String _streamPath = "/streams";
+  static const String _streamPath = "/v2/streams";
   final HttpService _httpService;
 
   const StreamUsecase(this._httpService);

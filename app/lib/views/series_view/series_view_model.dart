@@ -148,8 +148,10 @@ class SeriesViewModel implements VideoHandler {
     }
 
     final userHasAddedDebrid =
-        userBloc.profileNotifier.value != null &&
-        userBloc.profileNotifier.value!.debridType.isNotEmpty;
+        !(userBloc.profileNotifier.value!.realDebrid.isEmpty &&
+            userBloc.profileNotifier.value!.torbox.isEmpty &&
+            !userBloc.profileNotifier.value!.webstreamr);
+
     if (userHasAddedDebrid) {
       try {
         _episodeStreamsState.value = ItemLoading();

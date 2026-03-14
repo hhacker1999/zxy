@@ -269,7 +269,7 @@ func (r *Repository) GetUserProfile(
 	var res models.UserProfile
 	row := r.db.QueryRow(
 		`select id, user_id, debrid_type, debrid_key, name, is_admin,pin_hash,library_items,
-    trakt_expiry, is_trakt_valid
+    trakt_expiry, is_trakt_valid, ws, tb, rd
     from user_profiles where user_id = $1 and id = $2`,
 		userId,
 		profileId,
@@ -280,6 +280,8 @@ func (r *Repository) GetUserProfile(
 	var items *json.RawMessage
 	var traktExpiry sql.NullTime
 	var isTraktValid sql.NullBool
+	var tb sql.NullString
+	var rd sql.NullString
 
 	err := row.Scan(
 		&res.Id,
@@ -292,6 +294,9 @@ func (r *Repository) GetUserProfile(
 		&items,
 		&traktExpiry,
 		&isTraktValid,
+		&res.Webstreamr,
+		&tb,
+		&rd,
 	)
 	if err != nil {
 		fmt.Println("Error getting user profile", err)
@@ -311,6 +316,14 @@ func (r *Repository) GetUserProfile(
 	if isTraktValid.Valid {
 		res.TraktValid = isTraktValid.Bool
 	}
+
+  if rd.Valid {
+    res.RealDebrid = rd.String
+  }
+
+  if tb.Valid  {
+    res.Torbox = tb.String
+  }
 
 	if items != nil {
 		var lItems []models.ProfileLibraryItem
@@ -468,6 +481,43 @@ func (r *Repository) StoreLibraryItems(
 	}
 	if err != nil {
 		fmt.Println("Error storing library items", err)
+	}
+
+	return err
+}
+
+func (r *Repository) UpdateSource(
+	ctx context.Context,
+	userId int,
+	profileId int,
+	tp string,
+	value string,
+) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			fmt.Sprintf(
+				`update user_profiles set %s = %s  where user_id = $1 and id = $2`,
+				tp,
+				value,
+			),
+			userId,
+			profileId,
+		)
+	} else {
+		_, err = r.db.Exec(
+			fmt.Sprintf(
+				`update user_profiles set %s = %s  where user_id = $1 and id = $2`,
+				tp,
+				value,
+			),
+			userId,
+			profileId,
+		)
+	}
+	if err != nil {
+		fmt.Println("Error updating source", err)
 	}
 
 	return err

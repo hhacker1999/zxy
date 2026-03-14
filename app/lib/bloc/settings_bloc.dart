@@ -11,6 +11,7 @@ class SettingsBloc {
   final ValueNotifier<bool> isAmoled = ValueNotifier(true);
   final ValueNotifier<bool> isDynamic = ValueNotifier(true);
   final ValueNotifier<bool> showPosterRatings = ValueNotifier(true);
+  final ValueNotifier<bool> showFormattedStreams = ValueNotifier(true);
   final ValueNotifier<double> volume = ValueNotifier(100);
   late final ValueNotifier<SubtitleFontStyle> subFontStyle;
   final ValueNotifier<int> skipDuration = ValueNotifier(30);
@@ -66,6 +67,11 @@ class SettingsBloc {
     _storage.write(key: "padding", value: style.fontPadding.toString());
   }
 
+  set showFormattedStreams(bool show) {
+    showFormattedStreams.value = show;
+    _storage.write(key: "formatted_streams", value: show.toString());
+  }
+
   final FlutterSecureStorage _storage;
   SettingsBloc({required FlutterSecureStorage storage}) : _storage = storage;
 
@@ -96,6 +102,7 @@ class SettingsBloc {
     final sd = await _storage.read(key: "skipDuration");
     final lang = await _storage.read(key: "language");
     final resolution = await _storage.read(key: "resolution");
+    final formattedStream = await _storage.read(key: "formatted_streams");
     if (amoled != null) {
       isAmoled.value = amoled == "true";
     }
@@ -126,6 +133,10 @@ class SettingsBloc {
 
     if (lang != null) {
       langNotifier.value = lang;
+    }
+
+    if (formattedStream == "false") {
+      showFormattedStreams.value = false;
     }
 
     if (resolution != null) {

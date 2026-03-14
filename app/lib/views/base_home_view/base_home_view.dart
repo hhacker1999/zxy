@@ -119,17 +119,15 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
         return Column(
           children: [
             Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Stack(
                 children: [
-                  if (!screenData.shouldRenderMobile)
-                    ModernNavigationDrawer(vm: vm, leftCards: leftCards),
-                  Expanded(
+                  Positioned.fill(
+                    left: screenData.shouldRenderMobile ? 0 : 108.0,
                     child: ValueListenableBuilder(
                       valueListenable: vm.selectedIndex,
                       builder: (_, index, _) {
                         return ZxyFadeIndexedStack(
-                          key: ValueKey("Switcher"),
+                          key: const ValueKey("Switcher"),
                           duration: const Duration(milliseconds: 500),
                           index: index,
                           children: baseChildren,
@@ -137,11 +135,19 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
                       },
                     ),
                   ),
+                  if (!screenData.shouldRenderMobile)
+                    Positioned(
+                      top: 0,
+                      bottom: 0,
+                      left: 0,
+                      child: ModernNavigationDrawer(
+                        vm: vm,
+                        leftCards: leftCards,
+                      ),
+                    ),
                 ],
               ),
             ),
-            // // Reserve space so content is not hidden under the nav bar
-            // if (screenData.shouldRenderMobile) const SizedBox(height: 88),
           ],
         );
       },

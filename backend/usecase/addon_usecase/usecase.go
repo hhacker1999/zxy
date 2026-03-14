@@ -22,15 +22,18 @@ import (
 const userPath = "api/v1/user"
 
 type Usecase struct {
-	addonUrl  string
-	addonRepo *addonsrepository.Repository
-	template  string
-	instances []string
-	tmdbAt    string
-	db        *sql.DB
-	userRepo  *userrepository.Repository
-	zxyUrl    string
-	encrKey   string
+	addonUrl       string
+	addonRepo      *addonsrepository.Repository
+	template       string
+	instances      []string
+	tmdbAt         string
+	db             *sql.DB
+	userRepo       *userrepository.Repository
+	zxyUrl         string
+	encrKey        string
+	zxyAioInstance string
+	zxyAioUid      string
+	zxyAioPwd      string
 }
 
 func New(
@@ -42,6 +45,9 @@ func New(
 	userRepo *userrepository.Repository,
 	zxyUrl string,
 	encrKey string,
+	zxyAioInstance string,
+	zxyAioUid string,
+	zxyAioPwd string,
 ) (*Usecase, error) {
 
 	byte, err := os.ReadFile(templatePath)
@@ -57,14 +63,17 @@ func New(
 	}
 
 	return &Usecase{
-		addonRepo: addonRepo,
-		template:  string(byte),
-		instances: instancesSplitted,
-		tmdbAt:    tmdbAt,
-		db:        db,
-		userRepo:  userRepo,
-		zxyUrl:    zxyUrl,
-		encrKey:   encrKey,
+		addonRepo:      addonRepo,
+		template:       string(byte),
+		instances:      instancesSplitted,
+		tmdbAt:         tmdbAt,
+		db:             db,
+		userRepo:       userRepo,
+		zxyUrl:         zxyUrl,
+		encrKey:        encrKey,
+		zxyAioInstance: zxyAioInstance,
+		zxyAioUid:      zxyAioUid,
+		zxyAioPwd:      zxyAioPwd,
 	}, nil
 }
 
@@ -323,7 +332,11 @@ func (u *Usecase) GetSeriesStream(
 	return finalResult, nil
 }
 
-func (u *Usecase) GetMovieStreamProfile(id string, profileId int) (models.ZxyStreamsRes, error) {
+func (u *Usecase) GetMovieStreamProfile(
+	id string,
+	profileId int,
+	userIp string,
+) (models.ZxyStreamsRes, error) {
 	var res models.ZxyStreamsRes
 	var aioRes models.AddonStreamResponse
 
@@ -332,12 +345,22 @@ func (u *Usecase) GetMovieStreamProfile(id string, profileId int) (models.ZxyStr
 		return res, err
 	}
 
-	addonResponse, err := http.DefaultClient.Get(
-		strings.Replace(
-			addonUrl,
-			"manifest.json",
-			fmt.Sprintf("stream/movie/%s.json", id), 1,
-		),
+	req, err := http.NewRequest(http.MethodGet, strings.Replace(
+		addonUrl,
+		"manifest.json",
+		fmt.Sprintf("stream/movie/%s.json", id), 1,
+	), nil)
+	if err != nil {
+		fmt.Println("Error creating movie stream request ", err)
+		return res, apperrors.SomethingWentWrongError{}
+	}
+
+	req.Header.Set("X-Forwarded-For", userIp)
+	req.Header.Set("X-Real-IP", userIp)
+	req.Header.Set("X-Client-Ip", userIp)
+
+	addonResponse, err := http.DefaultClient.Do(
+		req,
 	)
 	if err != nil {
 		fmt.Println("Error sending movie stream request ", err)
@@ -374,6 +397,7 @@ func (u *Usecase) GetSeriesStreamProfile(
 	season int,
 	episode int,
 	profileId int,
+	userIp string,
 ) (models.ZxyStreamsRes, error) {
 	var res models.ZxyStreamsRes
 	var aioRes models.AddonStreamResponse
@@ -382,12 +406,23 @@ func (u *Usecase) GetSeriesStreamProfile(
 	if err != nil {
 		return res, err
 	}
-	addonResponse, err := http.DefaultClient.Get(
-		strings.Replace(
-			addonUrl,
-			"manifest.json",
-			fmt.Sprintf("stream/series/%s:%d:%d.json", id, season, episode), 1,
-		),
+
+	req, err := http.NewRequest(http.MethodGet, strings.Replace(
+		addonUrl,
+		"manifest.json",
+		fmt.Sprintf("stream/series/%s:%d:%d.json", id, season, episode), 1,
+	), nil)
+	if err != nil {
+		fmt.Println("Error creating series stream request ", err)
+		return res, apperrors.SomethingWentWrongError{}
+	}
+
+	req.Header.Set("X-Forwarded-For", userIp)
+	req.Header.Set("X-Real-IP", userIp)
+	req.Header.Set("X-Client-Ip", userIp)
+
+	addonResponse, err := http.DefaultClient.Do(
+		req,
 	)
 	if err != nil {
 		fmt.Println("Error sending series stream request ", err)
@@ -531,7 +566,7 @@ func (u *Usecase) StoreAddonFromApiKeyContext(
 func (u *Usecase) encryptURL(url string) (string, error) {
 	key, err := hex.DecodeString(u.encrKey)
 	if err != nil {
-    return "",err
+		return "", err
 	}
 
 	block, err := aes.NewCipher(key)
@@ -619,7 +654,7 @@ func (u *Usecase) getStreamUrlCommon(
 		}
 		size, ok := dataMap["size"].(float64)
 		if ok {
-			temp.Size = size
+			temp.Size = int(size)
 		}
 		encrypted, err := u.encryptURL(v.URL)
 		if err != nil {

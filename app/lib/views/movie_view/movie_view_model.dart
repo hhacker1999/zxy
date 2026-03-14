@@ -54,8 +54,9 @@ class MovieViewModel implements VideoHandler {
       _progressNotifier.value =
           progress ?? WatchProgress.empty(details.id.toString());
       final userHasAddedDebrid =
-          userBloc.profileNotifier.value != null &&
-          userBloc.profileNotifier.value!.debridType.isNotEmpty;
+          !(userBloc.profileNotifier.value!.realDebrid.isEmpty &&
+              userBloc.profileNotifier.value!.torbox.isEmpty &&
+              !userBloc.profileNotifier.value!.webstreamr);
       if (userHasAddedDebrid) {
         _getMovieStreams();
       }

@@ -139,6 +139,9 @@ func main() {
 		userRepo,
 		cfg.ZxyUrl,
 		cfg.EncrKey,
+    cfg.ZxyAioInstance,
+    cfg.AioConfigUid,
+    cfg.AioConfigPwd,
 	)
 	if err != nil {
 		return

@@ -59,12 +59,23 @@ class StreamRow extends StatelessWidget {
                   }
                 }
                 if (context
-                    .read<UserBloc>()
-                    .profileNotifier
-                    .value!
-                    .debridType
-                    .isEmpty) {
-                  showToast(context, true, "Setup debrid service first", "");
+                        .read<UserBloc>()
+                        .profileNotifier
+                        .value!
+                        .realDebrid
+                        .isEmpty &&
+                    context
+                        .read<UserBloc>()
+                        .profileNotifier
+                        .value!
+                        .torbox
+                        .isEmpty &&
+                    !context
+                        .read<UserBloc>()
+                        .profileNotifier
+                        .value!
+                        .webstreamr) {
+                  showToast(context, true, "Add sources in settings", "");
                   return;
                 }
                 Navigator.pushNamed(
