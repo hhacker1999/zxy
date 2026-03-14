@@ -19,6 +19,7 @@ import 'package:zxy_app/views/shared/drop_down.dart';
 import 'package:zxy_app/views/shared/library_list.dart';
 import 'package:zxy_app/views/shared/media_info_banner.dart';
 import 'package:zxy_app/views/shared/media_info_poster.dart';
+import 'package:zxy_app/views/shared/media_view_shimmer.dart';
 import 'package:zxy_app/views/shared/overlay_play_button.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
 import 'package:zxy_app/views/shared/toast.dart';
@@ -106,7 +107,10 @@ class _SeriesViewState extends State<SeriesView> with RouteAware {
               );
             }
             if (state is! ItemLoaded) {
-              return Center(child: CupertinoActivityIndicator());
+              return MediaViewShimmer(
+                isMobile: screenInfo.shouldRenderMobile,
+                headerHeight: height,
+              );
             }
             final details = (state as ItemLoaded<SeriesDetails>).data;
             List<Cast> nonEmptyCast = List.empty();

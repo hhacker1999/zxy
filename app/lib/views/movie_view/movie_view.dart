@@ -13,6 +13,7 @@ import 'package:zxy_app/views/shared/cast_crew.dart';
 import 'package:zxy_app/views/shared/library_list.dart';
 import 'package:zxy_app/views/shared/media_info_banner.dart';
 import 'package:zxy_app/views/shared/media_info_poster.dart';
+import 'package:zxy_app/views/shared/media_view_shimmer.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
@@ -72,7 +73,10 @@ class _MovieViewState extends State<MovieView> {
               );
             }
             if (state is! ItemLoaded) {
-              return Center(child: CupertinoActivityIndicator());
+              return MediaViewShimmer(
+                isMobile: screenInfo.shouldRenderMobile,
+                headerHeight: height,
+              );
             }
             final details = (state as ItemLoaded<MovieDetails>).data;
             List<Cast> castList = List.empty();
@@ -93,18 +97,18 @@ class _MovieViewState extends State<MovieView> {
                     visible: !Screen.of(context).shouldRenderMobile,
                     replacement: MediaInfoPoster(
                       streamRow: StreamRow(
-                          onTap: () async {
-                            await Navigator.pushNamed(
-                              context,
-                              AppRoutes.videoPlayerView,
-                              arguments: vm,
-                            );
-                            vm.onPause();
-                          },
-                          color: AppTheme.accentColor,
-                          handler: vm,
-                          onStreamSelect: vm.onStreamSelect,
-                        ),
+                        onTap: () async {
+                          await Navigator.pushNamed(
+                            context,
+                            AppRoutes.videoPlayerView,
+                            arguments: vm,
+                          );
+                          vm.onPause();
+                        },
+                        color: AppTheme.accentColor,
+                        handler: vm,
+                        onStreamSelect: vm.onStreamSelect,
+                      ),
                       media: details,
                       height: height,
                       width: width,

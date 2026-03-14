@@ -75,7 +75,7 @@ class _SearchViewState extends State<SearchView> {
             child: LayoutBuilder(
               builder: (_, constr) {
                 final ScreenData screenData = Screen.of(context);
-                final double width = screenData.shouldRenderMobile ? 120 : 160;
+                final double width = screenData.shouldRenderMobile ? 110 : 160;
                 final double imageHeight =
                     width / AppConstants.posterAspectRatio;
                 final double textHeight = screenData.shouldRenderMobile
