@@ -66,6 +66,7 @@ class AppTheme {
   static const double spacingL = 24.0;
   static const double spacingXL = 32.0;
   static const double spacingXXL = 64.0;
+  static const double spacingXXXL = 72.0;
 
   static const boxWidthXS = SizedBox(width: spacingXS);
   static const boxWidthS = SizedBox(width: spacingS);
@@ -79,6 +80,7 @@ class AppTheme {
   static const boxHeightL = SizedBox(height: spacingL);
   static const boxHeightXL = SizedBox(height: spacingXL);
   static const boxHeightXXL = SizedBox(height: spacingXXL);
+  static const boxHeightXXXL = SizedBox(height: spacingXXXL);
 
   // -----------------------------------------------------------------------------
   // 3. Text Styles

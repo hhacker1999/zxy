@@ -8,6 +8,7 @@ import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
+import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 
 class LibraryListItem extends StatelessWidget {
   const LibraryListItem({
@@ -71,6 +72,7 @@ class LibraryCard extends StatelessWidget {
   final double width;
   final bool updateColorOnHover;
   final bool showRatings;
+  final bool showMediaType;
   final double? textHeight;
   const LibraryCard({
     super.key,
@@ -80,6 +82,7 @@ class LibraryCard extends StatelessWidget {
     this.imageHeight = 240,
     this.width = 160,
     this.showRatings = true,
+    this.showMediaType = false,
     required this.updateColorOnHover,
     this.textHeight,
   });
@@ -126,6 +129,7 @@ class LibraryCard extends StatelessWidget {
                     ),
                   ),
                   if (showRatings) RatingPosterCard(resource: resource),
+                  if (showMediaType) MediaTypeChip(resource: resource),
                 ],
               ),
             ),
@@ -213,6 +217,37 @@ class RatingPosterCard extends StatelessWidget {
               height: 10,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class MediaTypeChip extends StatelessWidget {
+  const MediaTypeChip({super.key, required this.resource});
+
+  final ZxyMedia resource;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      right: 3,
+      top: 3,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppTheme.backgroundDark.withValues(alpha: 0.8),
+          borderRadius: AppTheme.roundedSmall,
+          border: Border.all(
+            color: AppTheme.textSecondary.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Text(
+          resource.type == ZxyMediaType.movie ? "Movie" : "Show",
+          style: Theme.of(context).textTheme.labelSmall!.copyWith(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

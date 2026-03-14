@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';

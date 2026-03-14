@@ -22,7 +22,7 @@ class BaseScaffold extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       bottomNavigationBar: bottomNavigationBar,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       body: LayoutBuilder(
         builder: (_, constr) {
           return SizedBox(

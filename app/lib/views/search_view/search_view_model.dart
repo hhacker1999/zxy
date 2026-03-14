@@ -12,6 +12,7 @@ class SearchViewModel {
   int _totalMoviePages = 0;
   int _totalShowPages = 0;
   late String _keyword;
+  bool _isLoadingMoreResults = false;
 
   SearchViewModel({required this.mediaUC});
 
@@ -63,7 +64,9 @@ class SearchViewModel {
   }
 
   Future<void> loadMoreResults() async {
+    if (_isLoadingMoreResults) return;
     try {
+      _isLoadingMoreResults = true;
       final oldItems = (itemsState.value as ItemLoaded<List<ZxyMedia>>);
       final List<Future<ZxyPaginatedResponse<ZxyMedia>>> futures = List.empty(
         growable: true,
@@ -124,6 +127,8 @@ class SearchViewModel {
       }
       // itemsState.value = ItemError(error: e.toString());
       rethrow;
+    } finally {
+      _isLoadingMoreResults = false;
     }
   }
 

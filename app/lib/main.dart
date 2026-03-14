@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_theme.dart';
@@ -94,15 +97,22 @@ class _MyAppState extends State<MyApp> {
           themeMode: ThemeMode.dark,
           theme: AppTheme.purpleTheme,
           onGenerateRoute: (settings) {
+            PageRoute<dynamic> buildRoute({required WidgetBuilder builder}) {
+              if (Platform.isIOS) {
+                return CupertinoPageRoute(builder: builder, settings: settings);
+              }
+              return FadePageRoute(builder: builder, settings: settings);
+            }
+
             switch (settings.name) {
               case AppRoutes.baseHomeView:
-                return FadePageRoute(
+                return buildRoute(
                   builder: (_) {
                     return BaseHomeView(deps: deps);
                   },
                 );
               case AppRoutes.movieView:
-                return FadePageRoute(
+                return buildRoute(
                   builder: (_) {
                     return Provider(
                       create: (_) => MovieViewModel(
@@ -120,7 +130,7 @@ class _MyAppState extends State<MyApp> {
                 );
               case AppRoutes.seriesView:
                 final args = settings.arguments as SeriesViewData;
-                return FadePageRoute(
+                return buildRoute(
                   builder: (_) {
                     return Provider(
                       create: (_) => SeriesViewModel(
@@ -137,7 +147,7 @@ class _MyAppState extends State<MyApp> {
                 );
               case AppRoutes.searchView:
                 final args = settings.arguments as String;
-                return FadePageRoute(
+                return buildRoute(
                   builder: (_) {
                     return Provider(
                       create: (_) => SearchViewModel(mediaUC: deps.mediaUc),
@@ -147,7 +157,7 @@ class _MyAppState extends State<MyApp> {
                   },
                 );
               case AppRoutes.loginView:
-                return FadePageRoute(
+                return buildRoute(
                   builder: (_) {
                     return Provider(
                       create: (_) => LoginViewModel(authUC: deps.authUc),
@@ -157,7 +167,7 @@ class _MyAppState extends State<MyApp> {
                   },
                 );
               case AppRoutes.profileSelectionView:
-                return FadePageRoute(
+                return buildRoute(
                   builder: (_) {
                     return ChangeNotifierProvider<ProfileSelectionViewModel>(
                       create: (_) => ProfileSelectionViewModel(deps.authUc),

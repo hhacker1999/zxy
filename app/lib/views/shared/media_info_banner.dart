@@ -11,6 +11,8 @@ import 'package:zxy_app/views/shared/ratings_tag.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
+import 'glass_circular_button.dart';
+
 class MediaInfoBanner extends StatefulWidget {
   final dynamic media;
   final double height;
@@ -278,11 +280,13 @@ class _MediaInfoBannerState extends State<MediaInfoBanner> {
         Positioned(
           left: AppTheme.spacingL,
           top: AppTheme.spacingL,
-          child: IconButton(
-            onPressed: () {
+          child: GlassCircularButton(
+            onTap: () {
               Navigator.pop(context);
             },
-            icon: const Icon(Icons.arrow_back),
+            icon: Icons.arrow_back_rounded,
+            size: 44,
+            iconSize: 24,
           ),
         ),
       ],

@@ -1,13 +1,18 @@
+import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/views/video_player_view/video_player_view.dart';
 
+import '../shared/glass_circular_button.dart';
+
 class MobileVideoPlayerHUD extends StatelessWidget {
   const MobileVideoPlayerHUD({
     super.key,
     required ZxyPlayerState state,
+    required this.onUserInteraction,
     required this.pinRadius,
     required this.progressHeight,
     required this.onPauseOrPlay,
@@ -30,39 +35,65 @@ class MobileVideoPlayerHUD extends StatelessWidget {
   final VoidCallback onBackOrStop;
   final VoidCallback onSkipForward;
   final VoidCallback onSkipBackward;
+  final VoidCallback onUserInteraction;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: _TopBar(
-            state: _state,
-            player: _player,
-            settingsBloc: settingsBloc,
-            onBackOrStop: onBackOrStop,
+    return Listener(
+      onPointerMove: (_) {
+        onUserInteraction();
+      },
+      behavior: HitTestBehavior.translucent,
+      child: Stack(
+        children: [
+          // Subtle background darkening for better contrast
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () {
+                _state.isOverlayVisible.value = false;
+              },
+              child: Container(color: Colors.black.withOpacity(0.40)),
+            ),
           ),
-        ),
 
-        Center(
-          child: _CenterControls(
-            state: _state,
-            onPauseOrPlay: onPauseOrPlay,
-            onSkipForward: onSkipForward,
-            onSkipBackward: onSkipBackward,
+          // Settings / Back Bar (Top)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _TopBar(
+              state: _state,
+              player: _player,
+              settingsBloc: settingsBloc,
+              onBackOrStop: onBackOrStop,
+            ),
           ),
-        ),
 
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: _BottomBar(state: _state, player: _player),
-        ),
-      ],
+          // Center Play/Pause & Skips
+          Center(
+            child: _CenterControls(
+              state: _state,
+              settingsBloc: settingsBloc,
+              onPauseOrPlay: onPauseOrPlay,
+              onSkipForward: onSkipForward,
+              onSkipBackward: onSkipBackward,
+            ),
+          ),
+
+          // Bottom Progress Bar & Time
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _BottomBar(
+              state: _state,
+              player: _player,
+              progressHeight: progressHeight,
+              pinRadius: pinRadius,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -83,12 +114,12 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(left: 12, right: 12, top: 20, bottom: 36),
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 40),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.black.withOpacity(0.55), Colors.transparent],
+          colors: [Colors.black.withOpacity(0.85), Colors.transparent],
         ),
       ),
       child: SafeArea(
@@ -96,16 +127,18 @@ class _TopBar extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Back
-            _TapIcon(
+            // Back Button
+            GlassCircularButton(
               onTap: onBackOrStop,
-              icon: Icons.arrow_back_ios_new_rounded,
+              icon: Icons.arrow_back_rounded,
+              size: 44,
+              iconSize: 24,
             ),
             const Spacer(),
-            // Volume
+            // Volume Toggle
             ValueListenableBuilder<double>(
               valueListenable: settingsBloc.volume,
-              builder: (_, vol, __) => _TapIcon(
+              builder: (_, vol, __) => GlassCircularButton(
                 onTap: () {
                   if (vol != 0) {
                     settingsBloc.volume = 0;
@@ -118,16 +151,20 @@ class _TopBar extends StatelessWidget {
                 icon: vol == 0
                     ? Icons.volume_off_rounded
                     : Icons.volume_up_rounded,
+                size: 44,
+                iconSize: 22,
               ),
             ),
-            const SizedBox(width: 4),
-            // Settings
-            _TapIcon(
+            const SizedBox(width: 16),
+            // Settings Toggle
+            GlassCircularButton(
               onTap: () {
                 state.isOverlayVisible.value = false;
                 state.settingsVisible.value = !state.settingsVisible.value;
               },
-              icon: Icons.tune_rounded,
+              icon: Icons.more_vert_rounded,
+              size: 44,
+              iconSize: 24,
             ),
           ],
         ),
@@ -139,12 +176,14 @@ class _TopBar extends StatelessWidget {
 class _CenterControls extends StatelessWidget {
   const _CenterControls({
     required this.state,
+    required this.settingsBloc,
     required this.onPauseOrPlay,
     required this.onSkipForward,
     required this.onSkipBackward,
   });
 
   final ZxyPlayerState state;
+  final SettingsBloc settingsBloc;
   final VoidCallback onPauseOrPlay;
   final VoidCallback onSkipForward;
   final VoidCallback onSkipBackward;
@@ -153,22 +192,32 @@ class _CenterControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: state.isPlaying,
-      builder: (_, isPlaying, __) {
+      builder: (_, isPlaying, _) {
         return Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _SkipTap(onTap: onSkipBackward, forward: false),
-            const SizedBox(width: 40),
+            _SkipTap(
+              onTap: onSkipBackward,
+              forward: false,
+              skipDurationListenable: settingsBloc.skipDuration,
+            ),
+            const SizedBox(width: 70),
             _PlayPauseTap(isPlaying: isPlaying, onTap: onPauseOrPlay),
-            const SizedBox(width: 40),
-            _SkipTap(onTap: onSkipForward, forward: true),
+            const SizedBox(width: 70),
+            _SkipTap(
+              onTap: onSkipForward,
+              forward: true,
+              skipDurationListenable: settingsBloc.skipDuration,
+            ),
           ],
         );
       },
     );
   }
 }
+
 
 class _PlayPauseTap extends StatefulWidget {
   final bool isPlaying;
@@ -189,12 +238,12 @@ class _PlayPauseTapState extends State<_PlayPauseTap>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 150),
     );
     _scale = Tween(
       begin: 1.0,
-      end: 0.82,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+      end: 0.85,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
   }
 
   @override
@@ -214,22 +263,43 @@ class _PlayPauseTapState extends State<_PlayPauseTap>
       onTapCancel: () => _ctrl.reverse(),
       child: ScaleTransition(
         scale: _scale,
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.18),
-          ),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 180),
-            transitionBuilder: (child, anim) =>
-                ScaleTransition(scale: anim, child: child),
-            child: Icon(
-              widget.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              key: ValueKey(widget.isPlaying),
-              color: Colors.white,
-              size: 36,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(44),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.18),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.35),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: ScaleTransition(scale: anim, child: child),
+                ),
+                child: Icon(
+                  widget.isPlaying
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                  key: ValueKey(widget.isPlaying),
+                  color: Colors.white,
+                  size: 48,
+                ),
+              ),
             ),
           ),
         ),
@@ -241,7 +311,13 @@ class _PlayPauseTapState extends State<_PlayPauseTap>
 class _SkipTap extends StatefulWidget {
   final VoidCallback onTap;
   final bool forward;
-  const _SkipTap({required this.onTap, required this.forward});
+  final ValueListenable<int> skipDurationListenable;
+
+  const _SkipTap({
+    required this.onTap,
+    required this.forward,
+    required this.skipDurationListenable,
+  });
 
   @override
   State<_SkipTap> createState() => _SkipTapState();
@@ -257,11 +333,11 @@ class _SkipTapState extends State<_SkipTap>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 90),
+      duration: const Duration(milliseconds: 120),
     );
     _scale = Tween(
       begin: 1.0,
-      end: 0.72,
+      end: 0.8,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
@@ -283,10 +359,41 @@ class _SkipTapState extends State<_SkipTap>
       onTapCancel: () => _ctrl.reverse(),
       child: ScaleTransition(
         scale: _scale,
-        child: Icon(
-          widget.forward ? Icons.forward_10_rounded : Icons.replay_10_rounded,
-          color: Colors.white.withOpacity(0.9),
-          size: 34,
+        child: Container(
+          width: 72,
+          height: 72,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.transparent,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                widget.forward
+                    ? Icons.rotate_right_rounded
+                    : Icons.rotate_left_rounded,
+                color: Colors.white.withOpacity(0.95),
+                size: 44,
+              ),
+              const SizedBox(height: 2),
+              ValueListenableBuilder<int>(
+                valueListenable: widget.skipDurationListenable,
+                builder: (_, skipDuration, _) {
+                  return Text(
+                    "$skipDuration",
+                    style: GoogleFonts.inter(
+                      color: Colors.white.withOpacity(0.95),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                      fontFeatures: [const FontFeature.tabularFigures()],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -294,10 +401,17 @@ class _SkipTapState extends State<_SkipTap>
 }
 
 class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.state, required this.player});
+  const _BottomBar({
+    required this.state,
+    required this.player,
+    required this.progressHeight,
+    required this.pinRadius,
+  });
 
   final ZxyPlayerState state;
   final Player player;
+  final double progressHeight;
+  final double pinRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -306,116 +420,63 @@ class _BottomBar extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
-          colors: [Colors.black.withOpacity(0.70), Colors.transparent],
+          colors: [Colors.black.withOpacity(0.9), Colors.transparent],
           stops: const [0.0, 1.0],
         ),
       ),
-      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 10, top: 80),
+      padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24, top: 60),
       child: SafeArea(
         top: false,
         child: ValueListenableBuilder(
           valueListenable: state.seekInfo,
-          builder: (_, seekInfo, __) {
+          builder: (_, seekInfo, _) {
             final current = seekInfo?.current ?? Duration.zero;
             final playback = seekInfo?.playback ?? Duration.zero;
 
             return Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       getPlayBackInfoString(current),
                       style: GoogleFonts.inter(
-                        fontSize: 11,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
-                        letterSpacing: 0.2,
+                        letterSpacing: 0.5,
+                        fontFeatures: [const FontFeature.tabularFigures()],
                       ),
                     ),
                     Text(
                       getPlayBackInfoString(playback),
                       style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white.withOpacity(0.5),
-                        letterSpacing: 0.2,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withOpacity(0.6),
+                        letterSpacing: 0.5,
+                        fontFeatures: [const FontFeature.tabularFigures()],
                       ),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 6),
-
+                const SizedBox(height: 14),
                 SizedBox(
-                  height: 24,
+                  height: 32,
                   child: ZxyProgressBar(
                     renderMobileLayout: true,
                     player: player,
                     state: state,
-                    pinRadius: 8,
-                    progressHeight: 3,
+                    pinRadius: pinRadius * 1.25,
+                    progressHeight: progressHeight * 1.5,
                   ),
                 ),
               ],
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _TapIcon extends StatefulWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _TapIcon({required this.icon, required this.onTap});
-
-  @override
-  State<_TapIcon> createState() => _TapIconState();
-}
-
-class _TapIconState extends State<_TapIcon>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 90),
-    );
-    _scale = Tween(
-      begin: 1.0,
-      end: 0.75,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) {
-        _ctrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: ScaleTransition(
-        scale: _scale,
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Icon(widget.icon, color: Colors.white, size: 22),
         ),
       ),
     );

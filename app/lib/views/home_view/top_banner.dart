@@ -1,27 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
-import 'package:zxy_app/bloc/image_bloc.dart';
+import 'package:zxy_app/extensions.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';
+import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/shared/zxy_button.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
-import 'package:zxy_app/extensions.dart';
+import 'package:zxy_app/views/view_item_state.dart';
 
 class TopBanner extends StatefulWidget {
-  final List<ZxyMedia> media;
-  final ScrollController? parentScrollController;
+  final HomeViewModel vm;
 
-  const TopBanner({
-    super.key,
-    required this.media,
-    this.parentScrollController,
-  });
+  const TopBanner({super.key, required this.vm});
 
   @override
   State<TopBanner> createState() => _TopBannerState();
@@ -31,44 +26,24 @@ class _TopBannerState extends State<TopBanner> {
   late final PageController _pageController;
   double _pageValue = 0.0;
   int _currentPage = 0;
-  double _scrollOffset = 0.0;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 1.0);
-    _pageController.addListener(_onPageScroll);
-    widget.parentScrollController?.addListener(_onParentScroll);
-  }
-
-  void _onPageScroll() {
-    if (_pageController.hasClients) {
-      final old = _currentPage;
-      setState(() {
-        _pageValue = _pageController.page ?? 0.0;
-        _currentPage = _pageValue.round();
-      });
-      if (old != _currentPage) {
-        context.read<ImageBloc>().setGradColorFromImage(
-          widget.media[_currentPage].backdropPath ?? "",
-          context,
-        );
-      }
-    }
-  }
-
-  void _onParentScroll() {
-    if (widget.parentScrollController?.hasClients ?? false) {
-      setState(() {
-        _scrollOffset = widget.parentScrollController!.offset;
-      });
-    }
+    // _pageController.addListener(() {
+    //   if (_pageController.hasClients) {
+    //     if (_currentPage != _pageController.page) {
+    //       setState(() {
+    //         _currentPage = _pageController.page;
+    //       });
+    //     }
+    //   }
+    // });
   }
 
   @override
   void dispose() {
-    _pageController.removeListener(_onPageScroll);
-    widget.parentScrollController?.removeListener(_onParentScroll);
     _pageController.dispose();
     super.dispose();
   }
@@ -81,72 +56,75 @@ class _TopBannerState extends State<TopBanner> {
     // Responsive aspect ratio: 16:9 for desktop, poster-friendly for mobile
     final aspectRatio = isMobile ? 0.75 : 16 / 9;
 
-    // Calculate scroll-based scale (1.0 -> 0.94)
-    final maxScrollForEffect = 200.0;
-    final scrollProgress = (_scrollOffset / maxScrollForEffect).clamp(0.0, 1.0);
-    final scrollScale = 1.0 - (scrollProgress * 0.06);
+    return ValueListenableBuilder(
+      valueListenable: widget.vm.topBannerState,
+      builder: (_, state, _) {
+        if (state is! ItemLoaded<List<ZxyMedia>>) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: !screenData.shouldRenderMobile ? AppTheme.spacingM : 0,
+            ),
+            child: Column(
+              children: [
+                AspectRatio(
+                  aspectRatio: aspectRatio,
+                  child: _TopBannerShimmer(isMobile: isMobile),
+                ),
+                SizedBox(
+                  height: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
+                ),
+              ],
+            ),
+          );
+        }
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: !screenData.shouldRenderMobile ? AppTheme.spacingM : 0,
-      ),
-      child: Column(
-        children: [
-          Transform.scale(
-            scale: scrollScale,
-            alignment: Alignment.topCenter,
-            child: AspectRatio(
-              aspectRatio: aspectRatio,
-              child: Stack(
-                children: [
-                  // Page View with zoom effect on page change
-                  ClipRRect(
-                    borderRadius: BorderRadiusGeometry.only(
-                      bottomRight: Radius.circular(AppTheme.radiusMedium),
-                      bottomLeft: Radius.circular(AppTheme.radiusMedium),
-                      topRight: Radius.circular(AppTheme.radiusMedium),
-                      topLeft: Radius.circular(AppTheme.radiusMedium),
-                    ),
-                    child: PageView.builder(
+        final media = state.data;
+        return Padding(
+          padding: EdgeInsets.only(
+            left: !screenData.shouldRenderMobile ? AppTheme.spacingM : 0,
+          ),
+          child: Column(
+            children: [
+              AspectRatio(
+                aspectRatio: aspectRatio,
+                child: Stack(
+                  children: [
+                    PageView.builder(
+                      onPageChanged: (page) {
+                        setState(() {
+                          _currentPage = page;
+                        });
+                      },
                       controller: _pageController,
-                      itemCount: widget.media.length,
+                      itemCount: media.length,
                       itemBuilder: (context, index) {
-                        // Calculate scale for each page (zoom effect on swipe)
-                        final distance = (_pageValue - index).abs();
-                        final scale = (1 - (distance * 0.1)).clamp(0.85, 1.0);
-                        final opacity = (1 - (distance * 0.3)).clamp(0.6, 1.0);
-
-                        return Transform.scale(
-                          scale: scale,
-                          child: Opacity(
-                            opacity: opacity,
-                            child: _BannerSlide(
-                              media: widget.media[index],
-                              isMobile: isMobile,
-                            ),
-                          ),
+                        return _BannerSlide(
+                          media: media[index],
+                          isMobile: isMobile,
                         );
                       },
                     ),
-                  ),
 
-                  // Page Indicators
-                  Positioned(
-                    bottom: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
-                    left: 0,
-                    right: 0,
-                    child: _PageIndicators(
-                      itemCount: widget.media.length,
-                      currentPage: _currentPage,
+                    // Page Indicators
+                    Positioned(
+                      bottom: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
+                      left: 0,
+                      right: 0,
+                      child: _PageIndicators(
+                        itemCount: media.length,
+                        currentPage: _currentPage,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              SizedBox(
+                height: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
+              ),
+            ],
           ),
-          SizedBox(height: isMobile ? AppTheme.spacingM : AppTheme.spacingL),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -173,146 +151,138 @@ class _BannerSlide extends StatelessWidget {
               : media.backdropPath ?? "")
         : (media.backdropPath ?? media.posterPath);
 
-    return ClipRRect(
-      borderRadius: BorderRadiusGeometry.only(
-        bottomRight: Radius.circular(AppTheme.radiusMedium),
-        bottomLeft: Radius.circular(AppTheme.radiusMedium),
-        topRight: Radius.circular(AppTheme.radiusMedium),
-        topLeft: Radius.circular(AppTheme.radiusMedium),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          ZxyImage(
-            path: imagePath,
-            size: isMobile ? 'w780' : 'original',
-            height: double.infinity,
-            width: double.infinity,
-            fit: BoxFit.cover,
-          ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ZxyImage(
+          path: imagePath,
+          size: isMobile ? 'w780' : 'original',
+          height: double.infinity,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        ),
 
-          // Gradient Overlay - stronger for mobile text readability
+        // Gradient Overlay - stronger for mobile text readability
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isMobile
+                  ? [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.7),
+                      Colors.black.withValues(alpha: 0.95),
+                    ]
+                  : [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.1),
+                      Colors.black.withValues(alpha: 0.4),
+                      Colors.black.withValues(alpha: 0.85),
+                    ],
+              stops: const [0.0, 0.4, 0.7, 1.0],
+            ),
+          ),
+        ),
+
+        // Left-side gradient for desktop
+        if (!isMobile)
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: isMobile
-                    ? [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.2),
-                        Colors.black.withValues(alpha: 0.7),
-                        Colors.black.withValues(alpha: 0.95),
-                      ]
-                    : [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.1),
-                        Colors.black.withValues(alpha: 0.4),
-                        Colors.black.withValues(alpha: 0.85),
-                      ],
-                stops: const [0.0, 0.4, 0.7, 1.0],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.6),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.5],
               ),
             ),
           ),
 
-          // Left-side gradient for desktop
-          if (!isMobile)
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.6),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.5],
+        // Content Overlay
+        Positioned(
+          bottom: isMobile ? 50 : 80,
+          left: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
+          right: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LogoZxyImage(
+                path: logo?.filePath ?? "",
+                alignment: Alignment.bottomLeft,
+                size: isMobile ? 'w300' : 'w500',
+                maxWidth: isMobile ? 200 : 400,
+                fit: BoxFit.contain,
+                replacement: Text(
+                  title,
+                  maxLines: isMobile ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: isMobile
+                      ? Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          shadows: _textShadows,
+                        )
+                      : Theme.of(context).textTheme.displayMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          shadows: _textShadows,
+                        ),
                 ),
               ),
-            ),
+              SizedBox(
+                height: isMobile ? AppTheme.spacingXS : AppTheme.spacingM,
+              ),
 
-          // Content Overlay
-          Positioned(
-            bottom: isMobile ? 50 : 80,
-            left: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
-            right: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LogoZxyImage(
-                  path: logo?.filePath ?? "",
-                  alignment: Alignment.bottomLeft,
-                  size: isMobile ? 'w300' : 'w500',
-                  maxWidth: isMobile ? 200 : 400,
-                  fit: BoxFit.contain,
-                  replacement: Text(
-                    title,
-                    maxLines: isMobile ? 1 : 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: isMobile
-                        ? Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            shadows: _textShadows,
-                          )
-                        : Theme.of(context).textTheme.displayMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            shadows: _textShadows,
-                          ),
-                  ),
-                ),
-                SizedBox(
-                  height: isMobile ? AppTheme.spacingXS : AppTheme.spacingM,
-                ),
-
-                // Meta Info Row (Year + Genres) - wrapped for mobile
-                Wrap(
-                  spacing: AppTheme.spacingXS,
-                  runSpacing: AppTheme.spacingXS,
-                  children: [
-                    if (year.isNotEmpty)
-                      _MetaChip(text: year, isMobile: isMobile),
-                    ...genres
-                        .take(isMobile ? 2 : 3)
-                        .map(
-                          (genre) => _MetaChip(text: genre, isMobile: isMobile),
-                        ),
-                  ],
-                ),
-
-                // Overview - desktop only
-                if (!isMobile && overview.isNotEmpty) ...[
-                  SizedBox(height: AppTheme.spacingM),
-                  SizedBox(
-                    width: 500,
-                    child: Text(
-                      overview,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        height: 1.4,
+              // Meta Info Row (Year + Genres) - wrapped for mobile
+              Wrap(
+                spacing: AppTheme.spacingXS,
+                runSpacing: AppTheme.spacingXS,
+                children: [
+                  if (year.isNotEmpty)
+                    _MetaChip(text: year, isMobile: isMobile),
+                  ...genres
+                      .take(isMobile ? 2 : 3)
+                      .map(
+                        (genre) => _MetaChip(text: genre, isMobile: isMobile),
                       ),
+                ],
+              ),
+
+              // Overview - desktop only
+              if (!isMobile && overview.isNotEmpty) ...[
+                SizedBox(height: AppTheme.spacingM),
+                SizedBox(
+                  width: 500,
+                  child: Text(
+                    overview,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      height: 1.4,
                     ),
                   ),
-                ],
-
-                SizedBox(
-                  height: isMobile ? AppTheme.spacingS : AppTheme.spacingM,
-                ),
-
-                // Play Button
-                _PlayButton(
-                  onTap: () => _navigateToDetail(context),
-                  isMobile: isMobile,
                 ),
               ],
-            ),
+
+              SizedBox(
+                height: isMobile ? AppTheme.spacingS : AppTheme.spacingM,
+              ),
+
+              // Play Button
+              _PlayButton(
+                onTap: () => _navigateToDetail(context),
+                isMobile: isMobile,
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -397,7 +367,7 @@ class _MetaChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: AppTheme.roundedSmall,
+        // borderRadius: AppTheme.roundedSmall,
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.25),
           width: 1,
@@ -501,4 +471,258 @@ class _PageIndicators extends StatelessWidget {
       }),
     );
   }
+}
+
+/// A beautiful shimmer placeholder for the top banner while loading.
+/// Matches the real banner layout with skeleton shapes and a sweeping
+/// gradient animation — no external package needed.
+class _TopBannerShimmer extends StatefulWidget {
+  final bool isMobile;
+
+  const _TopBannerShimmer({required this.isMobile});
+
+  @override
+  State<_TopBannerShimmer> createState() => _TopBannerShimmerState();
+}
+
+class _TopBannerShimmerState extends State<_TopBannerShimmer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = widget.isMobile;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Dark base
+          Container(color: const Color(0xFF0A0A0C)),
+
+          // Animated shimmer sweep overlay
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (_, __) {
+              return CustomPaint(
+                painter: _ShimmerPainter(progress: _controller.value),
+              );
+            },
+          ),
+
+          // Gradient overlay matching the real banner
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  AppTheme.surfaceColor.withValues(alpha: 0.2),
+                  AppTheme.surfaceColor.withValues(alpha: 0.6),
+                  AppTheme.surfaceColor.withValues(alpha: 0.95),
+                ],
+                stops: const [0.0, 0.4, 0.7, 1.0],
+              ),
+            ),
+          ),
+
+          // Skeleton content layout
+          Positioned(
+            bottom: isMobile ? 50 : 80,
+            left: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
+            right: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Logo placeholder
+                _ShimmerBlock(
+                  width: isMobile ? 160 : 320,
+                  height: isMobile ? 36 : 56,
+                  borderRadius: AppTheme.radiusSmall,
+                  controller: _controller,
+                ),
+                SizedBox(
+                  height: isMobile ? AppTheme.spacingXS : AppTheme.spacingM,
+                ),
+
+                // Meta chips placeholder row
+                Row(
+                  children: [
+                    _ShimmerBlock(
+                      width: isMobile ? 44 : 56,
+                      height: isMobile ? 20 : 26,
+                      borderRadius: AppTheme.radiusSmall,
+                      controller: _controller,
+                    ),
+                    const SizedBox(width: 6),
+                    _ShimmerBlock(
+                      width: isMobile ? 60 : 80,
+                      height: isMobile ? 20 : 26,
+                      borderRadius: AppTheme.radiusSmall,
+                      controller: _controller,
+                    ),
+                    const SizedBox(width: 6),
+                    _ShimmerBlock(
+                      width: isMobile ? 52 : 72,
+                      height: isMobile ? 20 : 26,
+                      borderRadius: AppTheme.radiusSmall,
+                      controller: _controller,
+                    ),
+                  ],
+                ),
+
+                // Overview placeholder (desktop only)
+                if (!isMobile) ...[
+                  SizedBox(height: AppTheme.spacingM),
+                  _ShimmerBlock(
+                    width: 420,
+                    height: 14,
+                    borderRadius: AppTheme.radiusXSmall,
+                    controller: _controller,
+                  ),
+                  const SizedBox(height: 8),
+                  _ShimmerBlock(
+                    width: 300,
+                    height: 14,
+                    borderRadius: AppTheme.radiusXSmall,
+                    controller: _controller,
+                  ),
+                ],
+
+                SizedBox(
+                  height: isMobile ? AppTheme.spacingS : AppTheme.spacingM,
+                ),
+
+                // Play button placeholder
+                _ShimmerBlock(
+                  width: isMobile ? 100 : 140,
+                  height: isMobile ? 40 : 52,
+                  borderRadius: AppTheme.radiusXXLarge,
+                  controller: _controller,
+                ),
+              ],
+            ),
+          ),
+
+          // Fake page indicators
+          Positioned(
+            bottom: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (index) {
+                return Container(
+                  margin: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacingXS / 2,
+                  ),
+                  height: 5,
+                  width: index == 0 ? 20 : 5,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(3),
+                    color: index == 0
+                        ? Colors.white.withValues(alpha: 0.25)
+                        : Colors.white.withValues(alpha: 0.1),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Individual shimmer block used as a skeleton placeholder.
+class _ShimmerBlock extends StatelessWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+  final AnimationController controller;
+
+  const _ShimmerBlock({
+    required this.width,
+    required this.height,
+    required this.borderRadius,
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        color: Colors.white.withValues(alpha: 0.08),
+      ),
+    );
+  }
+}
+
+/// CustomPainter that draws a wide diagonal shimmer band sweeping across
+/// the entire banner area, creating a cinematic loading feel.
+class _ShimmerPainter extends CustomPainter {
+  final double progress;
+
+  _ShimmerPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    canvas.save();
+    canvas.clipRect(rect);
+
+    // Rotate for diagonal sweep (approx 25 degrees)
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.rotate(0.44); // ~25 degrees
+    canvas.translate(-size.width / 2, -size.height / 2);
+
+    final bandWidth = size.width * 0.45;
+    final diagonal = size.width + size.height;
+    final startX = -bandWidth - diagonal * 0.3;
+    final endX = size.width + bandWidth + diagonal * 0.3;
+    final offset = startX + (endX - startX) * progress;
+
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.transparent,
+          Colors.white.withValues(alpha: 0.06),
+          Colors.white.withValues(alpha: 0.14),
+          Colors.white.withValues(alpha: 0.06),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
+      ).createShader(Rect.fromLTWH(offset, -diagonal, bandWidth, diagonal * 3));
+
+    canvas.drawRect(
+      Rect.fromLTWH(-diagonal, -diagonal, diagonal * 3, diagonal * 3),
+      paint,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_ShimmerPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }

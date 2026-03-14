@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/app_constants.dart';
+import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/modern_drop_downv2.dart';
@@ -27,16 +29,21 @@ class GeneralSection extends StatelessWidget {
       child: Column(
         children: [
           // if (!isMobile) ...[
-            ModernSettingTile(
-              title: 'Dynamic Theme',
-              subtitle: 'Extract color info from context image',
-              icon: Icons.dark_mode_outlined,
-              valueNotifier: settingsBloc.isDynamic,
-              onChanged: (value) => settingsBloc.isDynamic = value,
-              isFirst: true,
-              isLast: false,
-            ),
-            Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+          ModernSettingTile(
+            title: 'Dynamic Theme',
+            subtitle: 'Extract color info from context image',
+            icon: Icons.dark_mode_outlined,
+            valueNotifier: settingsBloc.isDynamic,
+            onChanged: (value) {
+              if (!value) {
+                context.read<ImageBloc>().removeBgGradColor();
+              }
+              settingsBloc.isDynamic = value;
+            },
+            isFirst: true,
+            isLast: false,
+          ),
+          Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
           // ],
           ModernSettingTile(
             title: 'Show Poster Ratings',

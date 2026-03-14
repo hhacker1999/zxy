@@ -374,14 +374,18 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     });
   }
 
-  void onHover() {
-    if (!_state.isOverlayVisible.value) {
-      _state.isOverlayVisible.value = true;
-    }
+  void startOverlayTimer() {
     _hoverTimer?.cancel();
     _hoverTimer = Timer(const Duration(seconds: 4), () {
       _state.isOverlayVisible.value = false;
     });
+  }
+
+  void onHover() {
+    if (!_state.isOverlayVisible.value) {
+      _state.isOverlayVisible.value = true;
+    }
+    startOverlayTimer();
   }
 
   void onPauseOrPlay() {
@@ -543,7 +547,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                 onScaleUpdate: (details) {
                                   final prev = horizontalScale;
                                   horizontalScale *= details.horizontalScale;
-                                  print(horizontalScale);
                                   if (horizontalScale < prev) {
                                     if (_state.playerFit.value ==
                                         BoxFit.cover) {
@@ -659,6 +662,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                 visible: visible,
                                 duration: const Duration(milliseconds: 400),
                                 child: MobileVideoPlayerHUD(
+                                  onUserInteraction: () {
+                                    startOverlayTimer();
+                                  },
                                   settingsBloc: _settingBloc,
                                   onBackOrStop: onBackPress,
                                   onPauseOrPlay: onPauseOrPlay,
