@@ -10,7 +10,7 @@ import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
 
 import 'package:zxy_app/views/settings_view/settings_view_model.dart';
-import 'widgets/debrid_section.dart';
+import 'widgets/sources_section.dart';
 import 'widgets/general_section.dart';
 import 'widgets/library_customization_section.dart';
 import 'widgets/profiles_section.dart';
@@ -102,10 +102,10 @@ class SettingsView extends StatelessWidget {
                             LibraryCustomizationSection(viewModel: settingsVm),
                             const SizedBox(height: AppTheme.spacingXL),
 
-                            // ── Debrid integration ────────────────────────
-                            _SectionLabel(label: 'Debrid Integration'),
+                            // ── Sources ──────────────────────────────────
+                            _SectionLabel(label: 'Sources'),
                             const SizedBox(height: AppTheme.spacingM),
-                            DebridSection(profile: profile),
+                            SourcesSection(profile: profile),
                             const SizedBox(height: AppTheme.spacingXXL),
                           ],
                         );

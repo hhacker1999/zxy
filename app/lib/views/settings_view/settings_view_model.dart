@@ -18,10 +18,9 @@ class SettingsViewModel extends ChangeNotifier {
   final WebSocketService wsService;
   final AuthUsecase _authUc;
   late BuildContext _context;
-  String _selectedDebridType = "";
-  String get selectedDebridType => _selectedDebridType;
 
-  final TextEditingController apiKeyController = TextEditingController();
+
+
 
   List<ProfileLibraryItem> _libraryItems = [];
   List<ProfileLibraryItem> get libraryItems => _libraryItems;
@@ -42,9 +41,7 @@ class SettingsViewModel extends ChangeNotifier {
 
     _initializedProfileId = currentProfile.id;
 
-    if (currentProfile.debridType.isNotEmpty) {
-      _selectedDebridType = currentProfile.debridType;
-    }
+
     _libraryItems = List.from(currentProfile.libraryItems);
     _hasLibraryChanges = false;
   }
@@ -100,50 +97,31 @@ class SettingsViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> storeDebridKey() async {
+  Future<void> addSource(String type, String value) async {
     try {
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
-      if (_selectedDebridType != "tb" && _selectedDebridType != "rd") {
-        showToast(_context, true, "Invalid debrid provider", "");
-        return;
-      }
-      if (apiKeyController.text.isEmpty) {
-        showToast(_context, true, "Invalid api key", "");
-        return;
-      }
-      await _authUc.storeUserDebridKey(
-        _selectedDebridType,
-        apiKeyController.text,
-      );
+      await _authUc.addSource(type, value);
       final newProfile = await _authUc.getUserProfile();
       _context.read<UserBloc>().profile = newProfile;
+      showToast(_context, false, "Source added", "");
     } catch (e) {
       showToast(_context, true, e.toString(), "");
     } finally {
-      notifyListeners();
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
     }
   }
 
-  Future<void> removeDebridKey() async {
+  Future<void> removeSource(String type) async {
     try {
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = true;
-      await _authUc.deleteUserDebridKey();
-      _selectedDebridType = "";
+      await _authUc.removeSource(type);
       final newProfile = await _authUc.getUserProfile();
       _context.read<UserBloc>().profile = newProfile;
+      showToast(_context, false, "Source removed", "");
     } catch (e) {
       showToast(_context, true, e.toString(), "");
     } finally {
-      notifyListeners();
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
-    }
-  }
-
-  void selectDebridType(String type) {
-    if (_selectedDebridType != type) {
-      _selectedDebridType = type;
-      notifyListeners();
     }
   }
 
@@ -274,7 +252,6 @@ class SettingsViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
-    apiKeyController.dispose();
     _traktLoginTimer?.cancel();
     super.dispose();
   }

@@ -119,6 +119,22 @@ class AuthUsecase {
     );
   }
 
+  Future<void> addSource(String tp, String value) async {
+    await _httpService.post(
+      Uri.parse("${AppConstants.baseUrl}/user/source"),
+      auth: RequestAuth.profile,
+      body: {"type": tp, "value": value},
+    );
+  }
+
+  Future<void> removeSource(String tp) async {
+    await _httpService.delete(
+      Uri.parse("${AppConstants.baseUrl}/user/source"),
+      auth: RequestAuth.profile,
+      body: {"type": tp},
+    );
+  }
+
   Future<void> deleteUserDebridKey() async {
     await _httpService.delete(
       Uri.parse("${AppConstants.baseUrl}/user/debrid/api"),
