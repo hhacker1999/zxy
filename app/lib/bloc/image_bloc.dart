@@ -126,6 +126,10 @@ class ImageBloc {
     });
   }
 
+  void removeBgGradColor() {
+    _bgGradColor.value = null;
+  }
+
   Future<void> setGradColorFromImage(String path, BuildContext context) async {
     if (!context.read<SettingsBloc>().isDynamic.value) {
       return;
