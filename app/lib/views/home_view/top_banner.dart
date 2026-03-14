@@ -14,10 +14,9 @@ import 'package:zxy_app/views/shared/zxy_image.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class TopBanner extends StatefulWidget {
-  final ScrollController? parentScrollController;
   final HomeViewModel vm;
 
-  const TopBanner({super.key, this.parentScrollController, required this.vm});
+  const TopBanner({super.key, required this.vm});
 
   @override
   State<TopBanner> createState() => _TopBannerState();
@@ -27,44 +26,24 @@ class _TopBannerState extends State<TopBanner> {
   late final PageController _pageController;
   double _pageValue = 0.0;
   int _currentPage = 0;
-  double _scrollOffset = 0.0;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 1.0);
-    // _pageController.addListener(_onPageScroll);
-    widget.parentScrollController?.addListener(_onParentScroll);
-  }
-
-  // void _onPageScroll() {
-  //   if (_pageController.hasClients) {
-  //     final old = _currentPage;
-  //     setState(() {
-  //       _pageValue = _pageController.page ?? 0.0;
-  //       _currentPage = _pageValue.round();
-  //     });
-  //     if (old != _currentPage) {
-  //       context.read<ImageBloc>().setGradColorFromImage(
-  //         widget.media[_currentPage].backdropPath ?? "",
-  //         context,
-  //       );
-  //     }
-  //   }
-  // }
-
-  void _onParentScroll() {
-    if (widget.parentScrollController?.hasClients ?? false) {
-      setState(() {
-        _scrollOffset = widget.parentScrollController!.offset;
-      });
-    }
+    // _pageController.addListener(() {
+    //   if (_pageController.hasClients) {
+    //     if (_currentPage != _pageController.page) {
+    //       setState(() {
+    //         _currentPage = _pageController.page;
+    //       });
+    //     }
+    //   }
+    // });
   }
 
   @override
   void dispose() {
-    // _pageController.removeListener(_onPageScroll);
-    widget.parentScrollController?.removeListener(_onParentScroll);
     _pageController.dispose();
     super.dispose();
   }
@@ -76,11 +55,6 @@ class _TopBannerState extends State<TopBanner> {
 
     // Responsive aspect ratio: 16:9 for desktop, poster-friendly for mobile
     final aspectRatio = isMobile ? 0.75 : 16 / 9;
-
-    // Calculate scroll-based scale (1.0 -> 0.94)
-    final maxScrollForEffect = 200.0;
-    final scrollProgress = (_scrollOffset / maxScrollForEffect).clamp(0.0, 1.0);
-    final scrollScale = 1.0 - (scrollProgress * 0.06);
 
     return ValueListenableBuilder(
       valueListenable: widget.vm.topBannerState,
@@ -111,64 +85,37 @@ class _TopBannerState extends State<TopBanner> {
           ),
           child: Column(
             children: [
-              Transform.scale(
-                scale: scrollScale,
-                alignment: Alignment.topCenter,
-                child: AspectRatio(
-                  aspectRatio: aspectRatio,
-                  child: Stack(
-                    children: [
-                      // Page View with zoom effect on page change
-                      ClipRRect(
-                        borderRadius: BorderRadiusGeometry.only(
-                          bottomRight: Radius.circular(AppTheme.radiusMedium),
-                          bottomLeft: Radius.circular(AppTheme.radiusMedium),
-                          topRight: Radius.circular(AppTheme.radiusMedium),
-                          topLeft: Radius.circular(AppTheme.radiusMedium),
-                        ),
-                        child: PageView.builder(
-                          controller: _pageController,
-                          itemCount: media.length,
-                          itemBuilder: (context, index) {
-                            // Calculate scale for each page (zoom effect on swipe)
-                            final distance = (_pageValue - index).abs();
-                            final scale = (1 - (distance * 0.1)).clamp(
-                              0.85,
-                              1.0,
-                            );
-                            final opacity = (1 - (distance * 0.3)).clamp(
-                              0.6,
-                              1.0,
-                            );
+              AspectRatio(
+                aspectRatio: aspectRatio,
+                child: Stack(
+                  children: [
+                    PageView.builder(
+                      onPageChanged: (page) {
+                        setState(() {
+                          _currentPage = page;
+                        });
+                      },
+                      controller: _pageController,
+                      itemCount: media.length,
+                      itemBuilder: (context, index) {
+                        return _BannerSlide(
+                          media: media[index],
+                          isMobile: isMobile,
+                        );
+                      },
+                    ),
 
-                            return Transform.scale(
-                              scale: scale,
-                              child: Opacity(
-                                opacity: opacity,
-                                child: _BannerSlide(
-                                  media: media[index],
-                                  isMobile: isMobile,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                    // Page Indicators
+                    Positioned(
+                      bottom: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
+                      left: 0,
+                      right: 0,
+                      child: _PageIndicators(
+                        itemCount: media.length,
+                        currentPage: _currentPage,
                       ),
-
-                      // Page Indicators
-                      Positioned(
-                        bottom: isMobile
-                            ? AppTheme.spacingM
-                            : AppTheme.spacingL,
-                        left: 0,
-                        right: 0,
-                        child: _PageIndicators(
-                          itemCount: media.length,
-                          currentPage: _currentPage,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(
@@ -204,146 +151,138 @@ class _BannerSlide extends StatelessWidget {
               : media.backdropPath ?? "")
         : (media.backdropPath ?? media.posterPath);
 
-    return ClipRRect(
-      borderRadius: BorderRadiusGeometry.only(
-        bottomRight: Radius.circular(AppTheme.radiusMedium),
-        bottomLeft: Radius.circular(AppTheme.radiusMedium),
-        topRight: Radius.circular(AppTheme.radiusMedium),
-        topLeft: Radius.circular(AppTheme.radiusMedium),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          ZxyImage(
-            path: imagePath,
-            size: isMobile ? 'w780' : 'original',
-            height: double.infinity,
-            width: double.infinity,
-            fit: BoxFit.cover,
-          ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ZxyImage(
+          path: imagePath,
+          size: isMobile ? 'w780' : 'original',
+          height: double.infinity,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        ),
 
-          // Gradient Overlay - stronger for mobile text readability
+        // Gradient Overlay - stronger for mobile text readability
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isMobile
+                  ? [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.7),
+                      Colors.black.withValues(alpha: 0.95),
+                    ]
+                  : [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.1),
+                      Colors.black.withValues(alpha: 0.4),
+                      Colors.black.withValues(alpha: 0.85),
+                    ],
+              stops: const [0.0, 0.4, 0.7, 1.0],
+            ),
+          ),
+        ),
+
+        // Left-side gradient for desktop
+        if (!isMobile)
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: isMobile
-                    ? [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.2),
-                        Colors.black.withValues(alpha: 0.7),
-                        Colors.black.withValues(alpha: 0.95),
-                      ]
-                    : [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.1),
-                        Colors.black.withValues(alpha: 0.4),
-                        Colors.black.withValues(alpha: 0.85),
-                      ],
-                stops: const [0.0, 0.4, 0.7, 1.0],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.6),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.5],
               ),
             ),
           ),
 
-          // Left-side gradient for desktop
-          if (!isMobile)
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.6),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.5],
+        // Content Overlay
+        Positioned(
+          bottom: isMobile ? 50 : 80,
+          left: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
+          right: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LogoZxyImage(
+                path: logo?.filePath ?? "",
+                alignment: Alignment.bottomLeft,
+                size: isMobile ? 'w300' : 'w500',
+                maxWidth: isMobile ? 200 : 400,
+                fit: BoxFit.contain,
+                replacement: Text(
+                  title,
+                  maxLines: isMobile ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: isMobile
+                      ? Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          shadows: _textShadows,
+                        )
+                      : Theme.of(context).textTheme.displayMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          shadows: _textShadows,
+                        ),
                 ),
               ),
-            ),
+              SizedBox(
+                height: isMobile ? AppTheme.spacingXS : AppTheme.spacingM,
+              ),
 
-          // Content Overlay
-          Positioned(
-            bottom: isMobile ? 50 : 80,
-            left: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
-            right: isMobile ? AppTheme.spacingM : AppTheme.spacingXL,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LogoZxyImage(
-                  path: logo?.filePath ?? "",
-                  alignment: Alignment.bottomLeft,
-                  size: isMobile ? 'w300' : 'w500',
-                  maxWidth: isMobile ? 200 : 400,
-                  fit: BoxFit.contain,
-                  replacement: Text(
-                    title,
-                    maxLines: isMobile ? 1 : 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: isMobile
-                        ? Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            shadows: _textShadows,
-                          )
-                        : Theme.of(context).textTheme.displayMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            shadows: _textShadows,
-                          ),
-                  ),
-                ),
-                SizedBox(
-                  height: isMobile ? AppTheme.spacingXS : AppTheme.spacingM,
-                ),
-
-                // Meta Info Row (Year + Genres) - wrapped for mobile
-                Wrap(
-                  spacing: AppTheme.spacingXS,
-                  runSpacing: AppTheme.spacingXS,
-                  children: [
-                    if (year.isNotEmpty)
-                      _MetaChip(text: year, isMobile: isMobile),
-                    ...genres
-                        .take(isMobile ? 2 : 3)
-                        .map(
-                          (genre) => _MetaChip(text: genre, isMobile: isMobile),
-                        ),
-                  ],
-                ),
-
-                // Overview - desktop only
-                if (!isMobile && overview.isNotEmpty) ...[
-                  SizedBox(height: AppTheme.spacingM),
-                  SizedBox(
-                    width: 500,
-                    child: Text(
-                      overview,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        height: 1.4,
+              // Meta Info Row (Year + Genres) - wrapped for mobile
+              Wrap(
+                spacing: AppTheme.spacingXS,
+                runSpacing: AppTheme.spacingXS,
+                children: [
+                  if (year.isNotEmpty)
+                    _MetaChip(text: year, isMobile: isMobile),
+                  ...genres
+                      .take(isMobile ? 2 : 3)
+                      .map(
+                        (genre) => _MetaChip(text: genre, isMobile: isMobile),
                       ),
+                ],
+              ),
+
+              // Overview - desktop only
+              if (!isMobile && overview.isNotEmpty) ...[
+                SizedBox(height: AppTheme.spacingM),
+                SizedBox(
+                  width: 500,
+                  child: Text(
+                    overview,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      height: 1.4,
                     ),
                   ),
-                ],
-
-                SizedBox(
-                  height: isMobile ? AppTheme.spacingS : AppTheme.spacingM,
-                ),
-
-                // Play Button
-                _PlayButton(
-                  onTap: () => _navigateToDetail(context),
-                  isMobile: isMobile,
                 ),
               ],
-            ),
+
+              SizedBox(
+                height: isMobile ? AppTheme.spacingS : AppTheme.spacingM,
+              ),
+
+              // Play Button
+              _PlayButton(
+                onTap: () => _navigateToDetail(context),
+                isMobile: isMobile,
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -428,7 +367,7 @@ class _MetaChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: AppTheme.roundedSmall,
+        // borderRadius: AppTheme.roundedSmall,
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.25),
           width: 1,

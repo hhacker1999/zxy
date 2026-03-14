@@ -6,6 +6,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/views/video_player_view/video_player_view.dart';
 
+import '../shared/glass_circular_button.dart';
+
 class MobileVideoPlayerHUD extends StatelessWidget {
   const MobileVideoPlayerHUD({
     super.key,
@@ -126,7 +128,7 @@ class _TopBar extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Back Button
-            _GlassControlButton(
+            GlassCircularButton(
               onTap: onBackOrStop,
               icon: Icons.arrow_back_rounded,
               size: 44,
@@ -136,7 +138,7 @@ class _TopBar extends StatelessWidget {
             // Volume Toggle
             ValueListenableBuilder<double>(
               valueListenable: settingsBloc.volume,
-              builder: (_, vol, __) => _GlassControlButton(
+              builder: (_, vol, __) => GlassCircularButton(
                 onTap: () {
                   if (vol != 0) {
                     settingsBloc.volume = 0;
@@ -155,7 +157,7 @@ class _TopBar extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             // Settings Toggle
-            _GlassControlButton(
+            GlassCircularButton(
               onTap: () {
                 state.isOverlayVisible.value = false;
                 state.settingsVisible.value = !state.settingsVisible.value;
@@ -190,7 +192,7 @@ class _CenterControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: state.isPlaying,
-      builder: (_, isPlaying, __) {
+      builder: (_, isPlaying, _) {
         return Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -216,86 +218,6 @@ class _CenterControls extends StatelessWidget {
   }
 }
 
-class _GlassControlButton extends StatefulWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final double size;
-  final double iconSize;
-
-  const _GlassControlButton({
-    required this.icon,
-    required this.onTap,
-    this.size = 50,
-    this.iconSize = 28,
-  });
-
-  @override
-  State<_GlassControlButton> createState() => _GlassControlButtonState();
-}
-
-class _GlassControlButtonState extends State<_GlassControlButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
-    _scale = Tween(
-      begin: 1.0,
-      end: 0.85,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) {
-        _ctrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: ScaleTransition(
-        scale: _scale,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(widget.size / 2),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              width: widget.size,
-              height: widget.size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.12),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.25),
-                  width: 1.2,
-                ),
-              ),
-              child: Icon(
-                widget.icon,
-                color: Colors.white.withOpacity(0.95),
-                size: widget.iconSize,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _PlayPauseTap extends StatefulWidget {
   final bool isPlaying;
@@ -457,7 +379,7 @@ class _SkipTapState extends State<_SkipTap>
               const SizedBox(height: 2),
               ValueListenableBuilder<int>(
                 valueListenable: widget.skipDurationListenable,
-                builder: (_, skipDuration, __) {
+                builder: (_, skipDuration, _) {
                   return Text(
                     "$skipDuration",
                     style: GoogleFonts.inter(
@@ -507,7 +429,7 @@ class _BottomBar extends StatelessWidget {
         top: false,
         child: ValueListenableBuilder(
           valueListenable: state.seekInfo,
-          builder: (_, seekInfo, __) {
+          builder: (_, seekInfo, _) {
             final current = seekInfo?.current ?? Duration.zero;
             final playback = seekInfo?.playback ?? Duration.zero;
 

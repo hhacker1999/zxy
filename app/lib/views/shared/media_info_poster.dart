@@ -6,12 +6,12 @@ import 'package:zxy_app/extensions.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
-import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/shared/ratings_tag.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
 import '../../bloc/image_bloc.dart';
+import 'glass_circular_button.dart';
 
 class MediaInfoPoster extends StatefulWidget {
   final dynamic media;
@@ -175,12 +175,11 @@ class _MediaInfoPosterState extends State<MediaInfoPoster> {
                         if (year != null)
                           Text(
                             '$year',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.labelLarge!.copyWith(
-                              color: AppTheme.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: Theme.of(context).textTheme.labelLarge!
+                                .copyWith(
+                                  color: AppTheme.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                         if (year != null && runtime != null)
                           Padding(
@@ -205,12 +204,11 @@ class _MediaInfoPosterState extends State<MediaInfoPoster> {
                               ),
                               Text(
                                 runtime,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.labelLarge!.copyWith(
-                                  color: AppTheme.textSecondary,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: Theme.of(context).textTheme.labelLarge!
+                                    .copyWith(
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                               ),
                             ],
                           ),
@@ -239,13 +237,12 @@ class _MediaInfoPosterState extends State<MediaInfoPoster> {
                             ),
                             child: Text(
                               genre.name,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelSmall!.copyWith(
-                                color: Colors.white.withOpacity(0.85),
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.3,
-                              ),
+                              style: Theme.of(context).textTheme.labelSmall!
+                                  .copyWith(
+                                    color: Colors.white.withOpacity(0.85),
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.3,
+                                  ),
                             ),
                           );
                         }).toList(),
@@ -280,11 +277,17 @@ class _MediaInfoPosterState extends State<MediaInfoPoster> {
                 ),
               ),
 
-              // Back button
               Positioned(
                 left: AppTheme.spacingM,
                 top: topPad + AppTheme.spacingM,
-                child: MediaBackButton(radius: 17.5),
+                child: GlassCircularButton(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  icon: Icons.arrow_back_rounded,
+                  size: 44,
+                  iconSize: 24,
+                ),
               ),
             ],
           ),

@@ -56,7 +56,6 @@ class _HomeViewState extends State<HomeView> {
           itemBuilder: (_, index) {
             if (index == 0) {
               return TopBanner(
-                parentScrollController: _scrollController,
                 vm: homeViewModel,
               );
             }
