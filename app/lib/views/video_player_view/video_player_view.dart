@@ -73,6 +73,8 @@ class ZxyPlayerState {
   final ValueNotifier<int> audioDelay = ValueNotifier(0);
   final ValueNotifier<int> subtitleDelay = ValueNotifier(0);
   final ValueNotifier<BoxFit> playerFit = ValueNotifier(BoxFit.contain);
+  final ValueNotifier<DateTime?> lastTap = ValueNotifier(null);
+  final ValueNotifier<bool> isDoubleRate = ValueNotifier(false);
 
   void dispose() {
     isPlaying.dispose();
@@ -132,7 +134,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   late final MovieViewModel mVm;
   late final SeriesViewModel sVm;
   late final ProxyManager _pm;
-  DateTime? lastTap;
   bool updateLayoutToNormal = false;
   Timer? _hoverTimer;
   double pinRadius = 20;
@@ -542,6 +543,20 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                 onHover();
                               },
                               child: GestureDetector(
+                                onLongPressStart: (_) {
+                                  if (!_state.isPlaying.value ||
+                                      _state.bufferingOrLoading.value) {
+                                    return;
+                                  }
+                                  _state.isDoubleRate.value = true;
+                                  _player.setRate(2.0);
+                                },
+                                onLongPressEnd: (_) {
+                                  if (_state.isDoubleRate.value) {
+                                    _state.isDoubleRate.value = false;
+                                    _player.setRate(1.0);
+                                  }
+                                },
                                 onScaleEnd: (_) {
                                   horizontalScale = 1;
                                 },
@@ -561,35 +576,26 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                     }
                                   }
                                 },
-                                onTapDown: (details) async {
+                                onTapUp: (details) async {
                                   final cTime = DateTime.now();
+                                  final lastTap = _state.lastTap.value;
+                                  _state.lastTap.value = cTime;
                                   if (lastTap != null) {
-                                    final diff = cTime.difference(lastTap!);
+                                    final diff = cTime.difference(lastTap);
                                     final isDoubleTap =
                                         diff < Duration(milliseconds: 200);
-                                    if (isDoubleTap) {
-                                      if (screenData.isMobileDevice) {
-                                        final position = details.localPosition;
-                                        final center = constr.maxWidth / 2;
-                                        if (position.dx > center + 20) {
-                                          onSkipPressOrTap(true);
-                                        }
-                                        if (position.dx < center - 20) {
-                                          onSkipPressOrTap(false);
-                                        }
+                                    // NOTE: In mobile UI, second tap goes to
+                                    // hud so we dont need to check for mobile here
+                                    if (isDoubleTap &&
+                                        !screenData.isMobileDevice) {
+                                      if (await windowManager.isFullScreen()) {
+                                        windowManager.setFullScreen(false);
                                       } else {
-                                        if (await windowManager
-                                            .isFullScreen()) {
-                                          windowManager.setFullScreen(false);
-                                        } else {
-                                          windowManager.setFullScreen(true);
-                                        }
+                                        windowManager.setFullScreen(true);
                                       }
-                                      lastTap = cTime;
                                       return;
                                     }
                                   }
-                                  lastTap = cTime;
                                   onTap();
                                 },
                                 child: ValueListenableBuilder(
@@ -649,13 +655,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                             final isBuffering = _state.bufferingOrLoading.value;
                             return AnimatedSwitcher(
                               duration: const Duration(milliseconds: 300),
-                              child: !isBuffering
-                                  ? const VideoBufferingIndicator(
-                                      key: ValueKey('buffering'),
-                                    )
-                                  : const SizedBox.shrink(
-                                      key: ValueKey('idle'),
-                                    ),
+                              child: isBuffering
+                                  ? const VideoBufferingIndicator()
+                                  : const SizedBox.shrink(),
                             );
                           },
                         ),
@@ -669,6 +671,17 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                 visible: visible,
                                 duration: const Duration(milliseconds: 400),
                                 child: MobileVideoPlayerHUD(
+                                  onDoubleTap: (details) {
+                                    final position = details.localPosition;
+                                    final center = constr.maxWidth / 2;
+                                    if (position.dx > center + 20) {
+                                      onSkipPressOrTap(true);
+                                    }
+                                    if (position.dx < center - 20) {
+                                      onSkipPressOrTap(false);
+                                    }
+                                    startOverlayTimer();
+                                  },
                                   onUserInteraction: () {
                                     startOverlayTimer();
                                   },
@@ -1443,4 +1456,3 @@ class SettingsPlusMinusWidget extends StatelessWidget {
     );
   }
 }
-
