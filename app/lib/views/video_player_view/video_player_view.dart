@@ -3,11 +3,13 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +27,7 @@ import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/video_handler.dart';
 import 'package:zxy_app/views/video_player_view/loading_indicator.dart';
 import 'package:zxy_app/views/video_player_view/modern_sidebar.dart';
+import 'package:zxy_app/views/video_player_view/playback_speed_chip.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 import 'mobile_player_hud.dart';
@@ -622,6 +625,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                       ValueListenableBuilder(
                         valueListenable: _settingBloc.subFontStyle,
                         builder: (_, style, _) {
+                          final double shadowOffset = style.fontSize * 0.04;
                           return Positioned(
                             bottom: style.fontPadding,
                             left: 0,
@@ -636,6 +640,36 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                   wordSpacing: 0.0,
                                   color: style.color,
                                   fontWeight: FontWeight.normal,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(
+                                        -shadowOffset,
+                                        -shadowOffset,
+                                      ),
+                                      color: Colors.black,
+                                    ),
+                                    Shadow(
+                                      offset: Offset(
+                                        shadowOffset,
+                                        -shadowOffset,
+                                      ),
+                                      color: Colors.black,
+                                    ),
+                                    Shadow(
+                                      offset: Offset(
+                                        shadowOffset,
+                                        shadowOffset,
+                                      ),
+                                      color: Colors.black,
+                                    ),
+                                    Shadow(
+                                      offset: Offset(
+                                        -shadowOffset,
+                                        shadowOffset,
+                                      ),
+                                      color: Colors.black,
+                                    ),
+                                  ],
                                   backgroundColor: Colors.transparent,
                                 ),
                                 textAlign: TextAlign.center,
@@ -661,6 +695,12 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                             );
                           },
                         ),
+                      ),
+                      Positioned(
+                        top: MediaQuery.of(context).padding.top + 16,
+                        left: 0,
+                        right: 0,
+                        child: PlaybackSpeedChip(state: _state),
                       ),
                       if (screenData.shouldRenderMobile)
                         Positioned.fill(
