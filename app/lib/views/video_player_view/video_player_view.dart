@@ -23,6 +23,7 @@ import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/glass_container.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/video_handler.dart';
+import 'package:zxy_app/views/video_player_view/loading_indicator.dart';
 import 'package:zxy_app/views/video_player_view/modern_sidebar.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
@@ -646,9 +647,15 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                           notifiers: [_state.bufferingOrLoading],
                           builder: (_) {
                             final isBuffering = _state.bufferingOrLoading.value;
-                            return Visibility(
-                              visible: isBuffering,
-                              child: CupertinoActivityIndicator(),
+                            return AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: !isBuffering
+                                  ? const VideoBufferingIndicator(
+                                      key: ValueKey('buffering'),
+                                    )
+                                  : const SizedBox.shrink(
+                                      key: ValueKey('idle'),
+                                    ),
                             );
                           },
                         ),
@@ -1436,3 +1443,4 @@ class SettingsPlusMinusWidget extends StatelessWidget {
     );
   }
 }
+
