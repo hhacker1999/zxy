@@ -1,3 +1,5 @@
+import 'package:zxy_app/usecase/resource/models.dart';
+
 class WatchProgress {
   final String mediaId;
   final double progress;
@@ -65,6 +67,19 @@ class WatchProgress {
       progress: progress ?? this.progress,
       userId: userId ?? this.userId,
       updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
+class ContinueWatchingItem {
+  final ZxyMedia media;
+  final WatchProgress progress;
+
+  ContinueWatchingItem({required this.media, required this.progress});
+  factory ContinueWatchingItem.fromJson(Map<String, dynamic> json) {
+    return ContinueWatchingItem(
+      media: ZxyMedia.fromJson(json["media"], null),
+      progress: WatchProgress.fromJson(json["progress"]),
     );
   }
 }

@@ -9,6 +9,7 @@ import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
 import 'package:zxy_app/main.dart';
+import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
 import 'package:zxy_app/views/filter_view/filter_view.dart';
 import 'package:zxy_app/views/filter_view/filter_view_model.dart';

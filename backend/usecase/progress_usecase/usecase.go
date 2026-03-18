@@ -10,6 +10,7 @@ import (
 	"time"
 	apperrors "zxy/app_errors"
 	"zxy/models"
+	localtmdbrepository "zxy/repository/local_tmdb_repository"
 	playbackrepository "zxy/repository/playback_repository"
 	tmdbusecase "zxy/usecase/tmdb_usecase"
 	traktusecase "zxy/usecase/trakt_usecase"
@@ -26,11 +27,13 @@ type Usecase struct {
 	pbr           *playbackrepository.Repository
 	trakcUC       *traktusecase.Usecase
 	progressCache *redis.Client
+	tmdbRepo      *localtmdbrepository.Repository
 }
 
 func New(db *sql.DB, tmdbUC *tmdbusecase.Usecase, pbr *playbackrepository.Repository,
 	trakcUC *traktusecase.Usecase,
 	progressCache *redis.Client,
+	tmdbRepo *localtmdbrepository.Repository,
 ) *Usecase {
 	usecase := &Usecase{
 		db:            db,
@@ -38,6 +41,7 @@ func New(db *sql.DB, tmdbUC *tmdbusecase.Usecase, pbr *playbackrepository.Reposi
 		pbr:           pbr,
 		trakcUC:       trakcUC,
 		progressCache: progressCache,
+		tmdbRepo:      tmdbRepo,
 	}
 	go usecase.startCacheProgressSyncCron()
 	return usecase
@@ -46,7 +50,8 @@ func New(db *sql.DB, tmdbUC *tmdbusecase.Usecase, pbr *playbackrepository.Reposi
 func (u *Usecase) GetContinueWatching(
 	userId int,
 	profileId int,
-) ([]playbackrepository.ProgressUpdate, error) {
+) ([]ContinueWatchingItem, error) {
+	var response []ContinueWatchingItem
 
 	watched := false
 	visible := true
@@ -68,8 +73,58 @@ func (u *Usecase) GetContinueWatching(
 			return nil, apperrors.SomethingWentWrongError{}
 		}
 	}
+	showsIds := []int{}
+	movieIds := []int{}
 
-	return res, nil
+	for _, v := range res {
+		splitted := strings.Split(v.MediaId, ":")
+		if len(splitted) == 1 {
+			id, _ := strconv.Atoi(v.MediaId)
+			movieIds = append(movieIds, id)
+		} else {
+			id, _ := strconv.Atoi(splitted[0])
+			showsIds = append(showsIds, id)
+		}
+	}
+
+	mediaMap := make(map[string]models.ZxyMedia)
+
+	if len(showsIds) != 0 {
+		media, err := u.tmdbRepo.GetLibraryFromIds(showsIds, "show")
+		if err != nil {
+			return nil, apperrors.SomethingWentWrongError{}
+		}
+		for _, v := range media {
+      v.Type = "show"
+			mediaMap[fmt.Sprintf("%d", v.ID)] = v
+		}
+	}
+
+	if len(movieIds) != 0 {
+		media, err := u.tmdbRepo.GetLibraryFromIds(movieIds, "movie")
+		if err != nil {
+			return nil, apperrors.SomethingWentWrongError{}
+		}
+		for _, v := range media {
+      v.Type = "movie"
+			mediaMap[fmt.Sprintf("%d", v.ID)] = v
+		}
+	}
+
+	for _, v := range res {
+		splitted := strings.Split(v.MediaId, ":")
+		media, ok := mediaMap[splitted[0]]
+		if !ok {
+			fmt.Println("Media not found for continue watching", splitted[0])
+			continue
+		}
+		response = append(response, ContinueWatchingItem{
+			Media:    media,
+			Progress: v,
+		})
+	}
+
+	return response, nil
 }
 
 func (u *Usecase) GetShowProgress(

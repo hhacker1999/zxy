@@ -82,6 +82,7 @@ func (u *Usecase) syncTraktData(userId int, profileId int, token string) error {
 					IsWatched: true,
 					UserId:    userId,
 					ProfileId: profileId,
+          UpdatedAt: v.LastWatchedAt,
 				},
 			)
 		}
@@ -104,6 +105,7 @@ func (u *Usecase) syncTraktData(userId int, profileId int, token string) error {
 							IsWatched: true,
 							UserId:    userId,
 							ProfileId: profileId,
+              UpdatedAt: v.LastWatchedAt,
 						},
 					)
 				}
@@ -115,7 +117,7 @@ func (u *Usecase) syncTraktData(userId int, profileId int, token string) error {
 		fmt.Println("Nothing to update in ZXY db")
 	}
 	if len(toMarkWatched) != 0 {
-		err = u.playbackRepo.UpdateProgress(context.Background(), toMarkWatched)
+		err = u.playbackRepo.UpdateProgressTrakt(context.Background(), toMarkWatched)
 	}
 
 	isWatched = false
@@ -205,7 +207,7 @@ func (u *Usecase) syncTraktData(userId int, profileId int, token string) error {
 
 	fmt.Println("Progress to update or create", len(incomplete))
 
-	u.playbackRepo.UpdateProgress(context.Background(), incomplete)
+	u.playbackRepo.UpdateProgressTrakt(context.Background(), incomplete)
 
 	return nil
 }

@@ -4,7 +4,6 @@ import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
 
-enum ZxyMediaType { movie, shows }
 
 class FilterViewModel {
   final MediaUsecase mediaUc;

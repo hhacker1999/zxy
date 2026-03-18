@@ -1,7 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
+import 'package:zxy_app/usecase/progress/model.dart';
+import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/views/continue_watching_card.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
@@ -21,9 +22,7 @@ class ContinueWatchingHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenData = Screen.of(context);
     final double itemHeight = screenData.shouldRenderMobile ? 180 : 260;
-    return ValueListenableBuilder<
-      ViewItemState<List<ContinueWatchingCardInfo>>
-    >(
+    return ValueListenableBuilder<ViewItemState<List<ContinueWatchingItem>>>(
       valueListenable: homeViewModel.continueWatchingState,
       builder: (_, state, _) {
         if (state is ItemLoading) {
@@ -32,7 +31,7 @@ class ContinueWatchingHeader extends StatelessWidget {
             itemHeight: itemHeight,
           );
         }
-        if (state is ItemLoaded<List<ContinueWatchingCardInfo>>) {
+        if (state is ItemLoaded<List<ContinueWatchingItem>>) {
           final data = state.data;
           if (data.isEmpty) return const SizedBox.shrink();
           return Column(
@@ -91,7 +90,7 @@ class ContinueWatchingHeader extends StatelessWidget {
                       },
                       info: data[index],
                       onTap: () {
-                        if (data[index].isShow) {
+                        if (data[index].media.type == ZxyMediaType.shows) {
                           final splitted = data[index].progress.mediaId.split(
                             ":",
                           );
@@ -103,7 +102,7 @@ class ContinueWatchingHeader extends StatelessWidget {
                             context,
                             AppRoutes.seriesView,
                             arguments: SeriesViewData(
-                              id: (data[index].media as SeriesDetails).id,
+                              id: data[index].media.id,
                               seasonIndex: seasonIndex,
                               episodeIndex: episodeIndex,
                             ),
@@ -112,7 +111,7 @@ class ContinueWatchingHeader extends StatelessWidget {
                           Navigator.pushNamed(
                             context,
                             AppRoutes.movieView,
-                            arguments: (data[index].media as MovieDetails).id,
+                            arguments: data[index].media.id,
                           );
                         }
                       },

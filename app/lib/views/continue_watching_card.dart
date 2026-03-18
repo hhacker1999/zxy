@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zxy_app/app_theme.dart';
+import 'package:zxy_app/usecase/progress/model.dart';
+import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
-import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/overlay_play_button.dart';
 
 import 'package:zxy_app/views/shared/zxy_image.dart';
 
 class ContinueWatchingCard extends StatelessWidget {
-  final ContinueWatchingCardInfo info;
+  final ContinueWatchingItem info;
   final VoidCallback onTap;
   final void Function(LongPressStartDetails) onLongPress;
   final void Function(TapUpDetails) onRightClick;
@@ -29,16 +30,14 @@ class ContinueWatchingCard extends StatelessWidget {
     String? title;
     late final bool isShow;
 
-    if (info.isShow) {
+    if (info.media.type == ZxyMediaType.shows) {
       isShow = true;
-      final series = info.media as SeriesDetails;
-      backdropPath = series.backdropPath;
-      title = series.name;
+      backdropPath = info.media.backdropPath;
+      title = info.media.name;
     } else {
       isShow = false;
-      final movie = info.media as MovieDetails;
-      backdropPath = movie.backdropPath;
-      title = movie.title;
+      backdropPath = info.media.backdropPath;
+      title = info.media.title;
     }
     final screenData = Screen.of(context);
     final double width = screenData.shouldRenderMobile ? 240 : 320;

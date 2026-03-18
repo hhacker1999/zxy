@@ -10,7 +10,6 @@ import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class ContinueWatchingCardInfo {
@@ -47,7 +46,7 @@ class HomeViewModel {
       _progressUc = pguc;
 
   late ValueNotifier<List<HomeViewListItem>> homeViewLists;
-  late ValueNotifier<ViewItemState<List<ContinueWatchingCardInfo>>>
+  late ValueNotifier<ViewItemState<List<ContinueWatchingItem>>>
   continueWatchingState;
 
   late ValueNotifier<ViewItemState<List<ZxyMedia>>> topBannerState;
@@ -59,7 +58,7 @@ class HomeViewModel {
     _initialised = true;
     homeViewLists = ValueNotifier([]);
     continueWatchingState = ValueNotifier(
-      ItemLoading<List<ContinueWatchingCardInfo>>(),
+      ItemLoading<List<ContinueWatchingItem>>(),
     );
     topBannerState = ValueNotifier(ItemLoading<List<ZxyMedia>>());
     final List<Future> futures = [
@@ -134,31 +133,7 @@ class HomeViewModel {
   Future<void> initialiseContinueWatching() async {
     try {
       final res = await _progressUc.getContinueWatching();
-
-      final List<Future> futures = List.empty(growable: true);
-      for (var item in res) {
-        final splitted = item.mediaId.split(":");
-        if (splitted.length > 1) {
-          futures.add(_mediaUc.getSeriesDetails(int.parse(splitted[0])));
-        } else {
-          futures.add(_mediaUc.getMovieDetails(int.parse(splitted[0])));
-        }
-      }
-      final futureRes = await Future.wait(futures);
-      final List<ContinueWatchingCardInfo> infoList = List.empty(
-        growable: true,
-      );
-      for (int i = 0; i < res.length; i++) {
-        var item = res[i];
-        infoList.add(
-          ContinueWatchingCardInfo(
-            progress: item,
-            media: futureRes[i],
-            isShow: futureRes[i] is SeriesDetails,
-          ),
-        );
-      }
-      continueWatchingState.value = ItemLoaded(data: infoList);
+      continueWatchingState.value = ItemLoaded(data: res);
     } catch (e) {
       continueWatchingState.value = ItemError(error: e.toString());
       rethrow;

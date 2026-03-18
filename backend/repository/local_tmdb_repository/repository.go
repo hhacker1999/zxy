@@ -372,8 +372,6 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 	params = append(params, (page-1)*items)
 
 	query += suffix
-	fmt.Println(query)
-	fmt.Println(countQuery)
 
 	row := r.db.QueryRow(countQuery, countParams...)
 	err := row.Scan(&count)
