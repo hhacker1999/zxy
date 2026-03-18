@@ -8,7 +8,6 @@ import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
-import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 

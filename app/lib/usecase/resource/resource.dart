@@ -6,7 +6,6 @@ import 'package:zxy_app/usecase/auth/user.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 
 const _baseUrl = AppConstants.baseUrl;
 const _movie = "/discover/movies";
@@ -275,7 +274,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.movie));
+        temp.add(ZxyMedia.fromJson(item, null));
       }
       return temp;
     });
