@@ -225,9 +225,6 @@ func (i *RestInterface) HandleGetTraktUrl(w http.ResponseWriter, r *http.Request
 }
 
 func (i *RestInterface) HandleTraktRedirect(w http.ResponseWriter, r *http.Request) {
-	response := &ApiResponse{}
-	defer response.SendResponse(w)
-
 	state := r.URL.Query().Get("state")
 	code := r.URL.Query().Get("code")
 

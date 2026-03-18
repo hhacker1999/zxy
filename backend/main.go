@@ -147,7 +147,6 @@ func main() {
 		return
 	}
 
-	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo, addonuc)
 	traktUc := traktusecase.New(
 		cfg.TraktKey,
 		cfg.TraktSecret,
@@ -156,6 +155,7 @@ func main() {
 		cfg.TraktRedirectUri,
 		cacheRDB,
 	)
+	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo, addonuc, traktUc)
 	progressUc := progressusecase.New(
 		db,
 		tmdbUc,

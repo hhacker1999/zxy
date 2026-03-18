@@ -1053,8 +1053,12 @@ func (u *Usecase) GetLibraryFromFilter(
 	filter models.LibraryFilter,
 ) (any, error) {
 	// NOTE: We are using trakt to get trending things
-	if filter.IsTrending {
-		return u.GetTrending(filter)
+	if filter.Type == models.TRAKT {
+		if filter.TraktId == models.TRENDING {
+			return u.GetTrending(filter)
+		} else {
+			return nil, apperrors.InvalidInput{Err: "Invalid filter"}
+		}
 	}
 	var res models.MediaPaginatedResponse
 	cTime := time.Now()

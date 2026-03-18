@@ -13,6 +13,7 @@ import (
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
 	addonusecase "zxy/usecase/addon_usecase"
+	traktusecase "zxy/usecase/trakt_usecase"
 	"zxy/utils"
 
 	"github.com/google/uuid"
@@ -28,6 +29,7 @@ type Usecase struct {
 	pbRepo      *playbackrepository.Repository
 	addonRepo   *addonsrepository.Repository
 	addonUc     *addonusecase.Usecase
+	traktUc     *traktusecase.Usecase
 }
 
 func New(
@@ -37,6 +39,7 @@ func New(
 	pbRepo *playbackrepository.Repository,
 	addonRepo *addonsrepository.Repository,
 	addonUc *addonusecase.Usecase,
+	traktUc *traktusecase.Usecase,
 ) *Usecase {
 	return &Usecase{
 		db:          db,
@@ -45,6 +48,7 @@ func New(
 		pbRepo:      pbRepo,
 		addonRepo:   addonRepo,
 		addonUc:     addonUc,
+		traktUc:     traktUc,
 	}
 }
 
@@ -245,6 +249,27 @@ func (u *Usecase) GetUserProfile(userId int, profileId int) (models.UserProfile,
 		profile.IsPinProtected = true
 		profile.PinHash = ""
 	}
+	traktLists := []models.TraktList{}
+
+	if profile.TraktValid {
+		liked, err := u.traktUc.GetLikedLists(userId, profileId)
+		if err != nil {
+			profile.TraktValid = false
+			u.userRepo.SetTraktAuthInvalid(context.Background(), userId, profileId)
+		}
+		for _, v := range liked {
+			traktLists = append(traktLists, v.List)
+		}
+
+		lists, err := u.traktUc.GetUsersLists(userId, profileId)
+		if err != nil {
+			profile.TraktValid = false
+			u.userRepo.SetTraktAuthInvalid(context.Background(), userId, profileId)
+		}
+		traktLists = append(traktLists, lists...)
+	}
+	profile.TraktLists = traktLists
+
 	return profile, nil
 }
 

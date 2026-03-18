@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
 	Id        int           `json:"-"`
@@ -31,6 +33,7 @@ type UserProfile struct {
 	Webstreamr     bool                 `json:"webstreamr"`
 	Torbox         string               `json:"torbox"`
 	RealDebrid     string               `json:"real_debrid"`
+	TraktLists     []TraktList          `json:"trakt_lists"`
 }
 
 type ProfileTraktDetails struct {
@@ -40,4 +43,5 @@ type ProfileTraktDetails struct {
 	RefreshToken string
 	Expiry       time.Time
 	IsTraktValid bool
+	User         TraktUser
 }

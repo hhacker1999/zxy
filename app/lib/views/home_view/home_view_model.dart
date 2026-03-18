@@ -90,22 +90,12 @@ class HomeViewModel {
   ) async {
     try {
       const items = 3;
-      var movieFilter = LibraryFilter.defaultFilter();
-      movieFilter = movieFilter.copyWith(
-        sort: "",
-        isTrending: true,
-        items: items,
-        isMovie: true,
-      );
+      var filter = LibraryFilter.defaultFilter();
+      filter = filter.copyWith(traktUrl: "trending", isMovie: true);
       var showFilter = LibraryFilter.defaultFilter();
-      showFilter = movieFilter.copyWith(
-        sort: "",
-        isTrending: true,
-        items: items,
-        isMovie: false,
-      );
+      showFilter = filter.copyWith(traktUrl: "trending", isMovie: false);
       final res = await Future.wait([
-        _mediaUc.discoverLibrary(filter: movieFilter),
+        _mediaUc.discoverLibrary(filter: filter),
         _mediaUc.discoverLibrary(filter: showFilter),
       ]);
       final movies = res[0].results;
