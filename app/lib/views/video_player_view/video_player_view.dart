@@ -244,7 +244,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       final hdStreams = val.data.hd;
       if (uhdStreams.isEmpty && fhdStreams.isEmpty && hdStreams.isEmpty) {
         showToast(context, true, "No Streams found", "");
-        Navigator.pop(context);
+        onBackPress();
         return;
       }
 
