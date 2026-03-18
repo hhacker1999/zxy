@@ -66,6 +66,7 @@ class _SearchViewState extends State<SearchView> {
           AppTheme.boxHeightM,
           Expanded(
             child: MediaGrid(
+              initialText: "Search movie or show by name",
               showType: true,
               onScrollNearEnd: () {
                 vm.loadMoreResults();
@@ -79,4 +80,3 @@ class _SearchViewState extends State<SearchView> {
     );
   }
 }
-

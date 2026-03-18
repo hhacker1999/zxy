@@ -1061,12 +1061,21 @@ func (u *Usecase) GetLibraryFromFilter(
 	// if filter.Sort != "popularity" && filter.Sort != "imdb_rating" && filter.Sort != "date" {
 	// 	return res, apperrors.InvalidInput{Err: "Invalid sort"}
 	// }
-	movies, items, err := u.localTmdbRepo.GetLibrary(filter)
+	media, items, err := u.localTmdbRepo.GetLibrary(filter)
 	if err != nil {
 		return res, apperrors.SomethingWentWrongError{}
 	}
 	fmt.Println(time.Now().Sub(cTime).Seconds())
-	res.Results = movies
+	tp := "show"
+	if filter.IsMovie {
+		tp = "movie"
+	}
+
+	for i := range len(media) {
+		media[i].Type = tp
+	}
+
+	res.Results = media
 	res.TotalResults = items
 	res.TotalPages = (items + filter.Items - 1) / (filter.Items)
 	res.Page = filter.Page

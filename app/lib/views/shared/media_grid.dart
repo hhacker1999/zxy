@@ -16,9 +16,11 @@ class MediaGrid extends StatelessWidget {
     required this.showType,
     required this.scrollController,
     required this.notifier,
+    required this.initialText,
   });
 
   final VoidCallback onScrollNearEnd;
+  final String initialText;
   final bool showType;
   final ScrollController scrollController;
   final ValueNotifier<ViewItemState<List<ZxyMedia>>> notifier;
@@ -94,7 +96,7 @@ class MediaGrid extends StatelessWidget {
               );
             }
             if (itemState is ItemInitial) {
-              return Center(child: Text("Search movie or show by name"));
+              return Center(child: Text(initialText));
             }
             if (itemState is ItemError) {
               return Center(child: Text((itemState as ItemError).error));
