@@ -10,6 +10,9 @@ class DiscoverViewModel {
   ValueNotifier<LibraryFilter> filterNotifier =
       ValueNotifier(LibraryFilter.defaultFilter());
 
+  /// Display name of the currently active Trakt list (null when using internal filters).
+  ValueNotifier<String?> activeListName = ValueNotifier(null);
+
   ValueNotifier<ViewItemState<List<ZxyMedia>>> viewState =
       ValueNotifier(ItemLoading());
 
@@ -28,8 +31,9 @@ class DiscoverViewModel {
     getItemsFromFilter();
   }
 
-  void onFilterUpdate(LibraryFilter filter) {
+  void onFilterUpdate(LibraryFilter filter, {String? listName}) {
     filterNotifier.value = filter;
+    activeListName.value = listName;
     _currentPage = 1;
     _hasMore = true;
     _items = [];
@@ -76,6 +80,7 @@ class DiscoverViewModel {
 
   void dispose() {
     filterNotifier.dispose();
+    activeListName.dispose();
     viewState.dispose();
   }
 }

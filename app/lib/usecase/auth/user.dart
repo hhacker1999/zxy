@@ -225,7 +225,7 @@ class LibraryFilter {
     bool? thisMonth,
     bool? isFirstAir,
     List<int>? years,
-    String? traktUrl,
+    String? traktId,
   }) {
     return LibraryFilter(
       isMovie: isMovie ?? this.isMovie,
@@ -244,7 +244,7 @@ class LibraryFilter {
       thisMonth: thisMonth ?? this.thisMonth,
       isFirstAir: isFirstAir ?? this.isFirstAir,
       years: years ?? this.years,
-      traktId: traktUrl ?? this.traktId,
+      traktId: traktId ?? this.traktId,
     );
   }
 

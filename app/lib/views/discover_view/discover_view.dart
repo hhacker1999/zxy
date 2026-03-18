@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
+import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
 import 'package:zxy_app/views/discover_view/discover_filter_form.dart';
 import 'package:zxy_app/views/discover_view/discover_view_model.dart';
@@ -71,31 +72,7 @@ class _DiscoverViewState extends State<DiscoverView> {
           const SizedBox(height: AppTheme.spacingS),
 
           // ── Active filter chips ───────────────────────────────────────
-          ValueListenableBuilder<LibraryFilter>(
-            valueListenable: vm.filterNotifier,
-            builder: (_, filter, _) {
-              final chips = _buildFilterChips(filter);
-              if (chips.isEmpty) return const SizedBox.shrink();
-              return Padding(
-                padding:
-                    const EdgeInsets.only(bottom: AppTheme.spacingS),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: chips
-                        .map(
-                          (chip) => Padding(
-                            padding: const EdgeInsets.only(
-                                right: AppTheme.spacingXS),
-                            child: chip,
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              );
-            },
-          ),
+          _buildChipRow(),
 
           // ── Media grid ───────────────────────────────────────────────
           Expanded(
@@ -112,19 +89,62 @@ class _DiscoverViewState extends State<DiscoverView> {
     );
   }
 
+  Widget _buildChipRow() {
+    return ValueListenableBuilder<LibraryFilter>(
+      valueListenable: vm.filterNotifier,
+      builder: (_, filter, __) {
+        return ValueListenableBuilder<String?>(
+          valueListenable: vm.activeListName,
+          builder: (_, listName, __) {
+            final chips = _buildFilterChips(filter, listName);
+            if (chips.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppTheme.spacingS),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: chips
+                      .map(
+                        (chip) => Padding(
+                          padding:
+                              const EdgeInsets.only(right: AppTheme.spacingXS),
+                          child: chip,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _openFilterForm(BuildContext context) {
+    final profile = context.read<UserBloc>().profileNotifier.value;
     showDiscoverFilterForm(
       context: context,
       currentFilter: vm.filterNotifier.value,
-      onApply: vm.onFilterUpdate,
+      profile: profile,
+      onApply: (filter, {String? listName}) {
+        vm.onFilterUpdate(filter, listName: listName);
+      },
     );
   }
 
   // ── Build summary chips from the current filter ────────────────────────
 
-  List<Widget> _buildFilterChips(LibraryFilter filter) {
+  List<Widget> _buildFilterChips(LibraryFilter filter, String? listName) {
     final List<Widget> chips = [];
 
+    // Trakt list mode: show a single chip with the list name
+    if (filter.type == 'trakt' && listName != null) {
+      chips.add(_InfoChip(label: '🔗 $listName'));
+      return chips;
+    }
+
+    // Internal filter mode
     // Media type
     chips.add(_InfoChip(label: filter.isMovie ? 'Movies' : 'TV Shows'));
 

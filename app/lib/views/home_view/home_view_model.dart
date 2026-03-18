@@ -91,9 +91,9 @@ class HomeViewModel {
     try {
       const items = 3;
       var filter = LibraryFilter.defaultFilter();
-      filter = filter.copyWith(traktUrl: "trending", isMovie: true);
+      filter = filter.copyWith(traktId: "trending", isMovie: true);
       var showFilter = LibraryFilter.defaultFilter();
-      showFilter = filter.copyWith(traktUrl: "trending", isMovie: false);
+      showFilter = filter.copyWith(traktId: "trending", isMovie: false);
       final res = await Future.wait([
         _mediaUc.discoverLibrary(filter: filter),
         _mediaUc.discoverLibrary(filter: showFilter),
