@@ -9,9 +9,11 @@ import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
 import 'package:zxy_app/service/http_proxy.dart';
+import 'package:zxy_app/usecase/auth/user.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
+import 'package:zxy_app/views/discover_view/discover_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/movie_view/movie_view.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
@@ -108,7 +110,13 @@ class _MyAppState extends State<MyApp> {
               case AppRoutes.baseHomeView:
                 return buildRoute(
                   builder: (_) {
-                    return BaseHomeView(deps: deps);
+                    return Provider<DiscoverViewModel>(
+                      create: (_) => DiscoverViewModel(mediaUc: deps.mediaUc),
+                      dispose: (_, vm) => vm.dispose(),
+                      builder: (_, _) {
+                        return BaseHomeView(deps: deps);
+                      },
+                    );
                   },
                 );
               case AppRoutes.movieView:

@@ -9,12 +9,10 @@ import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
 import 'package:zxy_app/main.dart';
-import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
+import 'package:zxy_app/views/base_home_view/modern_navigation_drawer.dart';
 import 'package:zxy_app/views/discover_view/discover_view.dart';
 import 'package:zxy_app/views/discover_view/discover_view_model.dart';
-import 'package:zxy_app/views/filter_view/filter_view.dart';
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
@@ -24,7 +22,6 @@ import 'package:zxy_app/views/settings_view/settings_view.dart';
 import 'package:zxy_app/views/settings_view/settings_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/top_header.dart';
-import 'package:zxy_app/views/base_home_view/modern_navigation_drawer.dart';
 
 class BaseHomeView extends StatefulWidget {
   final Dependencies deps;
@@ -58,14 +55,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
       //     return FilterView();
       //   },
       // ),
-      Provider<DiscoverViewModel>(
-        key: ValueKey<String>("Discover"),
-        create: (_) => DiscoverViewModel(mediaUc: widget.deps.mediaUc),
-        dispose: (_, vm) => vm.dispose(),
-        builder: (_, _) {
-          return DiscoverView();
-        },
-      ),
+      DiscoverView(key: ValueKey<String>("Discover")),
       Provider<SearchViewModel>(
         create: (_) => SearchViewModel(mediaUC: widget.deps.mediaUc),
         dispose: (_, vm) => vm.dispose(),
@@ -85,6 +75,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
       //   },
       // ),
       ChangeNotifierProvider<SettingsViewModel>(
+        key: ValueKey("settings"),
         create: (_) =>
             SettingsViewModel(widget.deps.authUc, widget.deps.wsService),
         builder: (_, _) {

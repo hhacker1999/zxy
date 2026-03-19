@@ -69,7 +69,6 @@ class HomeViewModel {
         homeViewLists.value.add(
           HomeViewListItemDetails(item: item, state: notifier),
         );
-        // futures.add(initialiseLibraryItem(notifier, item.filter));
       }
     }
 
@@ -82,9 +81,19 @@ class HomeViewModel {
     try {
       const items = 3;
       var filter = LibraryFilter.defaultFilter();
-      filter = filter.copyWith(traktId: "trending", isMovie: true);
+      filter = filter.copyWith(
+        traktId: "trending",
+        isMovie: true,
+        type: "trakt",
+        items: items,
+      );
       var showFilter = LibraryFilter.defaultFilter();
-      showFilter = filter.copyWith(traktId: "trending", isMovie: false);
+      showFilter = filter.copyWith(
+        traktId: "trending",
+        isMovie: false,
+        type: "trakt",
+        items: items,
+      );
       final res = await Future.wait([
         _mediaUc.discoverLibrary(filter: filter),
         _mediaUc.discoverLibrary(filter: showFilter),

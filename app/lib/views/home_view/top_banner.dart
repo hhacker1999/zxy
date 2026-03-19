@@ -5,7 +5,6 @@ import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/extensions.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/series_view/series_view.dart';

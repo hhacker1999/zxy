@@ -8,7 +8,6 @@ import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 
 class LibraryListItem extends StatelessWidget {
   const LibraryListItem({
@@ -146,7 +145,9 @@ class LibraryCard extends StatelessWidget {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        resource.name ?? resource.title ?? "",
+                        resource.type == ZxyMediaType.shows
+                            ? resource.name!
+                            : resource.title!,
                         maxLines: 2,
                         textAlign: TextAlign.left,
                         overflow: TextOverflow.ellipsis,
@@ -160,10 +161,12 @@ class LibraryCard extends StatelessWidget {
                       ),
                     ),
                   );
-                }
+                },
               ),
               child: Text(
-                resource.name ?? resource.title ?? "",
+                resource.type == ZxyMediaType.shows
+                    ? resource.name!
+                    : resource.title!,
                 maxLines: 2,
                 textAlign: TextAlign.left,
                 overflow: TextOverflow.ellipsis,
