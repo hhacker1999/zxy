@@ -516,6 +516,7 @@ func (r *Repository) GetLibraryFromIdsSameOrder(
 			fmt.Println("Not found in db", v)
 			continue
 		}
+    temp.Type = tp
 		res = append(res, temp)
 	}
 
