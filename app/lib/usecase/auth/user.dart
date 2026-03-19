@@ -134,14 +134,12 @@ class ProfileTraktLists {
 
 class Ids {
   final int trakt;
-  final String slug;
 
-  Ids({required this.trakt, required this.slug});
+  Ids({required this.trakt});
 
-  factory Ids.fromJson(Map<String, dynamic> json) =>
-      Ids(trakt: json["trakt"], slug: json["slug"]);
+  factory Ids.fromJson(Map<String, dynamic> json) => Ids(trakt: json["trakt"]);
 
-  Map<String, dynamic> toJson() => {"trakt": trakt, "slug": slug};
+  Map<String, dynamic> toJson() => {"trakt": trakt};
 }
 
 class ProfileLibraryItem {

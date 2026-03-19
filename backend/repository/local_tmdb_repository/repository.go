@@ -102,6 +102,7 @@ func (r *Repository) GetImdbRatings(imdbIds []string) (map[string]float64, error
 	}
 	query += ")"
 	rows, err := r.db.Query(query, params...)
+  defer rows.Close()
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return res, nil
@@ -165,6 +166,7 @@ func (r *Repository) GetImdbRatingsFromTmdb(tmdbIds []int, tp string) (map[int]f
 	}
 	query += ")"
 	rows, err := r.db.Query(query, params...)
+  defer rows.Close()
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return res, nil
@@ -328,10 +330,10 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 
 	// suffix += " and imdb_votes > 100000"
 
-  if filter.MinVotes > 0 {
-    suffix += fmt.Sprintf(" and imdb_votes > $%d", len(params) + 1)
-    params = append(params, filter.MinVotes)
-  }
+	if filter.MinVotes > 0 {
+		suffix += fmt.Sprintf(" and imdb_votes > $%d", len(params)+1)
+		params = append(params, filter.MinVotes)
+	}
 
 	countQuery += suffix
 	countParams = append(countParams, params...)
@@ -383,6 +385,7 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 	fmt.Println(params...)
 
 	rows, err := r.db.Query(query, params...)
+  defer rows.Close()
 	if err != nil {
 		fmt.Println("Error in movies query", err)
 		return res, count, err
@@ -429,6 +432,7 @@ func (r *Repository) GetLibraryFromIds(tmdbId []int, tp string) ([]models.ZxyMed
 	query += fmt.Sprintf("and type = '%s'", tp)
 
 	rows, err := r.db.Query(query)
+  defer rows.Close()
 	if err != nil {
 		fmt.Println("Error getting library from ids", err)
 		return res, err
@@ -453,6 +457,65 @@ func (r *Repository) GetLibraryFromIds(tmdbId []int, tp string) ([]models.ZxyMed
 			temp.ImdbRating = rtg.Float64
 		}
 		temp.GenreIDS = genreId
+		res = append(res, temp)
+	}
+
+	return res, nil
+}
+
+func (r *Repository) GetLibraryFromIdsSameOrder(
+	tmdbId []int,
+	tp string,
+) ([]models.ZxyMedia, error) {
+	tempMap := make(map[int]models.ZxyMedia)
+	res := []models.ZxyMedia{}
+	query := `
+  select  data, imdb_rating, genre_ids from details where tmdb_id in (
+  `
+	for i, v := range tmdbId {
+		query += fmt.Sprintf("%d", v)
+		if i != len(tmdbId)-1 {
+			query += ","
+		}
+	}
+	query += ")"
+	query += fmt.Sprintf("and type = '%s'", tp)
+
+	rows, err := r.db.Query(query)
+  defer rows.Close()
+	if err != nil {
+		fmt.Println("Error getting library from ids", err)
+		return res, err
+	}
+	for rows.Next() {
+		var jsn json.RawMessage
+		var genreId []int64
+		var rtg sql.NullFloat64
+		var temp models.ZxyMedia
+		err := rows.Scan(&jsn, &rtg, pq.Array(&genreId))
+		if err != nil {
+			fmt.Println("Error scanning library from id", err)
+			return res, err
+		}
+
+		err = json.Unmarshal(jsn, &temp)
+		if err != nil {
+			fmt.Println("Error unmarshalling library from id", err)
+			return res, err
+		}
+		if rtg.Valid {
+			temp.ImdbRating = rtg.Float64
+		}
+		temp.GenreIDS = genreId
+		tempMap[int(temp.ID)] = temp
+	}
+
+	for _, v := range tmdbId {
+		temp, ok := tempMap[v]
+		if !ok {
+			fmt.Println("Not found in db", v)
+			continue
+		}
 		res = append(res, temp)
 	}
 

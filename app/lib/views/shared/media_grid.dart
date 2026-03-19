@@ -134,7 +134,7 @@ class MediaGrid extends StatelessWidget {
                 itemBuilder: (_, index) {
                   return Center(
                     child: LibraryCard(
-                      key: ValueKey(index),
+                      key: ValueKey(items[index].id),
                       updateColorOnHover: true,
                       showMediaType: showType,
                       resource: items[index],

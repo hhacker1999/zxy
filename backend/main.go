@@ -129,7 +129,6 @@ func main() {
 
 	wsHandler := zxyWs.New()
 
-	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey, cfg.TmdbAT, cacheRDB)
 	addonuc, err := addonusecase.New(
 		addonRepo,
 		cfg.AIOTemplatePath,
@@ -156,6 +155,14 @@ func main() {
 		cacheRDB,
 	)
 	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo, addonuc, traktUc)
+	tmdbUc := tmdbusecase.New(
+		cfg.TmdbUrl,
+		localTmdbRepo,
+		cfg.TraktKey,
+		cfg.TmdbAT,
+		cacheRDB,
+		traktUc,
+	)
 	progressUc := progressusecase.New(
 		db,
 		tmdbUc,

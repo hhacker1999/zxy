@@ -39,7 +39,7 @@ type Item struct {
 	IDS   IDS    `json:"ids"`
 }
 
-type TraktTrendingResponeElement struct {
+type TraktMultiMediaResponseElement struct {
 	Movie TraktItem `json:"movie"`
 	Show  TraktItem `json:"show"`
 }

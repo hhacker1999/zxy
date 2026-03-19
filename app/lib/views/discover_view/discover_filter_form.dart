@@ -490,7 +490,7 @@ class _DesktopTraktListPicker extends StatelessWidget {
                       bottom: AppTheme.spacingS,
                     ),
                     child: Text(
-                      'TRENDING',
+                      'TRAKT',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -529,6 +529,39 @@ class _DesktopTraktListPicker extends StatelessWidget {
                     ),
                   ),
 
+                  if (profile != null && profile!.isTraktValid) ...[
+                    const SizedBox(height: AppTheme.spacingS),
+                    _TraktListTile(
+                      icon: Icons.local_fire_department_rounded,
+                      iconColor: Colors.orangeAccent,
+                      name: 'Recommended Shows',
+                      description: 'Shows Recommended by Trakt',
+                      onTap: () => onSelect(
+                        LibraryFilter.defaultFilter().copyWith(
+                          type: 'trakt',
+                          traktId: 'recommended',
+                          isMovie: false,
+                        ),
+                        'Recommended Shows',
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spacingS),
+                    _TraktListTile(
+                      icon: Icons.local_fire_department_rounded,
+                      iconColor: Colors.orangeAccent,
+                      name: 'Recommended Movies',
+                      description: 'Movies Recommended by Trakt',
+                      onTap: () => onSelect(
+                        LibraryFilter.defaultFilter().copyWith(
+                          type: 'trakt',
+                          traktId: 'recommended',
+                          isMovie: true,
+                        ),
+                        'Recommended Movies',
+                      ),
+                    ),
+                  ],
+
                   // User lists
                   if (profile != null &&
                       profile!.isTraktValid &&
@@ -564,7 +597,7 @@ class _DesktopTraktListPicker extends StatelessWidget {
                           onTap: () => onSelect(
                             LibraryFilter.defaultFilter().copyWith(
                               type: 'trakt',
-                              traktId: list.ids.slug,
+                              traktId: list.ids.trakt.toString(),
                             ),
                             list.name,
                           ),
@@ -667,7 +700,7 @@ class _MobileTraktListPicker extends StatelessWidget {
                     bottom: AppTheme.spacingS,
                   ),
                   child: Text(
-                    'TRENDING',
+                    'TRAKT',
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -706,6 +739,39 @@ class _MobileTraktListPicker extends StatelessWidget {
                   ),
                 ),
 
+                if (profile != null && profile!.isTraktValid) ...[
+                  const SizedBox(height: AppTheme.spacingS),
+                  _TraktListTile(
+                    icon: Icons.local_fire_department_rounded,
+                    iconColor: Colors.orangeAccent,
+                    name: 'Recommended Shows',
+                    description: 'Shows Recommende by Trakt',
+                    onTap: () => onSelect(
+                      LibraryFilter.defaultFilter().copyWith(
+                        type: 'trakt',
+                        traktId: 'recommended',
+                        isMovie: false,
+                      ),
+                      'Recommended Shows',
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacingS),
+                  _TraktListTile(
+                    icon: Icons.local_fire_department_rounded,
+                    iconColor: Colors.orangeAccent,
+                    name: 'Recommended Movies',
+                    description: 'Movies Recommende by Trakt',
+                    onTap: () => onSelect(
+                      LibraryFilter.defaultFilter().copyWith(
+                        type: 'trakt',
+                        traktId: 'recommended',
+                        isMovie: true,
+                      ),
+                      'Recommended Movies',
+                    ),
+                  ),
+                ],
+
                 // User lists
                 if (profile != null &&
                     profile!.isTraktValid &&
@@ -739,7 +805,7 @@ class _MobileTraktListPicker extends StatelessWidget {
                         onTap: () => onSelect(
                           LibraryFilter.defaultFilter().copyWith(
                             type: 'trakt',
-                            traktId: list.ids.slug,
+                            traktId: list.ids.trakt.toString(),
                           ),
                           list.name,
                         ),
