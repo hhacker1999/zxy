@@ -23,16 +23,11 @@ class ContinueWatchingCardInfo {
   });
 }
 
-class HomeViewListItem {
-  final String title;
-  final ZxyMediaType type;
+class HomeViewListItemDetails {
+  final ProfileLibraryItem item;
   final ValueNotifier<ViewItemState<List<ZxyMedia>>> state;
 
-  const HomeViewListItem({
-    required this.title,
-    required this.type,
-    required this.state,
-  });
+  const HomeViewListItemDetails({required this.state, required this.item});
 }
 
 class HomeViewModel {
@@ -44,7 +39,7 @@ class HomeViewModel {
     : _mediaUc = tmdbUc,
       _progressUc = pguc;
 
-  late ValueNotifier<List<HomeViewListItem>> homeViewLists;
+  late ValueNotifier<List<HomeViewListItemDetails>> homeViewLists;
   late ValueNotifier<ViewItemState<List<ContinueWatchingItem>>>
   continueWatchingState;
 
@@ -72,13 +67,9 @@ class HomeViewModel {
         final ValueNotifier<ViewItemState<List<ZxyMedia>>> notifier =
             ValueNotifier(ItemLoading<List<ZxyMedia>>());
         homeViewLists.value.add(
-          HomeViewListItem(
-            title: item.name,
-            type: item.filter.isMovie ? ZxyMediaType.movie : ZxyMediaType.shows,
-            state: notifier,
-          ),
+          HomeViewListItemDetails(item: item, state: notifier),
         );
-        futures.add(initialiseLibraryItem(notifier, item.filter));
+        // futures.add(initialiseLibraryItem(notifier, item.filter));
       }
     }
 
@@ -168,6 +159,9 @@ class HomeViewModel {
     ValueNotifier<ViewItemState> notifier,
     LibraryFilter filter,
   ) async {
+    if (notifier.value is ItemLoaded) {
+      return;
+    }
     try {
       final response = await _mediaUc.discoverLibrary(filter: filter);
       final results = response.results;
@@ -275,13 +269,9 @@ class HomeViewModel {
         final ValueNotifier<ViewItemState<List<ZxyMedia>>> notifier =
             ValueNotifier(ItemLoading<List<ZxyMedia>>());
         homeViewLists.value.add(
-          HomeViewListItem(
-            title: item.name,
-            type: item.filter.isMovie ? ZxyMediaType.movie : ZxyMediaType.shows,
-            state: notifier,
-          ),
+          HomeViewListItemDetails(item: item, state: notifier),
         );
-        futures.add(initialiseLibraryItem(notifier, item.filter));
+        // futures.add(initialiseLibraryItem(notifier, item.filter));
       }
     }
 

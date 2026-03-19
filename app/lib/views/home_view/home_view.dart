@@ -54,9 +54,7 @@ class _HomeViewState extends State<HomeView> {
           itemCount: homeLists.length + 3,
           itemBuilder: (_, index) {
             if (index == 0) {
-              return TopBanner(
-                vm: homeViewModel,
-              );
+              return TopBanner(vm: homeViewModel);
             }
             if (index == 1) {
               return Padding(
@@ -70,48 +68,81 @@ class _HomeViewState extends State<HomeView> {
 
             final listIndex = index - 2;
             final item = homeLists[listIndex];
-            return ValueListenableBuilder<ViewItemState>(
-              valueListenable: item.state,
-              builder: (_, value, _) {
-                if (value is ItemLoading) {
-                  return Padding(
-                    padding: EdgeInsets.only(left: AppTheme.spacingM),
-                    child: _LibraryListShimmer(
-                      isMobile: screenData.shouldRenderMobile,
-                    ),
-                  );
-                }
-                if (value is ItemError) {
-                  return Center(child: Text(value.error));
-                }
-
-                final List<ZxyMedia> resourceList =
-                    (value as ItemLoaded<List<ZxyMedia>>).data;
-                return Padding(
-                  padding: EdgeInsets.only(left: AppTheme.spacingM),
-                  child: LibraryList(
-                    resource: resourceList,
-                    title: item.title,
-                    onTap: (res) {
-                      if (item.type == ZxyMediaType.movie) {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.movieView,
-                          arguments: res.id,
-                        );
-                      } else {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.seriesView,
-                          arguments: SeriesViewData(id: res.id),
-                        );
-                      }
-                    },
-                  ),
-                );
-              },
+            return HomeLibraryItem(
+              itemDetails: item,
+              screenData: screenData,
+              vm: homeViewModel,
             );
           },
+        );
+      },
+    );
+  }
+}
+
+class HomeLibraryItem extends StatefulWidget {
+  const HomeLibraryItem({
+    super.key,
+    required this.itemDetails,
+    required this.screenData,
+    required this.vm,
+  });
+
+  final HomeViewListItemDetails itemDetails;
+  final ScreenData screenData;
+  final HomeViewModel vm;
+
+  @override
+  State<HomeLibraryItem> createState() => _HomeLibraryItemState();
+}
+
+class _HomeLibraryItemState extends State<HomeLibraryItem> {
+  @override
+  void initState() {
+    super.initState();
+    widget.vm.initialiseLibraryItem(widget.itemDetails.state, widget.itemDetails.item.filter);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<ViewItemState>(
+      valueListenable: widget.itemDetails.state,
+      builder: (_, value, _) {
+        if (value is ItemLoading) {
+          return Padding(
+            padding: EdgeInsets.only(left: AppTheme.spacingM),
+            child: _LibraryListShimmer(
+              isMobile: widget.screenData.shouldRenderMobile,
+            ),
+          );
+        }
+        if (value is ItemError) {
+          return Center(child: Text(value.error));
+        }
+
+        final List<ZxyMedia> resourceList =
+            (value as ItemLoaded<List<ZxyMedia>>).data;
+        return Padding(
+          padding: EdgeInsets.only(left: AppTheme.spacingM),
+          child: LibraryList(
+            resource: resourceList,
+            title: widget.itemDetails.item.name,
+            onTap: (res) {
+              if (res.type == ZxyMediaType.movie) {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.movieView,
+                  arguments: res.id,
+                );
+              } else {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.seriesView,
+                  arguments: SeriesViewData(id: res.id),
+                );
+              }
+            },
+          ),
         );
       },
     );
@@ -135,7 +166,9 @@ class _LibraryListShimmer extends StatelessWidget {
         : AppTheme.spacingXL;
 
     final double screenWidth = MediaQuery.of(context).size.width;
-    final int itemCount = ((screenWidth + separatorWidth) / (cardWidth + separatorWidth)).ceil() + 1;
+    final int itemCount =
+        ((screenWidth + separatorWidth) / (cardWidth + separatorWidth)).ceil() +
+        1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
