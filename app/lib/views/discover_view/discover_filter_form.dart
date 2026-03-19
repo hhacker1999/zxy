@@ -87,36 +87,30 @@ class _FilterTypeChooserDialogState extends State<_FilterTypeChooserDialog> {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
-                border:
-                    Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
               ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
-                child: _selectedType == null
-                    ? _buildChooser()
-                    : _selectedType == 'internal'
-                        ? _DesktopInternalFilterForm(
-                            key: const ValueKey('internal'),
-                            initialFilter: widget.currentFilter,
-                            onApply: (filter) {
-                              widget.onApply(filter);
-                              Navigator.pop(context);
-                            },
-                            onBack: () =>
-                                setState(() => _selectedType = null),
-                          )
-                        : _DesktopTraktListPicker(
-                            key: const ValueKey('trakt'),
-                            profile: widget.profile,
-                            onSelect: (filter, name) {
-                              widget.onApply(filter, listName: name);
-                              Navigator.pop(context);
-                            },
-                            onBack: () =>
-                                setState(() => _selectedType = null),
-                          ),
+              child: Visibility(
+                visible: _selectedType != null,
+                replacement: _buildChooser(),
+                child: _selectedType == 'internal'
+                    ? _DesktopInternalFilterForm(
+                        key: const ValueKey('internal'),
+                        initialFilter: widget.currentFilter,
+                        onApply: (filter) {
+                          widget.onApply(filter);
+                          Navigator.pop(context);
+                        },
+                        onBack: () => setState(() => _selectedType = null),
+                      )
+                    : _DesktopTraktListPicker(
+                        key: const ValueKey('trakt'),
+                        profile: widget.profile,
+                        onSelect: (filter, name) {
+                          widget.onApply(filter, listName: name);
+                          Navigator.pop(context);
+                        },
+                        onBack: () => setState(() => _selectedType = null),
+                      ),
               ),
             ),
           ),
@@ -243,35 +237,30 @@ class _FilterTypeChooserSheetState extends State<_FilterTypeChooserSheet> {
                   top: BorderSide(color: Color(0x1AFFFFFF), width: 1),
                 ),
               ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
-                child: _selectedType == null
-                    ? _buildMobileChooser(scrollController)
-                    : _selectedType == 'internal'
-                        ? _MobileInternalFilterSheet(
-                            key: const ValueKey('internal_sheet'),
-                            scrollController: scrollController,
-                            initialFilter: widget.currentFilter,
-                            onApply: (filter) {
-                              widget.onApply(filter);
-                              Navigator.pop(context);
-                            },
-                            onBack: () =>
-                                setState(() => _selectedType = null),
-                          )
-                        : _MobileTraktListPicker(
-                            key: const ValueKey('trakt_sheet'),
-                            scrollController: scrollController,
-                            profile: widget.profile,
-                            onSelect: (filter, name) {
-                              widget.onApply(filter, listName: name);
-                              Navigator.pop(context);
-                            },
-                            onBack: () =>
-                                setState(() => _selectedType = null),
-                          ),
+              child: Visibility(
+                visible: _selectedType != null,
+                replacement: _buildMobileChooser(scrollController),
+                child: _selectedType == 'internal'
+                    ? _MobileInternalFilterSheet(
+                        key: const ValueKey('internal_sheet'),
+                        scrollController: scrollController,
+                        initialFilter: widget.currentFilter,
+                        onApply: (filter) {
+                          widget.onApply(filter);
+                          Navigator.pop(context);
+                        },
+                        onBack: () => setState(() => _selectedType = null),
+                      )
+                    : _MobileTraktListPicker(
+                        key: const ValueKey('trakt_sheet'),
+                        scrollController: scrollController,
+                        profile: widget.profile,
+                        onSelect: (filter, name) {
+                          widget.onApply(filter, listName: name);
+                          Navigator.pop(context);
+                        },
+                        onBack: () => setState(() => _selectedType = null),
+                      ),
               ),
             ),
           ),
@@ -486,8 +475,9 @@ class _DesktopTraktListPicker extends StatelessWidget {
         // List items
         Flexible(
           child: ScrollConfiguration(
-            behavior:
-                ScrollConfiguration.of(context).copyWith(scrollbars: false),
+            behavior: ScrollConfiguration.of(
+              context,
+            ).copyWith(scrollbars: false),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppTheme.spacingM),
               child: Column(
@@ -561,8 +551,9 @@ class _DesktopTraktListPicker extends StatelessWidget {
                     ),
                     ...profile!.profileTraktLists.map(
                       (list) => Padding(
-                        padding:
-                            const EdgeInsets.only(bottom: AppTheme.spacingS),
+                        padding: const EdgeInsets.only(
+                          bottom: AppTheme.spacingS,
+                        ),
                         child: _TraktListTile(
                           icon: Icons.bookmark_rounded,
                           iconColor: Colors.blueAccent,
@@ -737,8 +728,7 @@ class _MobileTraktListPicker extends StatelessWidget {
                   ),
                   ...profile!.profileTraktLists.map(
                     (list) => Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: AppTheme.spacingS),
+                      padding: const EdgeInsets.only(bottom: AppTheme.spacingS),
                       child: _TraktListTile(
                         icon: Icons.bookmark_rounded,
                         iconColor: Colors.blueAccent,
@@ -825,11 +815,7 @@ class _TraktListTileState extends State<_TraktListTile> {
                   color: widget.iconColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  widget.icon,
-                  size: 20,
-                  color: widget.iconColor,
-                ),
+                child: Icon(widget.icon, size: 20, color: widget.iconColor),
               ),
               const SizedBox(width: AppTheme.spacingM),
               Expanded(
@@ -947,8 +933,9 @@ class _DesktopInternalFilterFormState
         // Form content
         Flexible(
           child: ScrollConfiguration(
-            behavior:
-                ScrollConfiguration.of(context).copyWith(scrollbars: false),
+            behavior: ScrollConfiguration.of(
+              context,
+            ).copyWith(scrollbars: false),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppTheme.spacingXL),
               child: _buildFormContent(),
@@ -972,9 +959,7 @@ class _DesktopInternalFilterFormState
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.textSecondary,
-                  side: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppTheme.spacingL,
                     vertical: AppTheme.spacingM,
@@ -1205,8 +1190,7 @@ class _DesktopInternalFilterFormState
             onChanged: onChanged,
             decoration: const InputDecoration(
               isDense: true,
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
         ),
@@ -1298,16 +1282,16 @@ class _DesktopInternalFilterFormState
     required List<int> selectedGenres,
     required ValueChanged<List<int>> onChanged,
   }) {
-    final genres =
-        _filter.isMovie ? AppConstants.movieGenre : AppConstants.showGenre;
+    final genres = _filter.isMovie
+        ? AppConstants.movieGenre
+        : AppConstants.showGenre;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style:
-              GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
         ),
         const SizedBox(height: AppTheme.spacingS),
         Wrap(
@@ -1486,16 +1470,16 @@ class _MobileInternalFilterSheetState
   // ── Mobile form content ──────────────────────────────────────────────────
 
   Widget _buildMobileFormContent() {
-    final genres =
-        _filter.isMovie ? AppConstants.movieGenre : AppConstants.showGenre;
+    final genres = _filter.isMovie
+        ? AppConstants.movieGenre
+        : AppConstants.showGenre;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Media Type',
-          style:
-              GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
         ),
         const SizedBox(height: AppTheme.spacingS),
         SegmentedButton<bool>(
@@ -1519,10 +1503,8 @@ class _MobileInternalFilterSheetState
             child: DropdownButtonFormField<String>(
               initialValue: _filter.isFirstAir ? 'first' : 'last',
               items: const [
-                DropdownMenuItem(
-                    value: 'first', child: Text('First Air Date')),
-                DropdownMenuItem(
-                    value: 'last', child: Text('Last Air Date')),
+                DropdownMenuItem(value: 'first', child: Text('First Air Date')),
+                DropdownMenuItem(value: 'last', child: Text('Last Air Date')),
               ],
               onChanged: (val) => setState(
                 () => _filter = _filter.copyWith(isFirstAir: val == 'first'),
@@ -1554,8 +1536,7 @@ class _MobileInternalFilterSheetState
             ),
             decoration: const InputDecoration(
               isDense: true,
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
         ),
@@ -1599,26 +1580,23 @@ class _MobileInternalFilterSheetState
           child: DropdownButtonFormField<String?>(
             initialValue: _filter.language.isEmpty ? null : _filter.language,
             items: [
-              const DropdownMenuItem(
-                  value: null, child: Text('Any Language')),
+              const DropdownMenuItem(value: null, child: Text('Any Language')),
               ...AppConstants.isoLanguages.entries.map(
                 (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
               ),
             ],
-            onChanged: (val) => setState(
-                () => _filter = _filter.copyWith(language: val ?? '')),
+            onChanged: (val) =>
+                setState(() => _filter = _filter.copyWith(language: val ?? '')),
             decoration: const InputDecoration(
               isDense: true,
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
         ),
         const SizedBox(height: AppTheme.spacingL),
         Text(
           'Include Genres',
-          style:
-              GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
         ),
         const SizedBox(height: AppTheme.spacingS),
         Wrap(
@@ -1646,8 +1624,7 @@ class _MobileInternalFilterSheetState
         const SizedBox(height: AppTheme.spacingL),
         Text(
           'Exclude Genres',
-          style:
-              GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
         ),
         const SizedBox(height: AppTheme.spacingS),
         Wrap(
@@ -1678,8 +1655,7 @@ class _MobileInternalFilterSheetState
           child: DropdownButtonFormField<String>(
             initialValue: _filter.sort,
             items: const [
-              DropdownMenuItem(
-                  value: 'popularity', child: Text('Popularity')),
+              DropdownMenuItem(value: 'popularity', child: Text('Popularity')),
               DropdownMenuItem(
                 value: 'imdb_rating',
                 child: Text('IMDB Rating'),
@@ -1691,16 +1667,14 @@ class _MobileInternalFilterSheetState
             ),
             decoration: const InputDecoration(
               isDense: true,
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
         ),
         const SizedBox(height: AppTheme.spacingL),
         Text(
           'Sort Order',
-          style:
-              GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
         ),
         const SizedBox(height: AppTheme.spacingS),
         SegmentedButton<bool>(
@@ -1723,8 +1697,7 @@ class _MobileInternalFilterSheetState
       children: [
         Text(
           label,
-          style:
-              GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
         ),
         const SizedBox(height: AppTheme.spacingS),
         child,
