@@ -6,6 +6,7 @@ const TRAKT_PRIVATE = "trakt_private"
 
 const TRENDING = "trending"
 const RECOMMENDED = "recommended"
+const LIBRARY = "library"
 
 type ProfileLibraryItem struct {
 	Name   string        `json:"name"`

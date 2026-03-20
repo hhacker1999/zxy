@@ -36,11 +36,14 @@ func (u *Usecase) GetLibraryFromFilter(
 				return nil, err
 			}
 		}
+	} else if filter.Type == models.LIBRARY {
+		data, items, err = u.getUserLibraryItems(profileId, filter)
 	} else {
 		data, items, err = u.localTmdbRepo.GetLibrary(filter)
-		if err != nil {
-			return nil, apperrors.SomethingWentWrongError{}
-		}
+	}
+
+	if err != nil {
+		return nil, apperrors.SomethingWentWrongError{}
 	}
 	var res models.MediaPaginatedResponse
 	res.Results = data
@@ -205,6 +208,44 @@ func (u *Usecase) getTraktUserListItems(
 			movieIds = append(movieIds, int(v.Movie.IDS.Tmdb))
 		} else {
 			showIds = append(showIds, int(v.Show.IDS.Tmdb))
+		}
+	}
+
+	if len(movieIds) != 0 {
+		temp, err := u.localTmdbRepo.GetLibraryFromIdsSameOrder(movieIds, "movie")
+		if err != nil {
+			return res, 0, err
+		}
+		res = append(res, temp...)
+	}
+	if len(showIds) != 0 {
+		temp, err := u.localTmdbRepo.GetLibraryFromIdsSameOrder(showIds, "show")
+		if err != nil {
+			return res, 0, err
+		}
+		res = append(res, temp...)
+	}
+
+	return res, count, nil
+}
+
+func (u *Usecase) getUserLibraryItems(
+	profileId int,
+	filter models.LibraryFilter,
+) ([]models.ZxyMedia, int, error) {
+	var res []models.ZxyMedia
+	temp, count, err := u.userRepo.GetUserLibrary(profileId, filter.Page, filter.Items)
+	if err != nil {
+		return res, 0, apperrors.SomethingWentWrongError{}
+	}
+
+	var movieIds []int
+	var showIds []int
+	for _, v := range temp {
+		if v.Type == "movie" {
+			movieIds = append(movieIds, v.TmdbId)
+		} else {
+			showIds = append(showIds, v.TmdbId)
 		}
 	}
 
