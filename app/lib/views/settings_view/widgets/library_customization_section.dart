@@ -2,9 +2,12 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
+import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
+import 'package:zxy_app/views/discover_view/discover_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 
 import 'package:zxy_app/views/settings_view/settings_view_model.dart';
@@ -25,7 +28,7 @@ class LibraryCustomizationSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Library Customization',
+              'Home Page Customization',
               style: GoogleFonts.poppins(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
@@ -112,8 +115,13 @@ class LibraryCustomizationSection extends StatelessWidget {
                   key: ValueKey(index),
                   item: item,
                   index: index,
-                  onEdit: () =>
-                      _showLibraryItemForm(context, viewModel, item, index),
+                  onEdit: () {
+                    context.read<DiscoverViewModel>().onProfileLibraryItem(
+                      item,
+                      index,
+                    );
+                    context.read<BaseHomeViewModel>().selectedIndex.value = 1;
+                  },
                   onDelete: () =>
                       _showDeleteConfirmation(context, viewModel, index),
                   isMobile: isMobile,
@@ -326,24 +334,21 @@ class LibraryItemTile extends StatelessWidget {
           item.filter.isMovie ? 'Movies' : 'TV Shows',
           style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondary),
         ),
-        trailing: Visibility(
-          visible: !item.filter.isTrending,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                color: AppTheme.textSecondary,
-                onPressed: onEdit,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                color: AppTheme.errorColor,
-                onPressed: onDelete,
-              ),
-              if (!isMobile) AppTheme.boxWidthM,
-            ],
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              color: AppTheme.textSecondary,
+              onPressed: onEdit,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, size: 18),
+              color: AppTheme.errorColor,
+              onPressed: onDelete,
+            ),
+            if (!isMobile) AppTheme.boxWidthM,
+          ],
         ),
       ),
     );

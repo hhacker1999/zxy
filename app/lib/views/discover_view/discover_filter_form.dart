@@ -1017,32 +1017,6 @@ class _DesktopInternalFilterFormState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              OutlinedButton(
-                onPressed: () {
-                  setState(() {
-                    _filter = LibraryFilter.defaultFilter();
-                  });
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.textSecondary,
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacingL,
-                    vertical: AppTheme.spacingM,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppTheme.roundedMedium,
-                  ),
-                ),
-                child: Text(
-                  'Reset',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppTheme.spacingM),
               ElevatedButton(
                 onPressed: () =>
                     widget.onApply(_filter.copyWith(type: 'internal')),
@@ -1464,32 +1438,12 @@ class _MobileInternalFilterSheetState
                   ),
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _filter = LibraryFilter.defaultFilter();
-                      });
-                    },
-                    child: Text(
-                      'Reset',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      color: AppTheme.textSecondary,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
+              IconButton(
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: AppTheme.textSecondary,
+                ),
+                onPressed: () => Navigator.pop(context),
               ),
             ],
           ),

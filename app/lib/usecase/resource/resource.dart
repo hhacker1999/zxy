@@ -45,7 +45,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.movie));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -79,7 +79,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.shows));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -155,7 +155,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.movie));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -189,7 +189,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.shows));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -228,7 +228,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.movie));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -251,7 +251,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.shows));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -274,7 +274,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, null));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });

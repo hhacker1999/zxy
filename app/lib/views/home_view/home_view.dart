@@ -27,7 +27,8 @@ class _HomeViewState extends State<HomeView> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    homeViewModel = context.read<HomeViewModel>()..initialise(context);
+    homeViewModel = context.read<HomeViewModel>();
+    homeViewModel.initialise(context);
   }
 
   @override
@@ -100,7 +101,21 @@ class _HomeLibraryItemState extends State<HomeLibraryItem> {
   @override
   void initState() {
     super.initState();
-    widget.vm.initialiseLibraryItem(widget.itemDetails.state, widget.itemDetails.item.filter);
+    widget.vm.initialiseLibraryItem(
+      widget.itemDetails.state,
+      widget.itemDetails.item.filter,
+    );
+  }
+
+  @override
+  void didUpdateWidget(HomeLibraryItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.itemDetails != oldWidget.itemDetails) {
+      widget.vm.initialiseLibraryItem(
+        widget.itemDetails.state,
+        widget.itemDetails.item.filter,
+      );
+    }
   }
 
   @override
@@ -125,6 +140,9 @@ class _HomeLibraryItemState extends State<HomeLibraryItem> {
         return Padding(
           padding: EdgeInsets.only(left: AppTheme.spacingM),
           child: LibraryList(
+            key: ValueKey(
+              widget.itemDetails.item.name + resourceList.hashCode.toString(),
+            ),
             resource: resourceList,
             title: widget.itemDetails.item.name,
             onTap: (res) {

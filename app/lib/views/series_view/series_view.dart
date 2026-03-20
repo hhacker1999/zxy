@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -25,8 +24,6 @@ import 'package:zxy_app/views/shared/stream_row.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 import 'package:zxy_app/views/view_item_state.dart';
-
-import '../filter_view/filter_view_model.dart';
 
 class SeriesViewData {
   final int id;
@@ -258,6 +255,7 @@ class _SeriesViewState extends State<SeriesView> with RouteAware {
                               return ZxyMedia(
                                 imdbRatings: e.imdbRatings,
                                 name: e.name,
+                                title: e.name,
                                 adult: e.adult ?? false,
                                 genreIds: e.genreIds ?? [],
                                 type: ZxyMediaType.movie,
@@ -295,6 +293,7 @@ class _SeriesViewState extends State<SeriesView> with RouteAware {
                               return ZxyMedia(
                                 imdbRatings: e.imdbRatings,
                                 name: e.name,
+                                title: e.name,
                                 adult: e.adult ?? false,
                                 genreIds: e.genreIds ?? [],
                                 type: ZxyMediaType.movie,
@@ -695,9 +694,7 @@ class _MobileEpisodeCard extends StatelessWidget {
                             ),
                             Text(
                               episode.airDate != null
-                                  ? DateFormat(
-                                      'MMM d',
-                                    ).format(episode.airDate!)
+                                  ? DateFormat('MMM d').format(episode.airDate!)
                                   : 'UPCOMING',
                               style: const TextStyle(
                                 fontSize: 9,
@@ -1091,42 +1088,42 @@ class EpisodeImage extends StatelessWidget {
               size: size,
             ),
           ),
-              // Progress bar floating at bottom of thumbnail
-              if (progress != null)
-                Positioned(
-                  bottom: isMobile ? 6 : 8,
-                  left: isMobile ? 6 : 8,
-                  right: isMobile ? 6 : 8,
-                  child: ValueListenableBuilder(
-                    valueListenable: progress!,
-                    builder: (_, prog, _) {
-                      if (prog.progress == 0) return const SizedBox.shrink();
-                      return Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(100),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.4),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+          // Progress bar floating at bottom of thumbnail
+          if (progress != null)
+            Positioned(
+              bottom: isMobile ? 6 : 8,
+              left: isMobile ? 6 : 8,
+              right: isMobile ? 6 : 8,
+              child: ValueListenableBuilder(
+                valueListenable: progress!,
+                builder: (_, prog, _) {
+                  if (prog.progress == 0) return const SizedBox.shrink();
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(100),
-                          child: LinearProgressIndicator(
-                            value: prog.progress / 100,
-                            backgroundColor: Colors.white.withOpacity(0.3),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                            minHeight: 4.5,
-                          ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(100),
+                      child: LinearProgressIndicator(
+                        value: prog.progress / 100,
+                        backgroundColor: Colors.white.withOpacity(0.3),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Colors.white,
                         ),
-                      );
-                    },
-                  ),
-                ),
+                        minHeight: 4.5,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           // ── Watched check badge ─────────────────────────────────────────
           if (progress != null)
             Positioned(

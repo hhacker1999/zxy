@@ -298,7 +298,7 @@ class LibraryFilter {
     language: '',
     sort: 'popularity',
     isAsc: false,
-    items: 20,
+    items: 15,
     includedGenres: [],
     excludedGenres: [],
     isTrending: false,

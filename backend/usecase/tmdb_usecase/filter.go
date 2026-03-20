@@ -26,13 +26,13 @@ func (u *Usecase) GetLibraryFromFilter(
 		} else if filter.TraktId == models.RECOMMENDED {
 			data, items, err = u.getTraktRecommendations(userId, profileId, filter)
 			if err != nil {
-				// TODO: set user trakt login to invalid
+				u.userRepo.SetTraktAuthInvalid(context.Background(), userId, profileId)
 				return nil, err
 			}
 		} else {
 			data, items, err = u.getTraktUserListItems(userId, profileId, filter)
 			if err != nil {
-				// TODO: set user trakt login to invalid
+				u.userRepo.SetTraktAuthInvalid(context.Background(), userId, profileId)
 				return nil, err
 			}
 		}
@@ -43,15 +43,6 @@ func (u *Usecase) GetLibraryFromFilter(
 		}
 	}
 	var res models.MediaPaginatedResponse
-	tp := "show"
-	if filter.IsMovie {
-		tp = "movie"
-	}
-
-	for i := range len(data) {
-		data[i].Type = tp
-	}
-
 	res.Results = data
 	res.TotalResults = items
 	res.TotalPages = (items + filter.Items - 1) / (filter.Items)

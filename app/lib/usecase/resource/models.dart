@@ -1,5 +1,3 @@
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
-
 class ZxyPaginatedResponse<T> {
   final int page;
   final int totalPages;
@@ -74,8 +72,7 @@ class ZxyMedia {
   });
 
   @override
-  factory ZxyMedia.fromJson(Map<String, dynamic> json, ZxyMediaType? type) {
-    final mediaType = json["type"] == "show";
+  factory ZxyMedia.fromJson(Map<String, dynamic> json) {
     return ZxyMedia(
       images: json["images"] != null ? Images.fromJson(json["images"]) : null,
       adult: json["adult"],
@@ -84,7 +81,7 @@ class ZxyMedia {
           ? List<int>.from(json["genre_ids"].map((x) => x))
           : [],
       id: json["id"],
-      type: type ?? ((mediaType) ? ZxyMediaType.shows : ZxyMediaType.movie),
+      type: json["type"] == "show" ? ZxyMediaType.shows : ZxyMediaType.movie,
       originalLanguage: json["original_language"]!,
       originalTitle: json["original_title"],
       originalName: json["original_name"],

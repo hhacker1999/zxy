@@ -47,6 +47,7 @@ class LibraryListItem extends StatelessWidget {
               return Align(
                 alignment: Alignment.topCenter,
                 child: LibraryCard(
+                  key: ValueKey(resource[index].id),
                   updateColorOnHover: updateColorOnHover,
                   resource: resource[index],
                   onTap: onTap,
@@ -146,8 +147,8 @@ class LibraryCard extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         resource.type == ZxyMediaType.shows
-                            ? resource.name!
-                            : resource.title!,
+                            ? resource.name ?? ""
+                            : resource.title ?? "",
                         maxLines: 2,
                         textAlign: TextAlign.left,
                         overflow: TextOverflow.ellipsis,
@@ -165,8 +166,8 @@ class LibraryCard extends StatelessWidget {
               ),
               child: Text(
                 resource.type == ZxyMediaType.shows
-                    ? resource.name!
-                    : resource.title!,
+                    ? resource.name ?? ""
+                    : resource.title ?? "",
                 maxLines: 2,
                 textAlign: TextAlign.left,
                 overflow: TextOverflow.ellipsis,

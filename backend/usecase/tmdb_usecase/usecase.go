@@ -13,6 +13,7 @@ import (
 	apperrors "zxy/app_errors"
 	"zxy/models"
 	localtmdbrepository "zxy/repository/local_tmdb_repository"
+	userrepository "zxy/repository/user_repository"
 	traktusecase "zxy/usecase/trakt_usecase"
 
 	"github.com/redis/go-redis/v9"
@@ -26,6 +27,7 @@ type Usecase struct {
 	tmdbAt         string
 	redisCacheDb   *redis.Client
 	traktUc        *traktusecase.Usecase
+	userRepo       *userrepository.Repository
 }
 
 func New(
@@ -35,6 +37,7 @@ func New(
 	tmdbAt string,
 	redisCacheDb *redis.Client,
 	traktUc *traktusecase.Usecase,
+	userRepo *userrepository.Repository,
 ) *Usecase {
 	var tmdbClient = &http.Client{
 		Timeout: 10 * time.Second,
@@ -54,6 +57,7 @@ func New(
 		traktKey:       traktKey,
 		redisCacheDb:   redisCacheDb,
 		traktUc:        traktUc,
+		userRepo:       userRepo,
 	}
 }
 

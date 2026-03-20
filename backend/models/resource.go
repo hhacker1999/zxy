@@ -341,3 +341,8 @@ type ZxyMedia struct {
 	ImdbRating       float64  `json:"imdb_rating"`
 	Images           Images   `json:"images"`
 }
+
+type TmdbMediaIdentity struct {
+	TmdbId int
+	Type   string
+}

@@ -1,11 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
@@ -164,6 +162,8 @@ class _MovieViewState extends State<MovieView> {
                             updateColorOnHover: false,
                             resource: details.collection!.parts.map((e) {
                               return ZxyMedia(
+                                name: e.name,
+                                title: e.title,
                                 imdbRatings: e.imdbRatings,
                                 adult: e.adult ?? false,
                                 genreIds: e.genreIds ?? [],
@@ -198,7 +198,7 @@ class _MovieViewState extends State<MovieView> {
                             resource: details.recommendations!.results.map((e) {
                               return ZxyMedia(
                                 imdbRatings: e.imdbRatings,
-                                name: e.title,
+                                title: e.title,
                                 adult: e.adult ?? false,
                                 genreIds: e.genreIds ?? [],
                                 type: ZxyMediaType.movie,
@@ -232,7 +232,7 @@ class _MovieViewState extends State<MovieView> {
                             resource: details.similar!.results.map((e) {
                               return ZxyMedia(
                                 imdbRatings: e.imdbRatings,
-                                name: e.title,
+                                title: e.title,
                                 adult: e.adult ?? false,
                                 genreIds: e.genreIds ?? [],
                                 type: ZxyMediaType.movie,

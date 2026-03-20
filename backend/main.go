@@ -162,6 +162,7 @@ func main() {
 		cfg.TmdbAT,
 		cacheRDB,
 		traktUc,
+    userRepo,
 	)
 	progressUc := progressusecase.New(
 		db,

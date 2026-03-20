@@ -382,8 +382,6 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 		return res, count, err
 	}
 
-	fmt.Println(params...)
-
 	rows, err := r.db.Query(query, params...)
   defer rows.Close()
 	if err != nil {
@@ -410,6 +408,7 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 			rating = rtg.Float64
 		}
 		temp.ImdbRating = rating
+    temp.Type = tp
 
 		res = append(res, temp)
 	}

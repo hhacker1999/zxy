@@ -78,7 +78,7 @@ class ContinueWatchingItem {
   ContinueWatchingItem({required this.media, required this.progress});
   factory ContinueWatchingItem.fromJson(Map<String, dynamic> json) {
     return ContinueWatchingItem(
-      media: ZxyMedia.fromJson(json["media"], null),
+      media: ZxyMedia.fromJson(json["media"]),
       progress: WatchProgress.fromJson(json["progress"]),
     );
   }
