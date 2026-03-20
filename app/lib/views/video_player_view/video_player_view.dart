@@ -3,13 +3,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +26,7 @@ import 'package:zxy_app/views/video_handler.dart';
 import 'package:zxy_app/views/video_player_view/loading_indicator.dart';
 import 'package:zxy_app/views/video_player_view/modern_sidebar.dart';
 import 'package:zxy_app/views/video_player_view/playback_speed_chip.dart';
+import 'package:zxy_app/views/video_player_view/stream_selection_picker.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 import 'mobile_player_hud.dart';
@@ -136,7 +135,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   late final SettingsBloc _settingBloc;
   late final MovieViewModel mVm;
   late final SeriesViewModel sVm;
-  late final ProxyManager _pm;
   bool updateLayoutToNormal = false;
   Timer? _hoverTimer;
   double pinRadius = 20;
@@ -151,7 +149,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   void initState() {
     super.initState();
     _settingBloc = context.read<SettingsBloc>();
-    _pm = context.read<ProxyManager>();
     _state = ZxyPlayerState();
     _initialiseMpvPlayer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -238,6 +235,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       showToast(context, true, "Error loading streams", "");
     }
 
+
     if (val is ItemLoaded<ZxyStreamResponse>) {
       final uhdStreams = val.data.uhd;
       final fhdStreams = val.data.fhd;
@@ -248,26 +246,45 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
         return;
       }
 
-      final selectedStream = widget.handler.getSelectedStreamNotifier().value;
       final streams = List<ZxyResolutionItem>.from(uhdStreams)
         ..addAll(fhdStreams)
         ..addAll(hdStreams);
-      print("Playing url ${streams[selectedStream].url}");
-      // _pm.setInternalUrl(streams[selectedStream].url);
-      // _player.open(Media(streams[selectedStream].url), play: true);
-      _currentInternalUrl = streams[selectedStream].url;
-      widget.handler
-          .getStreamUrl(streams[selectedStream].url)
-          .then((url) {
-            print("Final url $url");
-            _player.open(Media(url), play: true);
-          })
-          .onError((e, _) {
-            if (context.mounted) {
-              showToast(context, true, e.toString(), "");
-            }
-          });
+
+      // If auto-select is off, show a picker for the user to choose a stream
+      if (!_settingBloc.autoSelectBestStream.value) {
+        showStreamSelectionPicker(
+          context: context,
+          streams: streams,
+          currentSelectedIndex:
+              widget.handler.getSelectedStreamNotifier().value,
+          showFormatted: _settingBloc.showFormattedStreams.value,
+          onStreamSelected: (index) {
+            widget.handler.getSelectedStreamNotifier().value = index;
+            _playStream(streams[index]);
+          },
+        );
+        return;
+      }
+
+      final selectedStream = widget.handler.getSelectedStreamNotifier().value;
+      _playStream(streams[selectedStream]);
     }
+  }
+
+  void _playStream(ZxyResolutionItem streamItem) {
+    print("Playing url ${streamItem.url}");
+    _currentInternalUrl = streamItem.url;
+    widget.handler
+        .getStreamUrl(streamItem.url)
+        .then((url) {
+          print("Final url $url");
+          _player.open(Media(url), play: true);
+        })
+        .onError((e, _) {
+          if (context.mounted) {
+            showToast(context, true, e.toString(), "");
+          }
+        });
   }
 
   void onMediaInitialized(Tracks tracks) {

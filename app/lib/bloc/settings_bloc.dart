@@ -18,6 +18,7 @@ class SettingsBloc {
   final ValueNotifier<String> langNotifier = ValueNotifier(
     LanguageMapper.defaultLang,
   );
+  final ValueNotifier<bool> autoSelectBestStream = ValueNotifier(true);
   late final ValueNotifier<String> resolutionNotifier;
 
   set isAmoled(bool amoled) {
@@ -72,6 +73,11 @@ class SettingsBloc {
     _storage.write(key: "formatted_streams", value: show.toString());
   }
 
+  set setAutoSelectBestStream(bool autoSelect) {
+    autoSelectBestStream.value = autoSelect;
+    _storage.write(key: "auto_select", value: autoSelect.toString());
+  }
+
   final FlutterSecureStorage _storage;
   SettingsBloc({required FlutterSecureStorage storage}) : _storage = storage;
 
@@ -103,6 +109,7 @@ class SettingsBloc {
     final lang = await _storage.read(key: "language");
     final resolution = await _storage.read(key: "resolution");
     final formattedStream = await _storage.read(key: "formatted_streams");
+    final autoSelect = await _storage.read(key: "auto_select");
     if (amoled != null) {
       isAmoled.value = amoled == "true";
     }
@@ -137,6 +144,10 @@ class SettingsBloc {
 
     if (formattedStream == "false") {
       showFormattedStreams.value = false;
+    }
+
+    if (autoSelect == "false") {
+      autoSelectBestStream.value = false;
     }
 
     if (resolution != null) {
