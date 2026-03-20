@@ -112,6 +112,8 @@ class _MovieViewState extends State<MovieView> {
                       width: width,
                       size: "w500",
                       color: color,
+                      isInLibrary: vm.isInLibrary,
+                      onLibraryToggle: () => vm.toggleLibrary(widget.id),
                     ),
                     child: SizedBox(
                       height: height,
@@ -134,6 +136,8 @@ class _MovieViewState extends State<MovieView> {
                         width: width,
                         size: "original",
                         color: color,
+                        isInLibrary: vm.isInLibrary,
+                        onLibraryToggle: () => vm.toggleLibrary(widget.id),
                       ),
                     ),
                   ),

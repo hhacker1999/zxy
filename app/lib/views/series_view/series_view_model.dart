@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:zxy_app/bloc/events_bloc.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
@@ -18,6 +19,7 @@ class SeriesViewModel implements VideoHandler {
   final ProgressUsecase progressUc;
   final UserBloc userBloc;
   final SettingsBloc settingsBloc;
+  final EventsBloc eventsBloc;
 
   late final List<Season> seasons;
   final Map<String, ZxyStreamResponse> _streams = {};
@@ -32,6 +34,7 @@ class SeriesViewModel implements VideoHandler {
     required this.progressUc,
     required this.userBloc,
     required this.settingsBloc,
+    required this.eventsBloc,
   });
 
   final ValueNotifier<bool> scffoldLoading = ValueNotifier(false);
@@ -57,6 +60,22 @@ class SeriesViewModel implements VideoHandler {
       ValueNotifier<(int, int)>((0, -1));
 
   final ValueNotifier<bool> isInLibrary = ValueNotifier(false);
+
+  Future<void> toggleLibrary(int id) async {
+    try {
+      if (isInLibrary.value) {
+        await mediaUc.removeFromLibrary(id, ZxyMediaType.shows);
+      } else {
+        await mediaUc.addToLibrary(id, ZxyMediaType.shows);
+      }
+      isInLibrary.value = !isInLibrary.value;
+      eventsBloc.addEvent(UpdatedLibrary());
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
 
   Future<void> initialise(int id, {int? season, int episode = 0}) async {
     try {

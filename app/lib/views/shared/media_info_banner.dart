@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zxy_app/app_constants.dart';
@@ -20,6 +21,8 @@ class MediaInfoBanner extends StatefulWidget {
   final String size;
   final StreamRow streamRow;
   final Color? color;
+  final ValueListenable<bool> isInLibrary;
+  final VoidCallback onLibraryToggle;
   const MediaInfoBanner({
     super.key,
     required this.media,
@@ -28,6 +31,8 @@ class MediaInfoBanner extends StatefulWidget {
     required this.streamRow,
     required this.width,
     required this.size,
+    required this.isInLibrary,
+    required this.onLibraryToggle,
   });
 
   @override
@@ -287,6 +292,23 @@ class _MediaInfoBannerState extends State<MediaInfoBanner> {
             icon: Icons.arrow_back_rounded,
             size: 44,
             iconSize: 24,
+          ),
+        ),
+        Positioned(
+          right: AppTheme.spacingL,
+          top: AppTheme.spacingL,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: widget.isInLibrary,
+            builder: (_, inLib, _) {
+              return GlassCircularButton(
+                onTap: widget.onLibraryToggle,
+                icon: inLib
+                    ? Icons.bookmark_rounded
+                    : Icons.bookmark_border_rounded,
+                size: 44,
+                iconSize: 24,
+              );
+            },
           ),
         ),
       ],

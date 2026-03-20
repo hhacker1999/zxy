@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:zxy_app/bloc/events_bloc.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
@@ -19,6 +20,7 @@ class MovieViewModel implements VideoHandler {
   final ProgressUsecase progressUc;
   final UserBloc userBloc;
   final SettingsBloc settingsBloc;
+  final EventsBloc eventsBloc;
 
   ValueNotifier<int> selectedStream = ValueNotifier(0);
 
@@ -28,6 +30,7 @@ class MovieViewModel implements VideoHandler {
     required this.progressUc,
     required this.userBloc,
     required this.settingsBloc,
+    required this.eventsBloc,
   });
 
   final ValueNotifier<ViewItemState<MovieDetails>> _movieDetailsState =
@@ -48,6 +51,22 @@ class MovieViewModel implements VideoHandler {
       _movieStreamsState;
 
   final ValueNotifier<bool> isInLibrary = ValueNotifier(false);
+
+  Future<void> toggleLibrary(int id) async {
+    try {
+      if (isInLibrary.value) {
+        await mediaUc.removeFromLibrary(id, ZxyMediaType.movie);
+      } else {
+        await mediaUc.addToLibrary(id, ZxyMediaType.movie);
+      }
+      isInLibrary.value = !isInLibrary.value;
+      eventsBloc.addEvent(UpdatedLibrary());
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
 
   Future<void> initialise(int id) async {
     try {

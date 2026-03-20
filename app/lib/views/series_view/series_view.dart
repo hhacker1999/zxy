@@ -145,6 +145,8 @@ class _SeriesViewState extends State<SeriesView> with RouteAware {
                       width: width,
                       size: "w500",
                       color: color,
+                      isInLibrary: vm.isInLibrary,
+                      onLibraryToggle: () => vm.toggleLibrary(widget.data.id),
                     ),
                     child: SizedBox(
                       height: height,
@@ -167,6 +169,8 @@ class _SeriesViewState extends State<SeriesView> with RouteAware {
                         width: width,
                         size: "original",
                         color: color,
+                        isInLibrary: vm.isInLibrary,
+                        onLibraryToggle: () => vm.toggleLibrary(widget.data.id),
                       ),
                     ),
                   ),

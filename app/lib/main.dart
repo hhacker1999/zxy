@@ -135,6 +135,7 @@ class _MyAppState extends State<MyApp> {
                         progressUc: deps.progUc,
                         userBloc: context.read<UserBloc>(),
                         settingsBloc: context.read<SettingsBloc>(),
+                        eventsBloc: context.read<EventsBloc>(),
                       ),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) =>
@@ -153,6 +154,7 @@ class _MyAppState extends State<MyApp> {
                         progressUc: deps.progUc,
                         userBloc: context.read<UserBloc>(),
                         settingsBloc: context.read<SettingsBloc>(),
+                        eventsBloc: context.read<EventsBloc>(),
                       ),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) => SeriesView(data: args),
