@@ -1,17 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:zxy_app/bloc/user_bloc.dart';
+import 'package:zxy_app/bloc/events_bloc.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
-import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class DiscoverViewModel {
   final MediaUsecase mediaUc;
   final AuthUsecase authUc;
+  late final StreamSubscription<BaseEvent> _eventSub;
   BuildContext? _context;
 
   ValueNotifier<LibraryFilter> filterNotifier = ValueNotifier(
@@ -38,6 +40,11 @@ class DiscoverViewModel {
 
   void setContext(BuildContext context) {
     _context = context;
+    _eventSub = context.read<EventsBloc>().eventStream.listen((event) {
+      if (event is UpdatedHomeList) {
+        resetFilter();
+      }
+    });
   }
 
   void initialise() {
@@ -146,5 +153,6 @@ class DiscoverViewModel {
     filterNotifier.dispose();
     activeListName.dispose();
     viewState.dispose();
+    _eventSub.cancel();
   }
 }

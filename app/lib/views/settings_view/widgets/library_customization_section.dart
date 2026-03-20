@@ -39,7 +39,7 @@ class LibraryCustomizationSection extends StatelessWidget {
             GlassIconButton(
               icon: Icons.add_rounded,
               tooltip: 'Add List',
-              onTap: () => _showLibraryItemForm(context, viewModel, null, -1),
+              onTap: () => _showDiscoverInfoDialog(context),
             ),
           ],
         ),
@@ -73,7 +73,7 @@ class LibraryCustomizationSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Tap + to create your first custom list',
+                    'Use Discover to find and save lists',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: AppTheme.textDisabled,
@@ -166,41 +166,27 @@ class LibraryCustomizationSection extends StatelessWidget {
     );
   }
 
-  void _showLibraryItemForm(
-    BuildContext context,
-    SettingsViewModel viewModel,
-    ProfileLibraryItem? existingItem,
-    int index,
-  ) {
+  void _showDiscoverInfoDialog(BuildContext context) {
     final isMobile = Screen.of(context).shouldRenderMobile;
 
     if (isMobile) {
       showModalBottomSheet(
         context: context,
-        isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (_) => LibraryFilterFormSheet(
-          existingItem: existingItem,
-          onSave: (item) {
-            if (index >= 0) {
-              viewModel.updateLibraryItem(index, item);
-            } else {
-              viewModel.addLibraryItem(item);
-            }
+        builder: (_) => _DiscoverInfoSheet(
+          onGoToDiscover: () {
+            Navigator.pop(context);
+            context.read<BaseHomeViewModel>().selectedIndex.value = 1;
           },
         ),
       );
     } else {
       showDialog(
         context: context,
-        builder: (_) => LibraryFilterFormDialog(
-          existingItem: existingItem,
-          onSave: (item) {
-            if (index >= 0) {
-              viewModel.updateLibraryItem(index, item);
-            } else {
-              viewModel.addLibraryItem(item);
-            }
+        builder: (_) => _DiscoverInfoDialog(
+          onGoToDiscover: () {
+            Navigator.pop(context);
+            context.read<BaseHomeViewModel>().selectedIndex.value = 1;
           },
         ),
       );
@@ -224,6 +210,284 @@ class LibraryCustomizationSection extends StatelessWidget {
           viewModel.deleteLibraryItem(index);
           Navigator.pop(context);
         },
+      ),
+    );
+  }
+}
+
+// ── Discover info dialog (desktop) ────────────────────────────────────────────
+
+class _DiscoverInfoDialog extends StatelessWidget {
+  final VoidCallback onGoToDiscover;
+
+  const _DiscoverInfoDialog({required this.onGoToDiscover});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingXL,
+        vertical: AppTheme.spacingXL,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              padding: const EdgeInsets.all(AppTheme.spacingXL),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+                border:
+                    Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.explore_rounded,
+                      size: 28,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacingL),
+                  Text(
+                    'Create Lists from Discover',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacingS),
+                  Text(
+                    'Select a filter in Discover and save it to add a new list to your home page.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      height: 1.5,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacingXL),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.textSecondary,
+                              side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.15),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppTheme.roundedMedium,
+                              ),
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spacingM),
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
+                          child: ElevatedButton(
+                            onPressed: onGoToDiscover,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Discover',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.arrow_forward_rounded,
+                                    size: 16, color: Colors.black),
+                              ],
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppTheme.roundedMedium,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Discover info bottom sheet (mobile) ───────────────────────────────────────
+
+class _DiscoverInfoSheet extends StatelessWidget {
+  final VoidCallback onGoToDiscover;
+
+  const _DiscoverInfoSheet({required this.onGoToDiscover});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(24),
+        ),
+        border: Border(
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+          left: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+          right: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spacingXL,
+            AppTheme.spacingM,
+            AppTheme.spacingXL,
+            AppTheme.spacingXL,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Handle bar ────────────────────────────────────────
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.20),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: AppTheme.spacingL),
+
+              // ── Icon ──────────────────────────────────────────────
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.explore_rounded,
+                  size: 28,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppTheme.spacingL),
+
+              // ── Title ─────────────────────────────────────────────
+              Text(
+                'Create Lists from Discover',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppTheme.spacingS),
+
+              // ── Description ───────────────────────────────────────
+              Text(
+                'Select a filter in Discover and save it to add a new list to your home page.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppTheme.spacingXL),
+
+              // ── Go to Discover button ─────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: onGoToDiscover,
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: Text(
+                    'Go to Discover',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppTheme.roundedMedium,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppTheme.spacingS),
+
+              // ── Cancel ────────────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.textSecondary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppTheme.roundedMedium,
+                    ),
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
