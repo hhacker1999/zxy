@@ -43,7 +43,7 @@ func (r *Repository) GetUserLibrary(
 	countPrefix := "select count(*) "
 	queryPrefix := "select tmdb_id, type "
 	query := " from profile_library where profile_id = $1 "
-  offset:= int((items*(page-1)))
+	offset := int((items * (page - 1)))
 	limits := fmt.Sprintf(" order by created_at desc limit %d offset %d ", items, offset)
 
 	row := r.db.QueryRow(
@@ -75,4 +75,23 @@ func (r *Repository) GetUserLibrary(
 	}
 
 	return res, count, nil
+}
+
+func (r *Repository) CheckIfInLibrary(
+	profileId int,
+	tmdbId int,
+	tp string,
+) (bool, error) {
+	var res int
+
+	row := r.db.QueryRow(`select count(*) from profile_library where profile_id = $1
+    and tmdb_id = $2 and type = $3
+    `, profileId, tmdbId, tp)
+	err := row.Scan(&res)
+	if err != nil {
+		fmt.Println("Error scanning in library response", err)
+		return false, err
+	}
+
+	return res == 1, nil
 }

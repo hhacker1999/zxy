@@ -14,6 +14,8 @@ import 'package:zxy_app/views/base_home_view/modern_navigation_drawer.dart';
 import 'package:zxy_app/views/discover_view/discover_view.dart';
 import 'package:zxy_app/views/discover_view/discover_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view.dart';
+import 'package:zxy_app/views/library_view/library_view.dart';
+import 'package:zxy_app/views/library_view/library_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/search_view/search_view.dart';
@@ -63,17 +65,14 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
           return SearchView(keyword: "");
         },
       ),
-      // Provider<FilterViewModel>(
-      //   key: ValueKey<String>("Show Library"),
-      //   create: (_) => FilterViewModel(
-      //     type: ZxyMediaType.shows,
-      //     mediaUc: widget.deps.mediaUc,
-      //   ),
-      //   dispose: (_, vm) => vm.dispose(),
-      //   builder: (_, _) {
-      //     return FilterView();
-      //   },
-      // ),
+      Provider<LibraryViewModel>(
+        key: ValueKey<String>("Library"),
+        create: (_) => LibraryViewModel(mediaUc: widget.deps.mediaUc),
+        dispose: (_, vm) => vm.dispose(),
+        builder: (_, _) {
+          return LibraryView();
+        },
+      ),
       ChangeNotifierProvider<SettingsViewModel>(
         key: ValueKey("settings"),
         create: (_) =>
@@ -88,6 +87,7 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
       ("Discover", AppIcons.show),
       ("Search", AppIcons.search),
       // ("TV Shows", AppIcons.show),
+      ("Library", AppIcons.movie),
       ("Settings", AppIcons.settings),
     ];
   }

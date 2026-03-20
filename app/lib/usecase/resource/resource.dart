@@ -306,4 +306,18 @@ class MediaUsecase {
       },
     );
   }
+
+  Future<bool> isInLibrary(int tmdbId, ZxyMediaType type) async {
+    var url = "$_baseUrl$_modifyLibrary/check";
+    final res = await _httpService.post(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+      body: {
+        "tmdb_id": tmdbId,
+        "type": type == ZxyMediaType.movie ? "movie" : "show",
+      },
+    );
+    final found = (json.decode(res.body) as Map<String, dynamic>)["found"];
+    return found as bool;
+  }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 abstract class BaseEvent {}
 class UpdatedHomeList implements BaseEvent {}
+class UpdatedLibrary implements BaseEvent {}
 
 
 class EventsBloc {

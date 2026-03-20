@@ -189,6 +189,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Delete("/user/source", i.SessionHandler(i.HandleRemoveSource, true))
 	router.Post("/user/library", i.SessionHandler(i.HandleAddToLibrary, true))
 	router.Delete("/user/library", i.SessionHandler(i.HandleDeleteFromLibrary, true))
+	router.Post("/user/library/check", i.SessionHandler(i.HandleCheckIfInLibrary, true))
 	return router
 }
 

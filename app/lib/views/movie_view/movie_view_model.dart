@@ -5,6 +5,7 @@ import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
+import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
@@ -46,13 +47,17 @@ class MovieViewModel implements VideoHandler {
   ValueListenable<ViewItemState<ZxyStreamResponse>> get movieStreamState =>
       _movieStreamsState;
 
+  final ValueNotifier<bool> isInLibrary = ValueNotifier(false);
+
   Future<void> initialise(int id) async {
     try {
       final details = await mediaUc.getMovieDetails(id);
-      _movieDetailsState.value = ItemLoaded(data: details);
       final progress = await progressUc.getMovieProgress(details.id.toString());
       _progressNotifier.value =
           progress ?? WatchProgress.empty(details.id.toString());
+      final inLib = await mediaUc.isInLibrary(id, ZxyMediaType.movie);
+      isInLibrary.value = inLib;
+      _movieDetailsState.value = ItemLoaded(data: details);
       final userHasAddedDebrid =
           !(userBloc.profileNotifier.value!.realDebrid.isEmpty &&
               userBloc.profileNotifier.value!.torbox.isEmpty &&
@@ -111,6 +116,7 @@ class MovieViewModel implements VideoHandler {
     _movieStreamsState.dispose();
     _progressNotifier.dispose();
     _progressTimer?.cancel();
+    isInLibrary.dispose();
   }
 
   //----------------------------------Handler Methods--------------------------------------------

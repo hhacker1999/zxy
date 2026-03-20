@@ -4,6 +4,7 @@ import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/usecase/progress/model.dart';
 import 'package:zxy_app/usecase/progress/usecase.dart';
+import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
@@ -55,6 +56,8 @@ class SeriesViewModel implements VideoHandler {
   final ValueNotifier<(int, int)> activeSeasonEpisode =
       ValueNotifier<(int, int)>((0, -1));
 
+  final ValueNotifier<bool> isInLibrary = ValueNotifier(false);
+
   Future<void> initialise(int id, {int? season, int episode = 0}) async {
     try {
       final details = await mediaUc.getSeriesDetails(id);
@@ -87,6 +90,8 @@ class SeriesViewModel implements VideoHandler {
 
       activeSeasonEpisode.value = (season!, activeSeasonEpisode.value.$2);
       onEpisodeSelect(episode);
+      final inLib = await mediaUc.isInLibrary(id, ZxyMediaType.shows);
+      isInLibrary.value = inLib;
       _seriesDetailsState.value = ItemLoaded(data: details);
     } catch (e) {
       if (kDebugMode) {
@@ -217,6 +222,7 @@ class SeriesViewModel implements VideoHandler {
     activeSeasonEpisode.dispose();
     _progressTimer?.cancel();
     scffoldLoading.dispose();
+    isInLibrary.dispose();
   }
 
   //----------------------------------Handler Methods--------------------------------------------
