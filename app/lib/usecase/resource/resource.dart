@@ -10,6 +10,7 @@ import 'package:zxy_app/usecase/resource/tv_details.dart';
 const _baseUrl = AppConstants.baseUrl;
 const _movie = "/discover/movies";
 const _library = "/discover/library";
+const _modifyLibrary = "/user/library";
 const _trendingMovie = "/trending/movies";
 const _trendingShow = "/trending/shows";
 const _tv = "/discover/shows";
@@ -280,5 +281,29 @@ class MediaUsecase {
     });
 
     return finalResult;
+  }
+
+  Future<void> addToLibrary(int tmdbId, ZxyMediaType type) async {
+    var url = _baseUrl + _modifyLibrary;
+    await _httpService.post(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+      body: {
+        "tmdb_id": tmdbId,
+        "type": type == ZxyMediaType.movie ? "movie" : "show",
+      },
+    );
+  }
+
+  Future<void> removeFromLibrary(int tmdbId, ZxyMediaType type) async {
+    var url = _baseUrl + _modifyLibrary;
+    await _httpService.delete(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+      body: {
+        "tmdb_id": tmdbId,
+        "type": type == ZxyMediaType.movie ? "movie" : "show",
+      },
+    );
   }
 }
