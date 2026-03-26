@@ -224,7 +224,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     _updatePlayerBasedOnStreamsUpdate();
   }
 
-  // NOTE: This function listens to streams and load url from strems
+  // NOTE: This function listens to streams and load url from streams
   void _updatePlayerBasedOnStreamsUpdate() {
     final val = widget.handler.getCurrentStreamsNotifier().value;
     if (val is ItemLoading) {
@@ -470,6 +470,21 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     Navigator.pop(context);
   }
 
+
+  void onSkipPressOrTap(bool isRight) {
+    final currDur = _state.seekInfo.value.current;
+    if (isRight) {
+      _player.seek(
+        currDur + Duration(seconds: _settingBloc.skipDuration.value),
+      );
+    } else {
+      _player.seek(
+        currDur - Duration(seconds: _settingBloc.skipDuration.value),
+      );
+    }
+    // onHover();
+  }
+
   @override
   void dispose() {
     widget.handler.getCurrentStreamsNotifier().removeListener(
@@ -489,19 +504,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     super.dispose();
   }
 
-  void onSkipPressOrTap(bool isRight) {
-    final currDur = _state.seekInfo.value.current;
-    if (isRight) {
-      _player.seek(
-        currDur + Duration(seconds: _settingBloc.skipDuration.value),
-      );
-    } else {
-      _player.seek(
-        currDur - Duration(seconds: _settingBloc.skipDuration.value),
-      );
-    }
-    // onHover();
-  }
 
   @override
   Widget build(BuildContext context) {

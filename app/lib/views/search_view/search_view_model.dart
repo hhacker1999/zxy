@@ -2,7 +2,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/resource.dart';
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 class SearchViewModel {

@@ -12,6 +12,7 @@ import 'package:zxy_app/views/shared/library_list.dart';
 import 'package:zxy_app/views/shared/media_info_banner.dart';
 import 'package:zxy_app/views/shared/media_info_poster.dart';
 import 'package:zxy_app/views/shared/media_view_shimmer.dart';
+import 'package:zxy_app/views/shared/scale_fade_widget.dart';
 import 'package:zxy_app/views/shared/stream_row.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
@@ -87,37 +88,15 @@ class _MovieViewState extends State<MovieView> {
                   )
                   .toList();
             }
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Visibility(
-                    visible: !Screen.of(context).shouldRenderMobile,
-                    replacement: MediaInfoPoster(
-                      streamRow: StreamRow(
-                        onTap: () async {
-                          await Navigator.pushNamed(
-                            context,
-                            AppRoutes.videoPlayerView,
-                            arguments: vm,
-                          );
-                          vm.onPause();
-                        },
-                        color: AppTheme.accentColor,
-                        handler: vm,
-                        onStreamSelect: vm.onStreamSelect,
-                      ),
-                      media: details,
-                      height: height,
-                      width: width,
-                      size: "w500",
-                      color: color,
-                      isInLibrary: vm.isInLibrary,
-                      onLibraryToggle: () => vm.toggleLibrary(widget.id),
-                    ),
-                    child: SizedBox(
-                      height: height,
-                      child: MediaInfoBanner(
+            return ScaleFadeWidget(
+            initialScale: 1,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Visibility(
+                      visible: !Screen.of(context).shouldRenderMobile,
+                      replacement: MediaInfoPoster(
                         streamRow: StreamRow(
                           onTap: () async {
                             await Navigator.pushNamed(
@@ -134,135 +113,162 @@ class _MovieViewState extends State<MovieView> {
                         media: details,
                         height: height,
                         width: width,
-                        size: "original",
+                        size: "w500",
                         color: color,
                         isInLibrary: vm.isInLibrary,
                         onLibraryToggle: () => vm.toggleLibrary(widget.id),
                       ),
-                    ),
-                  ),
-                  AppTheme.boxHeightL,
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacingM,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CastAndCrew(
-                          castList: castList,
-                          renderMobile: screenInfo.shouldRenderMobile,
+                      child: SizedBox(
+                        height: height,
+                        child: MediaInfoBanner(
+                          streamRow: StreamRow(
+                            onTap: () async {
+                              await Navigator.pushNamed(
+                                context,
+                                AppRoutes.videoPlayerView,
+                                arguments: vm,
+                              );
+                              vm.onPause();
+                            },
+                            color: AppTheme.accentColor,
+                            handler: vm,
+                            onStreamSelect: vm.onStreamSelect,
+                          ),
+                          media: details,
+                          height: height,
+                          width: width,
+                          size: "original",
+                          color: color,
+                          isInLibrary: vm.isInLibrary,
+                          onLibraryToggle: () => vm.toggleLibrary(widget.id),
                         ),
-                        screenInfo.shouldRenderMobile
-                            ? AppTheme.boxHeightS
-                            : AppTheme.boxHeightL,
-                        if (details.collection != null &&
-                            details.collection!.parts.isNotEmpty) ...[
-                          screenInfo.shouldRenderMobile
-                              ? AppTheme.boxHeightM
-                              : AppTheme.boxHeightL,
-                          LibraryList(
-                            updateColorOnHover: false,
-                            resource: details.collection!.parts.map((e) {
-                              return ZxyMedia(
-                                name: e.name,
-                                title: e.title,
-                                imdbRatings: e.imdbRatings,
-                                adult: e.adult ?? false,
-                                genreIds: e.genreIds ?? [],
-                                type: ZxyMediaType.movie,
-                                id: e.id,
-                                originalLanguage: "",
-                                overview: "",
-                                popularity: e.popularity,
-                                posterPath: e.posterPath,
-                                voteAverage: e.voteAverage,
-                                voteCount: null,
-                              );
-                            }).toList(),
-                            title: details.collection!.name,
-                            onTap: (media) {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.movieView,
-                                arguments: media.id,
-                              );
-                            },
-                          ),
-                        ],
-
-                        if (details.recommendations != null &&
-                            details.recommendations!.results.isNotEmpty) ...[
-                          screenInfo.shouldRenderMobile
-                              ? AppTheme.boxHeightM
-                              : AppTheme.boxHeightL,
-                          LibraryList(
-                            updateColorOnHover: false,
-                            resource: details.recommendations!.results.map((e) {
-                              return ZxyMedia(
-                                imdbRatings: e.imdbRatings,
-                                title: e.title,
-                                adult: e.adult ?? false,
-                                genreIds: e.genreIds ?? [],
-                                type: ZxyMediaType.movie,
-                                id: e.id,
-                                originalLanguage: "",
-                                overview: "",
-                                popularity: e.popularity,
-                                posterPath: e.posterPath,
-                                voteAverage: e.voteAverage,
-                                voteCount: null,
-                              );
-                            }).toList(),
-                            title: "You may also like",
-                            onTap: (media) {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.movieView,
-                                arguments: media.id,
-                              );
-                            },
-                          ),
-                        ],
-
-                        if (details.similar != null &&
-                            details.similar!.results.isNotEmpty) ...[
-                          screenInfo.shouldRenderMobile
-                              ? AppTheme.boxHeightM
-                              : AppTheme.boxHeightL,
-                          LibraryList(
-                            updateColorOnHover: false,
-                            resource: details.similar!.results.map((e) {
-                              return ZxyMedia(
-                                imdbRatings: e.imdbRatings,
-                                title: e.title,
-                                adult: e.adult ?? false,
-                                genreIds: e.genreIds ?? [],
-                                type: ZxyMediaType.movie,
-                                id: e.id,
-                                originalLanguage: "",
-                                overview: "",
-                                popularity: e.popularity,
-                                posterPath: e.posterPath,
-                                voteAverage: e.voteAverage,
-                                voteCount: null,
-                              );
-                            }).toList(),
-                            title: "Similar Movies",
-                            onTap: (media) {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.movieView,
-                                arguments: media.id,
-                              );
-                            },
-                          ),
-                        ],
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                    AppTheme.boxHeightL,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacingM,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CastAndCrew(
+                            castList: castList,
+                            renderMobile: screenInfo.shouldRenderMobile,
+                          ),
+                          screenInfo.shouldRenderMobile
+                              ? AppTheme.boxHeightS
+                              : AppTheme.boxHeightL,
+                          if (details.collection != null &&
+                              details.collection!.parts.isNotEmpty) ...[
+                            screenInfo.shouldRenderMobile
+                                ? AppTheme.boxHeightM
+                                : AppTheme.boxHeightL,
+                            LibraryList(
+                              updateColorOnHover: false,
+                              resource: details.collection!.parts.map((e) {
+                                return ZxyMedia(
+                                  name: e.name,
+                                  title: e.title,
+                                  imdbRatings: e.imdbRatings,
+                                  adult: e.adult ?? false,
+                                  genreIds: e.genreIds ?? [],
+                                  type: ZxyMediaType.movie,
+                                  id: e.id,
+                                  originalLanguage: "",
+                                  overview: "",
+                                  popularity: e.popularity,
+                                  posterPath: e.posterPath,
+                                  voteAverage: e.voteAverage,
+                                  voteCount: null,
+                                );
+                              }).toList(),
+                              title: details.collection!.name,
+                              onTap: (media) {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.movieView,
+                                  arguments: media.id,
+                                );
+                              },
+                            ),
+                          ],
+                    
+                          if (details.recommendations != null &&
+                              details.recommendations!.results.isNotEmpty) ...[
+                            screenInfo.shouldRenderMobile
+                                ? AppTheme.boxHeightM
+                                : AppTheme.boxHeightL,
+                            LibraryList(
+                              updateColorOnHover: false,
+                              resource: details.recommendations!.results.map((
+                                e,
+                              ) {
+                                return ZxyMedia(
+                                  imdbRatings: e.imdbRatings,
+                                  title: e.title,
+                                  adult: e.adult ?? false,
+                                  genreIds: e.genreIds ?? [],
+                                  type: ZxyMediaType.movie,
+                                  id: e.id,
+                                  originalLanguage: "",
+                                  overview: "",
+                                  popularity: e.popularity,
+                                  posterPath: e.posterPath,
+                                  voteAverage: e.voteAverage,
+                                  voteCount: null,
+                                );
+                              }).toList(),
+                              title: "You may also like",
+                              onTap: (media) {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.movieView,
+                                  arguments: media.id,
+                                );
+                              },
+                            ),
+                          ],
+                    
+                          if (details.similar != null &&
+                              details.similar!.results.isNotEmpty) ...[
+                            screenInfo.shouldRenderMobile
+                                ? AppTheme.boxHeightM
+                                : AppTheme.boxHeightL,
+                            LibraryList(
+                              updateColorOnHover: false,
+                              resource: details.similar!.results.map((e) {
+                                return ZxyMedia(
+                                  imdbRatings: e.imdbRatings,
+                                  title: e.title,
+                                  adult: e.adult ?? false,
+                                  genreIds: e.genreIds ?? [],
+                                  type: ZxyMediaType.movie,
+                                  id: e.id,
+                                  originalLanguage: "",
+                                  overview: "",
+                                  popularity: e.popularity,
+                                  posterPath: e.posterPath,
+                                  voteAverage: e.voteAverage,
+                                  voteCount: null,
+                                );
+                              }).toList(),
+                              title: "Similar Movies",
+                              onTap: (media) {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.movieView,
+                                  arguments: media.id,
+                                );
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },

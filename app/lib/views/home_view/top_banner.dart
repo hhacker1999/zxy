@@ -8,6 +8,7 @@ import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/series_view/series_view.dart';
+import 'package:zxy_app/views/shared/scale_fade_widget.dart';
 import 'package:zxy_app/views/shared/zxy_button.dart';
 import 'package:zxy_app/views/shared/zxy_image.dart';
 import 'package:zxy_app/views/view_item_state.dart';
@@ -78,49 +79,53 @@ class _TopBannerState extends State<TopBanner> {
         }
 
         final media = state.data;
-        return Padding(
-          padding: EdgeInsets.only(
-            left: !screenData.shouldRenderMobile ? AppTheme.spacingM : 0,
-          ),
-          child: Column(
-            children: [
-              AspectRatio(
-                aspectRatio: aspectRatio,
-                child: Stack(
-                  children: [
-                    PageView.builder(
-                      onPageChanged: (page) {
-                        setState(() {
-                          _currentPage = page;
-                        });
-                      },
-                      controller: _pageController,
-                      itemCount: media.length,
-                      itemBuilder: (context, index) {
-                        return _BannerSlide(
-                          media: media[index],
-                          isMobile: isMobile,
-                        );
-                      },
-                    ),
-
-                    // Page Indicators
-                    Positioned(
-                      bottom: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
-                      left: 0,
-                      right: 0,
-                      child: _PageIndicators(
+        return ScaleFadeWidget(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: !screenData.shouldRenderMobile ? AppTheme.spacingM : 0,
+            ),
+            child: Column(
+              children: [
+                AspectRatio(
+                  aspectRatio: aspectRatio,
+                  child: Stack(
+                    children: [
+                      PageView.builder(
+                        onPageChanged: (page) {
+                          setState(() {
+                            _currentPage = page;
+                          });
+                        },
+                        controller: _pageController,
                         itemCount: media.length,
-                        currentPage: _currentPage,
+                        itemBuilder: (context, index) {
+                          return _BannerSlide(
+                            media: media[index],
+                            isMobile: isMobile,
+                          );
+                        },
                       ),
-                    ),
-                  ],
+
+                      // Page Indicators
+                      Positioned(
+                        bottom: isMobile
+                            ? AppTheme.spacingM
+                            : AppTheme.spacingL,
+                        left: 0,
+                        right: 0,
+                        child: _PageIndicators(
+                          itemCount: media.length,
+                          currentPage: _currentPage,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(
-                height: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
-              ),
-            ],
+                SizedBox(
+                  height: isMobile ? AppTheme.spacingM : AppTheme.spacingL,
+                ),
+              ],
+            ),
           ),
         );
       },
