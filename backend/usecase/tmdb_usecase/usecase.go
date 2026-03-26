@@ -13,6 +13,8 @@ import (
 	apperrors "zxy/app_errors"
 	"zxy/models"
 	localtmdbrepository "zxy/repository/local_tmdb_repository"
+	userrepository "zxy/repository/user_repository"
+	traktusecase "zxy/usecase/trakt_usecase"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -24,6 +26,8 @@ type Usecase struct {
 	traktKey       string
 	tmdbAt         string
 	redisCacheDb   *redis.Client
+	traktUc        *traktusecase.Usecase
+	userRepo       *userrepository.Repository
 }
 
 func New(
@@ -32,6 +36,8 @@ func New(
 	traktKey string,
 	tmdbAt string,
 	redisCacheDb *redis.Client,
+	traktUc *traktusecase.Usecase,
+	userRepo *userrepository.Repository,
 ) *Usecase {
 	var tmdbClient = &http.Client{
 		Timeout: 10 * time.Second,
@@ -50,6 +56,8 @@ func New(
 		tmdbAt:         tmdbAt,
 		traktKey:       traktKey,
 		redisCacheDb:   redisCacheDb,
+		traktUc:        traktUc,
+		userRepo:       userRepo,
 	}
 }
 
@@ -923,6 +931,7 @@ func (u *Usecase) SearchMovie(
 
 	for i := range len(resp.Results) {
 		v := resp.Results[i]
+		v.Type = "movie"
 		rating, ok := ratings[int(v.ID)]
 		if ok {
 			v.ImdbRating = rating
@@ -986,6 +995,7 @@ func (u *Usecase) SearchShows(
 
 	for i := range len(resp.Results) {
 		v := resp.Results[i]
+		v.Type = "show"
 		rating, ok := ratings[int(v.ID)]
 		if ok {
 			v.ImdbRating = rating
@@ -1047,139 +1057,4 @@ func (u *Usecase) getConfigurationInternal() ([]byte, error) {
 	}
 
 	return body, nil
-}
-
-func (u *Usecase) GetLibraryFromFilter(
-	filter models.LibraryFilter,
-) (any, error) {
-	// NOTE: We are using trakt to get trending things
-	if filter.IsTrending {
-		return u.GetTrending(filter)
-	}
-	var res models.MediaPaginatedResponse
-	cTime := time.Now()
-	// if filter.Sort != "popularity" && filter.Sort != "imdb_rating" && filter.Sort != "date" {
-	// 	return res, apperrors.InvalidInput{Err: "Invalid sort"}
-	// }
-	movies, items, err := u.localTmdbRepo.GetLibrary(filter)
-	if err != nil {
-		return res, apperrors.SomethingWentWrongError{}
-	}
-	fmt.Println(time.Now().Sub(cTime).Seconds())
-	res.Results = movies
-	res.TotalResults = items
-	res.TotalPages = (items + filter.Items - 1) / (filter.Items)
-	res.Page = filter.Page
-	if res.Page == 0 {
-		res.Page = 1
-	}
-
-	return res, nil
-}
-func (u *Usecase) GetTrending(filter models.LibraryFilter) ([]byte, error) {
-	tp := "shows"
-	if filter.IsMovie {
-		tp = "movies"
-	}
-	key := fmt.Sprintf("%s:%d:%d", tp, filter.Page, filter.Items)
-	bodyBytes, err := u.redisCacheDb.Get(context.Background(), key).Result()
-	if err != nil {
-		response, err := u.GetTrendingInternal(filter)
-		if err != nil {
-			return nil, err
-		}
-		resBytes, err := json.Marshal(response)
-		if err != nil {
-			fmt.Println("Error marshalling trending response", err)
-			return nil, apperrors.SomethingWentWrongError{}
-		}
-		go u.redisCacheDb.Set(
-			context.Background(),
-			key,
-			string(resBytes),
-			time.Duration(time.Minute*30),
-		)
-		return resBytes, nil
-	}
-	return []byte(bodyBytes), nil
-}
-
-func (u *Usecase) GetTrendingInternal(
-	filter models.LibraryFilter,
-) (models.MediaPaginatedResponse, error) {
-	var res models.MediaPaginatedResponse
-	tp := "shows"
-	if filter.IsMovie {
-		tp = "movies"
-	}
-	url := fmt.Sprintf(
-		"https://api.trakt.tv/%s/trending?page=%d&limit=%d",
-		tp,
-		filter.Page,
-		filter.Items,
-	)
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		fmt.Println("Error creating trakt trending request", err)
-		return res, apperrors.SomethingWentWrongError{}
-	}
-	req.Header.Add("trakt-api-version", "2")
-	req.Header.Add("trakt-api-key", u.traktKey)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Println("Error sending trakt trending request", err)
-		return res, apperrors.SomethingWentWrongError{}
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error reading trakt trending response", err)
-		return res, apperrors.SomethingWentWrongError{}
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("Invalid status code from trakt", resp.StatusCode)
-		fmt.Println(string(body))
-		return res, apperrors.SomethingWentWrongError{}
-	}
-
-	var temp []models.TraktTrendingResponeElement
-	err = json.Unmarshal(body, &temp)
-	if err != nil {
-		fmt.Println("Error unmarshalling trakt trending response", err)
-		return res, apperrors.SomethingWentWrongError{}
-	}
-	var ids []int
-	for _, v := range temp {
-		if filter.IsMovie {
-			ids = append(ids, int(v.Movie.IDS.Tmdb))
-		} else {
-			ids = append(ids, int(v.Show.IDS.Tmdb))
-		}
-	}
-
-	tp = "show"
-	if filter.IsMovie {
-		tp = "movie"
-	}
-
-	media, err := u.localTmdbRepo.GetLibraryFromIds(ids, tp)
-	if err != nil {
-		return res, err
-	}
-	count, err := strconv.Atoi(resp.Header.Get("X-Pagination-Page-Count"))
-	if err == nil {
-		res.TotalPages = count
-	}
-	count, err = strconv.Atoi(resp.Header.Get("X-Pagination-Item-Count"))
-	if err == nil {
-		res.TotalResults = count
-	}
-	res.Page = filter.Page
-	res.Results = media
-
-	return res, nil
 }

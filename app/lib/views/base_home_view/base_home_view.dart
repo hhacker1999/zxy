@@ -10,9 +10,12 @@ import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
 import 'package:zxy_app/main.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
-import 'package:zxy_app/views/filter_view/filter_view.dart';
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
+import 'package:zxy_app/views/base_home_view/modern_navigation_drawer.dart';
+import 'package:zxy_app/views/discover_view/discover_view.dart';
+import 'package:zxy_app/views/discover_view/discover_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view.dart';
+import 'package:zxy_app/views/library_view/library_view.dart';
+import 'package:zxy_app/views/library_view/library_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/search_view/search_view.dart';
@@ -21,7 +24,6 @@ import 'package:zxy_app/views/settings_view/settings_view.dart';
 import 'package:zxy_app/views/settings_view/settings_view_model.dart';
 import 'package:zxy_app/views/shared/base_scaffold.dart';
 import 'package:zxy_app/views/top_header.dart';
-import 'package:zxy_app/views/base_home_view/modern_navigation_drawer.dart';
 
 class BaseHomeView extends StatefulWidget {
   final Dependencies deps;
@@ -43,17 +45,19 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
     vm.initialise();
     baseChildren = [
       HomeView(),
-      Provider<FilterViewModel>(
-        key: ValueKey<String>("Movie Library"),
-        create: (_) => FilterViewModel(
-          type: ZxyMediaType.movie,
-          mediaUc: widget.deps.mediaUc,
-        ),
-        dispose: (_, vm) => vm.dispose(),
-        builder: (_, _) {
-          return FilterView();
-        },
-      ),
+
+      // Provider<FilterViewModel>(
+      //   key: ValueKey<String>("Movie Library"),
+      //   create: (_) => FilterViewModel(
+      //     type: ZxyMediaType.movie,
+      //     mediaUc: widget.deps.mediaUc,
+      //   ),
+      //   dispose: (_, vm) => vm.dispose(),
+      //   builder: (_, _) {
+      //     return FilterView();
+      //   },
+      // ),
+      DiscoverView(key: ValueKey<String>("Discover")),
       Provider<SearchViewModel>(
         create: (_) => SearchViewModel(mediaUC: widget.deps.mediaUc),
         dispose: (_, vm) => vm.dispose(),
@@ -61,18 +65,16 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
           return SearchView(keyword: "");
         },
       ),
-      Provider<FilterViewModel>(
-        key: ValueKey<String>("Show Library"),
-        create: (_) => FilterViewModel(
-          type: ZxyMediaType.shows,
-          mediaUc: widget.deps.mediaUc,
-        ),
+      Provider<LibraryViewModel>(
+        key: ValueKey<String>("Library"),
+        create: (_) => LibraryViewModel(mediaUc: widget.deps.mediaUc),
         dispose: (_, vm) => vm.dispose(),
         builder: (_, _) {
-          return FilterView();
+          return LibraryView();
         },
       ),
       ChangeNotifierProvider<SettingsViewModel>(
+        key: ValueKey("settings"),
         create: (_) =>
             SettingsViewModel(widget.deps.authUc, widget.deps.wsService),
         builder: (_, _) {
@@ -82,9 +84,10 @@ class _BaseHomeViewState extends State<BaseHomeView> with RouteAware {
     ];
     leftCards = [
       ("Home", AppIcons.home),
-      ("Movies", AppIcons.movie),
+      ("Discover", AppIcons.show),
       ("Search", AppIcons.search),
-      ("TV Shows", AppIcons.show),
+      // ("TV Shows", AppIcons.show),
+      ("Library", AppIcons.movie),
       ("Settings", AppIcons.settings),
     ];
   }

@@ -9,16 +9,16 @@ class ProgressUsecase {
 
   const ProgressUsecase({required HttpService service}) : _service = service;
 
-  Future<List<WatchProgress>> getContinueWatching() async {
+  Future<List<ContinueWatchingItem>> getContinueWatching() async {
     final res = await _service.get(
       Uri.parse("${AppConstants.baseUrl}/continue_watching"),
       auth: RequestAuth.profile,
     );
     if (res.body.isEmpty || res.body == "null") {
-      return List<WatchProgress>.empty();
+      return List<ContinueWatchingItem>.empty();
     }
     final List<Map<String, dynamic>> parsed = List.from(jsonDecode(res.body));
-    return parsed.map((e) => WatchProgress.fromJson(e)).toList();
+    return parsed.map((e) => ContinueWatchingItem.fromJson(e)).toList();
   }
 
   Future<WatchProgress?> getMovieProgress(String movieId) async {

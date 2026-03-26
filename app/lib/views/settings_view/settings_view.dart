@@ -15,17 +15,26 @@ import 'widgets/general_section.dart';
 import 'widgets/library_customization_section.dart';
 import 'widgets/profiles_section.dart';
 
-class SettingsView extends StatelessWidget {
+class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Builder(
-      builder: (context) {
-        final userBloc = context.read<UserBloc>();
-        final settingsVm = context.watch<SettingsViewModel>()
-          ..context = context;
+  State<SettingsView> createState() => _SettingsViewState();
+}
 
+class _SettingsViewState extends State<SettingsView> {
+  late final UserBloc userBloc;
+  @override
+  void initState() {
+    super.initState();
+    userBloc = context.read<UserBloc>();
+    context.read<SettingsViewModel>().setContext(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SettingsViewModel>(
+      builder: (_, settingsVm, _) {
         return Stack(
           children: [
             Positioned.fill(

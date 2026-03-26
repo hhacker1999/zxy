@@ -129,7 +129,6 @@ func main() {
 
 	wsHandler := zxyWs.New()
 
-	tmdbUc := tmdbusecase.New(cfg.TmdbUrl, localTmdbRepo, cfg.TraktKey, cfg.TmdbAT, cacheRDB)
 	addonuc, err := addonusecase.New(
 		addonRepo,
 		cfg.AIOTemplatePath,
@@ -139,15 +138,14 @@ func main() {
 		userRepo,
 		cfg.ZxyUrl,
 		cfg.EncrKey,
-    cfg.ZxyAioInstance,
-    cfg.AioConfigUid,
-    cfg.AioConfigPwd,
+		cfg.ZxyAioInstance,
+		cfg.AioConfigUid,
+		cfg.AioConfigPwd,
 	)
 	if err != nil {
 		return
 	}
 
-	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo, addonuc)
 	traktUc := traktusecase.New(
 		cfg.TraktKey,
 		cfg.TraktSecret,
@@ -156,7 +154,24 @@ func main() {
 		cfg.TraktRedirectUri,
 		cacheRDB,
 	)
-	progressUc := progressusecase.New(db, tmdbUc, playbackRepo, traktUc, watchSessionDB)
+	userUc := userusecase.New(db, userRepo, sessionRepo, playbackRepo, addonRepo, addonuc, traktUc)
+	tmdbUc := tmdbusecase.New(
+		cfg.TmdbUrl,
+		localTmdbRepo,
+		cfg.TraktKey,
+		cfg.TmdbAT,
+		cacheRDB,
+		traktUc,
+    userRepo,
+	)
+	progressUc := progressusecase.New(
+		db,
+		tmdbUc,
+		playbackRepo,
+		traktUc,
+		watchSessionDB,
+		localTmdbRepo,
+	)
 	restInterface := rest.New(
 		addonuc,
 		tmdbUc,
@@ -170,7 +185,7 @@ func main() {
 	)
 	defer restInterface.Exit()
 	router := restInterface.SetupRoutes()
-	err = http.ListenAndServe(fmt.Sprintf(":%s",cfg.Port), router)
+	err = http.ListenAndServe(fmt.Sprintf(":%s", cfg.Port), router)
 	if err != nil {
 		fmt.Println("Error creating http server ", err)
 	}

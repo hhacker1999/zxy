@@ -23,7 +23,10 @@ import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/glass_container.dart';
 import 'package:zxy_app/views/shared/toast.dart';
 import 'package:zxy_app/views/video_handler.dart';
+import 'package:zxy_app/views/video_player_view/loading_indicator.dart';
 import 'package:zxy_app/views/video_player_view/modern_sidebar.dart';
+import 'package:zxy_app/views/video_player_view/playback_speed_chip.dart';
+import 'package:zxy_app/views/video_player_view/stream_selection_picker.dart';
 import 'package:zxy_app/views/view_item_state.dart';
 
 import 'mobile_player_hud.dart';
@@ -72,6 +75,8 @@ class ZxyPlayerState {
   final ValueNotifier<int> audioDelay = ValueNotifier(0);
   final ValueNotifier<int> subtitleDelay = ValueNotifier(0);
   final ValueNotifier<BoxFit> playerFit = ValueNotifier(BoxFit.contain);
+  final ValueNotifier<DateTime?> lastTap = ValueNotifier(null);
+  final ValueNotifier<bool> isDoubleRate = ValueNotifier(false);
 
   void dispose() {
     isPlaying.dispose();
@@ -130,8 +135,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   late final SettingsBloc _settingBloc;
   late final MovieViewModel mVm;
   late final SeriesViewModel sVm;
-  late final ProxyManager _pm;
-  DateTime? lastTap;
   bool updateLayoutToNormal = false;
   Timer? _hoverTimer;
   double pinRadius = 20;
@@ -146,7 +149,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   void initState() {
     super.initState();
     _settingBloc = context.read<SettingsBloc>();
-    _pm = context.read<ProxyManager>();
     _state = ZxyPlayerState();
     _initialiseMpvPlayer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -222,7 +224,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     _updatePlayerBasedOnStreamsUpdate();
   }
 
-  // NOTE: This function listens to streams and load url from strems
+  // NOTE: This function listens to streams and load url from streams
   void _updatePlayerBasedOnStreamsUpdate() {
     final val = widget.handler.getCurrentStreamsNotifier().value;
     if (val is ItemLoading) {
@@ -233,36 +235,56 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       showToast(context, true, "Error loading streams", "");
     }
 
+
     if (val is ItemLoaded<ZxyStreamResponse>) {
       final uhdStreams = val.data.uhd;
       final fhdStreams = val.data.fhd;
       final hdStreams = val.data.hd;
       if (uhdStreams.isEmpty && fhdStreams.isEmpty && hdStreams.isEmpty) {
         showToast(context, true, "No Streams found", "");
-        Navigator.pop(context);
+        onBackPress();
+        return;
+      }
+
+      final streams = List<ZxyResolutionItem>.from(uhdStreams)
+        ..addAll(fhdStreams)
+        ..addAll(hdStreams);
+
+      // If auto-select is off, show a picker for the user to choose a stream
+      if (!_settingBloc.autoSelectBestStream.value) {
+        showStreamSelectionPicker(
+          context: context,
+          streams: streams,
+          currentSelectedIndex:
+              widget.handler.getSelectedStreamNotifier().value,
+          showFormatted: _settingBloc.showFormattedStreams.value,
+          onStreamSelected: (index) {
+            widget.handler.getSelectedStreamNotifier().value = index;
+            _playStream(streams[index]);
+          },
+        );
         return;
       }
 
       final selectedStream = widget.handler.getSelectedStreamNotifier().value;
-      final streams = List<ZxyResolutionItem>.from(uhdStreams)
-        ..addAll(fhdStreams)
-        ..addAll(hdStreams);
-      print("Playing url ${streams[selectedStream].url}");
-      // _pm.setInternalUrl(streams[selectedStream].url);
-      // _player.open(Media(streams[selectedStream].url), play: true);
-      _currentInternalUrl = streams[selectedStream].url;
-      widget.handler
-          .getStreamUrl(streams[selectedStream].url)
-          .then((url) {
-            print("Final url $url");
-            _player.open(Media(url), play: true);
-          })
-          .onError((e, _) {
-            if (context.mounted) {
-              showToast(context, true, e.toString(), "");
-            }
-          });
+      _playStream(streams[selectedStream]);
     }
+  }
+
+  void _playStream(ZxyResolutionItem streamItem) {
+    print("Playing url ${streamItem.url}");
+    _currentInternalUrl = streamItem.url;
+    widget.handler
+        .getStreamUrl(streamItem.url)
+        .then((url) {
+          print("Final url $url");
+          _player.open(Media(url), play: true);
+        })
+        .onError((e, _) {
+          if (context.mounted) {
+            showToast(context, true, e.toString(), "");
+          }
+        });
   }
 
   void onMediaInitialized(Tracks tracks) {
@@ -448,6 +470,21 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     Navigator.pop(context);
   }
 
+
+  void onSkipPressOrTap(bool isRight) {
+    final currDur = _state.seekInfo.value.current;
+    if (isRight) {
+      _player.seek(
+        currDur + Duration(seconds: _settingBloc.skipDuration.value),
+      );
+    } else {
+      _player.seek(
+        currDur - Duration(seconds: _settingBloc.skipDuration.value),
+      );
+    }
+    // onHover();
+  }
+
   @override
   void dispose() {
     widget.handler.getCurrentStreamsNotifier().removeListener(
@@ -467,19 +504,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     super.dispose();
   }
 
-  void onSkipPressOrTap(bool isRight) {
-    final currDur = _state.seekInfo.value.current;
-    if (isRight) {
-      _player.seek(
-        currDur + Duration(seconds: _settingBloc.skipDuration.value),
-      );
-    } else {
-      _player.seek(
-        currDur - Duration(seconds: _settingBloc.skipDuration.value),
-      );
-    }
-    // onHover();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -541,6 +565,20 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                 onHover();
                               },
                               child: GestureDetector(
+                                onLongPressStart: (_) {
+                                  if (!_state.isPlaying.value ||
+                                      _state.bufferingOrLoading.value) {
+                                    return;
+                                  }
+                                  _state.isDoubleRate.value = true;
+                                  _player.setRate(2.0);
+                                },
+                                onLongPressEnd: (_) {
+                                  if (_state.isDoubleRate.value) {
+                                    _state.isDoubleRate.value = false;
+                                    _player.setRate(1.0);
+                                  }
+                                },
                                 onScaleEnd: (_) {
                                   horizontalScale = 1;
                                 },
@@ -560,35 +598,26 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                     }
                                   }
                                 },
-                                onTapDown: (details) async {
+                                onTapUp: (details) async {
                                   final cTime = DateTime.now();
+                                  final lastTap = _state.lastTap.value;
+                                  _state.lastTap.value = cTime;
                                   if (lastTap != null) {
-                                    final diff = cTime.difference(lastTap!);
+                                    final diff = cTime.difference(lastTap);
                                     final isDoubleTap =
                                         diff < Duration(milliseconds: 200);
-                                    if (isDoubleTap) {
-                                      if (screenData.isMobileDevice) {
-                                        final position = details.localPosition;
-                                        final center = constr.maxWidth / 2;
-                                        if (position.dx > center + 20) {
-                                          onSkipPressOrTap(true);
-                                        }
-                                        if (position.dx < center - 20) {
-                                          onSkipPressOrTap(false);
-                                        }
+                                    // NOTE: In mobile UI, second tap goes to
+                                    // hud so we dont need to check for mobile here
+                                    if (isDoubleTap &&
+                                        !screenData.isMobileDevice) {
+                                      if (await windowManager.isFullScreen()) {
+                                        windowManager.setFullScreen(false);
                                       } else {
-                                        if (await windowManager
-                                            .isFullScreen()) {
-                                          windowManager.setFullScreen(false);
-                                        } else {
-                                          windowManager.setFullScreen(true);
-                                        }
+                                        windowManager.setFullScreen(true);
                                       }
-                                      lastTap = cTime;
                                       return;
                                     }
                                   }
-                                  lastTap = cTime;
                                   onTap();
                                 },
                                 child: ValueListenableBuilder(
@@ -615,6 +644,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                       ValueListenableBuilder(
                         valueListenable: _settingBloc.subFontStyle,
                         builder: (_, style, _) {
+                          final double shadowOffset = style.fontSize * 0.04;
                           return Positioned(
                             bottom: style.fontPadding,
                             left: 0,
@@ -629,6 +659,36 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                   wordSpacing: 0.0,
                                   color: style.color,
                                   fontWeight: FontWeight.normal,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(
+                                        -shadowOffset,
+                                        -shadowOffset,
+                                      ),
+                                      color: Colors.black,
+                                    ),
+                                    Shadow(
+                                      offset: Offset(
+                                        shadowOffset,
+                                        -shadowOffset,
+                                      ),
+                                      color: Colors.black,
+                                    ),
+                                    Shadow(
+                                      offset: Offset(
+                                        shadowOffset,
+                                        shadowOffset,
+                                      ),
+                                      color: Colors.black,
+                                    ),
+                                    Shadow(
+                                      offset: Offset(
+                                        -shadowOffset,
+                                        shadowOffset,
+                                      ),
+                                      color: Colors.black,
+                                    ),
+                                  ],
                                   backgroundColor: Colors.transparent,
                                 ),
                                 textAlign: TextAlign.center,
@@ -646,12 +706,20 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                           notifiers: [_state.bufferingOrLoading],
                           builder: (_) {
                             final isBuffering = _state.bufferingOrLoading.value;
-                            return Visibility(
-                              visible: isBuffering,
-                              child: CupertinoActivityIndicator(),
+                            return AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: isBuffering
+                                  ? const VideoBufferingIndicator()
+                                  : const SizedBox.shrink(),
                             );
                           },
                         ),
+                      ),
+                      Positioned(
+                        top: MediaQuery.of(context).padding.top + 16,
+                        left: 0,
+                        right: 0,
+                        child: PlaybackSpeedChip(state: _state),
                       ),
                       if (screenData.shouldRenderMobile)
                         Positioned.fill(
@@ -662,6 +730,17 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                 visible: visible,
                                 duration: const Duration(milliseconds: 400),
                                 child: MobileVideoPlayerHUD(
+                                  onDoubleTap: (details) {
+                                    final position = details.localPosition;
+                                    final center = constr.maxWidth / 2;
+                                    if (position.dx > center + 20) {
+                                      onSkipPressOrTap(true);
+                                    }
+                                    if (position.dx < center - 20) {
+                                      onSkipPressOrTap(false);
+                                    }
+                                    startOverlayTimer();
+                                  },
                                   onUserInteraction: () {
                                     startOverlayTimer();
                                   },

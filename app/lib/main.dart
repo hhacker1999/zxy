@@ -3,31 +3,33 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/app_theme.dart';
+import 'package:zxy_app/bloc/events_bloc.dart';
 import 'package:zxy_app/bloc/image_bloc.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/dependencies.dart';
 import 'package:zxy_app/service/http_proxy.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view.dart';
-import 'package:zxy_app/app_routes.dart';
 import 'package:zxy_app/views/base_home_view/base_home_view_model.dart';
+import 'package:zxy_app/views/discover_view/discover_view_model.dart';
 import 'package:zxy_app/views/home_view/home_view_model.dart';
+import 'package:zxy_app/views/login_view/login_view.dart';
+import 'package:zxy_app/views/login_view/login_view_model.dart';
 import 'package:zxy_app/views/movie_view/movie_view.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
+import 'package:zxy_app/views/profile_selection_view/profile_selection_view.dart';
 import 'package:zxy_app/views/profile_selection_view/profile_selection_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
 import 'package:zxy_app/views/search_view/search_view.dart';
 import 'package:zxy_app/views/search_view/search_view_model.dart';
-import 'package:zxy_app/views/login_view/login_view.dart';
-import 'package:zxy_app/views/login_view/login_view_model.dart';
 import 'package:zxy_app/views/series_view/series_view.dart';
 import 'package:zxy_app/views/series_view/series_view_model.dart';
 import 'package:zxy_app/views/shared/fade_page_route.dart';
 import 'package:zxy_app/views/splash_view/splash_view.dart';
 import 'package:zxy_app/views/splash_view/splash_view_model.dart';
 import 'package:zxy_app/views/video_handler.dart';
-import 'package:zxy_app/views/profile_selection_view/profile_selection_view.dart';
 import 'package:zxy_app/views/video_player_view/video_player_view.dart';
 
 void main() {
@@ -86,6 +88,11 @@ class _MyAppState extends State<MyApp> {
           dispose: (_, bloc) => bloc.dispose(),
           lazy: false,
         ),
+        Provider<EventsBloc>(
+          create: (_) => EventsBloc(),
+          dispose: (_, bloc) => bloc.dispose(),
+          lazy: false,
+        ),
       ],
       builder: (context, _) {
         return MaterialApp(
@@ -108,7 +115,14 @@ class _MyAppState extends State<MyApp> {
               case AppRoutes.baseHomeView:
                 return buildRoute(
                   builder: (_) {
-                    return BaseHomeView(deps: deps);
+                    return Provider<DiscoverViewModel>(
+                      create: (_) => DiscoverViewModel(mediaUc: deps.mediaUc, authUc: deps.authUc),
+                      lazy: false,
+                      dispose: (_, vm) => vm.dispose(),
+                      builder: (_, _) {
+                        return BaseHomeView(deps: deps);
+                      },
+                    );
                   },
                 );
               case AppRoutes.movieView:
@@ -121,6 +135,7 @@ class _MyAppState extends State<MyApp> {
                         progressUc: deps.progUc,
                         userBloc: context.read<UserBloc>(),
                         settingsBloc: context.read<SettingsBloc>(),
+                        eventsBloc: context.read<EventsBloc>(),
                       ),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) =>
@@ -139,6 +154,7 @@ class _MyAppState extends State<MyApp> {
                         progressUc: deps.progUc,
                         userBloc: context.read<UserBloc>(),
                         settingsBloc: context.read<SettingsBloc>(),
+                        eventsBloc: context.read<EventsBloc>(),
                       ),
                       dispose: (_, vm) => vm.dispose(),
                       builder: (_, _) => SeriesView(data: args),

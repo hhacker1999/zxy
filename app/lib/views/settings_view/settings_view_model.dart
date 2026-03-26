@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:zxy_app/app_routes.dart';
+import 'package:zxy_app/bloc/events_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
 import 'package:zxy_app/service/web_socket.dart';
 import 'package:zxy_app/usecase/auth/auth.dart';
@@ -18,9 +19,7 @@ class SettingsViewModel extends ChangeNotifier {
   final WebSocketService wsService;
   final AuthUsecase _authUc;
   late BuildContext _context;
-
-
-
+  late final StreamSubscription<BaseEvent> _eventsSubscription;
 
   List<ProfileLibraryItem> _libraryItems = [];
   List<ProfileLibraryItem> get libraryItems => _libraryItems;
@@ -41,12 +40,30 @@ class SettingsViewModel extends ChangeNotifier {
 
     _initializedProfileId = currentProfile.id;
 
-
     _libraryItems = List.from(currentProfile.libraryItems);
     _hasLibraryChanges = false;
   }
 
-  set context(BuildContext context) => _context = context;
+  void setContext(BuildContext context) {
+    _context = context;
+    _eventsSubscription = _context.read<EventsBloc>().eventStream.listen((
+      event,
+    ) {
+      _eventHandler(event);
+    });
+  }
+
+  void _eventHandler(BaseEvent event) {
+    if (event is UpdatedHomeList) {
+      final items = _context
+          .read<UserBloc>()
+          .profileNotifier
+          .value!
+          .libraryItems;
+      _libraryItems = List.from(items);
+      notifyListeners();
+    }
+  }
 
   void addLibraryItem(ProfileLibraryItem item) {
     _libraryItems.add(item);
@@ -86,7 +103,6 @@ class SettingsViewModel extends ChangeNotifier {
       await _authUc.updateProfileList(_libraryItems);
       final profile = await _authUc.getUserProfile();
       _context.read<UserBloc>().profile = profile;
-      _context.read<HomeViewModel>().reload(_context);
       _hasLibraryChanges = false;
       showToast(_context, false, "Home page lists saved", "");
     } catch (e) {
@@ -94,6 +110,7 @@ class SettingsViewModel extends ChangeNotifier {
     } finally {
       notifyListeners();
       _context.read<BaseHomeViewModel>().scaffoldLoading.value = false;
+      _context.read<EventsBloc>().addEvent(UpdatedHomeList());
     }
   }
 
@@ -253,6 +270,7 @@ class SettingsViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _traktLoginTimer?.cancel();
+    _eventsSubscription.cancel();
     super.dispose();
   }
 }

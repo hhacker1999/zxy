@@ -6,11 +6,11 @@ import 'package:zxy_app/usecase/auth/user.dart';
 import 'package:zxy_app/usecase/resource/models.dart';
 import 'package:zxy_app/usecase/resource/movie_details.dart';
 import 'package:zxy_app/usecase/resource/tv_details.dart';
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
 
 const _baseUrl = AppConstants.baseUrl;
 const _movie = "/discover/movies";
 const _library = "/discover/library";
+const _modifyLibrary = "/user/library";
 const _trendingMovie = "/trending/movies";
 const _trendingShow = "/trending/shows";
 const _tv = "/discover/shows";
@@ -46,7 +46,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.movie));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -80,7 +80,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.shows));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -156,7 +156,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.movie));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -190,7 +190,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.shows));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -229,7 +229,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.movie));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -252,7 +252,7 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.shows));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
@@ -275,11 +275,49 @@ class MediaUsecase {
     ) {
       final List<ZxyMedia> temp = [];
       for (var item in results) {
-        temp.add(ZxyMedia.fromJson(item, ZxyMediaType.movie));
+        temp.add(ZxyMedia.fromJson(item));
       }
       return temp;
     });
 
     return finalResult;
+  }
+
+  Future<void> addToLibrary(int tmdbId, ZxyMediaType type) async {
+    var url = _baseUrl + _modifyLibrary;
+    await _httpService.post(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+      body: {
+        "tmdb_id": tmdbId,
+        "type": type == ZxyMediaType.movie ? "movie" : "show",
+      },
+    );
+  }
+
+  Future<void> removeFromLibrary(int tmdbId, ZxyMediaType type) async {
+    var url = _baseUrl + _modifyLibrary;
+    await _httpService.delete(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+      body: {
+        "tmdb_id": tmdbId,
+        "type": type == ZxyMediaType.movie ? "movie" : "show",
+      },
+    );
+  }
+
+  Future<bool> isInLibrary(int tmdbId, ZxyMediaType type) async {
+    var url = "$_baseUrl$_modifyLibrary/check";
+    final res = await _httpService.post(
+      Uri.parse(url),
+      auth: RequestAuth.profile,
+      body: {
+        "tmdb_id": tmdbId,
+        "type": type == ZxyMediaType.movie ? "movie" : "show",
+      },
+    );
+    final found = (json.decode(res.body) as Map<String, dynamic>)["found"];
+    return found as bool;
   }
 }

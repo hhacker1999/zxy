@@ -120,7 +120,18 @@ func (u *Usecase) RetrieveUserAuthToken(
 	}
 
 	authRes.Expiry = time.Now().Add(time.Second * time.Duration(authRes.ExpiresIn))
-	err = u.userRepo.StoreTraktAuthToken(context.Background(), userId, profileId, authRes)
+	traktUser, err := u.getTraktProfile(authRes.AccessToken)
+	if err != nil {
+		return err
+	}
+
+	err = u.userRepo.StoreTraktAuthToken(
+		context.Background(),
+		userId,
+		profileId,
+		authRes,
+		traktUser,
+	)
 	if err != nil {
 		return apperrors.SomethingWentWrongError{}
 	}
@@ -204,9 +215,65 @@ func (u *Usecase) runRefreshTraktTokensNearExpiryCron() {
 				u.userRepo.SetTraktAuthInvalid(context.Background(), v.UserId, v.ProfileId)
 				continue inner
 			}
-			u.userRepo.StoreTraktAuthToken(context.Background(), v.UserId, v.ProfileId, res)
+
+			traktUser, err := u.getTraktProfile(v.Token)
+			if err != nil {
+				continue inner
+			}
+			u.userRepo.StoreTraktAuthToken(context.Background(), v.UserId, v.ProfileId, res, traktUser)
 		}
 		fmt.Println("Trak profiles updated")
 	}
 
+}
+
+func (u *Usecase) doTraktPrivateReq(
+	req *http.Request,
+	traktToken string,
+) (*http.Response, error) {
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("trakt-api-version", "2")
+	req.Header.Set("trakt-api-key", u.clientId)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", traktToken))
+
+	return http.DefaultClient.Do(req)
+}
+
+func (u *Usecase) getTraktProfile(token string) (models.TraktUser, error) {
+	res := models.TraktUser{}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/users/settings", traktApiUrl), nil)
+	if err != nil {
+		fmt.Println("Error creating get user request", err)
+		return res, apperrors.SomethingWentWrongError{}
+	}
+
+	profileRes, err := u.doTraktPrivateReq(req, token)
+  defer profileRes.Body.Close()
+	if err != nil {
+		fmt.Println("Error doing trakt profile req", err)
+		return res, apperrors.SomethingWentWrongError{}
+	}
+
+	resBytes, err := io.ReadAll(profileRes.Body)
+	if err != nil {
+		fmt.Println(profileRes.StatusCode)
+		fmt.Println("Error reading trakt profile response body ", err)
+		return res, apperrors.SomethingWentWrongError{}
+	}
+
+	if profileRes.StatusCode != http.StatusOK {
+		fmt.Println(profileRes.StatusCode)
+		fmt.Println("Error getting trakt profile", string(resBytes))
+		return res, fmt.Errorf("Error getting trakt profile")
+	}
+
+	var traktResponse models.TraktUserSettingsResponse
+	err = json.Unmarshal(resBytes, &traktResponse)
+	if err != nil {
+		fmt.Println("Error unmarshalling profile resposne ", err)
+		return res, fmt.Errorf("Error unmarshalling profile resposne %s", err)
+	}
+	res = traktResponse.User
+
+	return res, nil
 }

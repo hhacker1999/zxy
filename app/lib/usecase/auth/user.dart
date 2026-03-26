@@ -49,6 +49,7 @@ class Profile {
   final String realDebrid;
   final String torbox;
   final bool webstreamr;
+  final List<ProfileTraktLists> profileTraktLists;
 
   Profile({
     required this.id,
@@ -63,6 +64,7 @@ class Profile {
     required this.realDebrid,
     required this.torbox,
     required this.webstreamr,
+    required this.profileTraktLists,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
@@ -72,6 +74,11 @@ class Profile {
     realDebrid: json["real_debrid"],
     webstreamr: json["webstreamr"],
     isPinProtected: json["is_pin_protected"],
+    profileTraktLists: json["trakt_lists"] != null
+        ? List<ProfileTraktLists>.from(
+            json["trakt_lists"].map((x) => ProfileTraktLists.fromJson(x)),
+          )
+        : [],
     traktExpiry: json["trakt_expiry"] != null
         ? DateTime.tryParse(json["trakt_expiry"])
         : null,
@@ -96,6 +103,45 @@ class Profile {
   };
 }
 
+class ProfileTraktLists {
+  final String name;
+  final String description;
+  final Ids ids;
+  final String privacy;
+
+  ProfileTraktLists({
+    required this.name,
+    required this.description,
+    required this.ids,
+    required this.privacy,
+  });
+
+  factory ProfileTraktLists.fromJson(Map<String, dynamic> json) =>
+      ProfileTraktLists(
+        name: json["name"],
+        description: json["description"],
+        ids: Ids.fromJson(json["ids"]),
+        privacy: json["privacy"],
+      );
+
+  Map<String, dynamic> toJson() => {
+    "name": name,
+    "description": description,
+    "ids": ids.toJson(),
+    "privacy": privacy,
+  };
+}
+
+class Ids {
+  final int trakt;
+
+  Ids({required this.trakt});
+
+  factory Ids.fromJson(Map<String, dynamic> json) => Ids(trakt: json["trakt"]);
+
+  Map<String, dynamic> toJson() => {"trakt": trakt};
+}
+
 class ProfileLibraryItem {
   final String name;
   final LibraryFilter filter;
@@ -105,11 +151,12 @@ class ProfileLibraryItem {
   ProfileLibraryItem({required this.name, required this.filter})
     : id = DateTime.now().microsecondsSinceEpoch.toString();
 
-  factory ProfileLibraryItem.fromJson(Map<String, dynamic> json) =>
-      ProfileLibraryItem(
-        name: json["name"],
-        filter: LibraryFilter.fromJson(json["filter"]),
-      );
+  factory ProfileLibraryItem.fromJson(Map<String, dynamic> json) {
+    return ProfileLibraryItem(
+      name: json["name"],
+      filter: LibraryFilter.fromJson(json["filter"]),
+    );
+  }
 
   Map<String, dynamic> toJson() => {"name": name, "filter": filter.toJson()};
 
@@ -136,9 +183,13 @@ class LibraryFilter {
   final List<int> excludedGenres;
   final int page;
   final int minVotes;
+  final String type;
+  final String traktId;
 
   LibraryFilter({
     required this.isMovie,
+    required this.type,
+    required this.traktId,
     required this.isTrending,
     required this.thisWeek,
     required this.thisMonth,
@@ -155,9 +206,51 @@ class LibraryFilter {
     required this.page,
   });
 
+  LibraryFilter copyWith({
+    bool? isMovie,
+    List<int>? includedGenres,
+    int? items,
+    bool? isAsc,
+    List<int>? excludedGenres,
+    int? minVotes,
+    int? page,
+    String? type,
+    String? sort,
+    int? imdbRating,
+    bool? thisWeek,
+    bool? isTrending,
+    String? language,
+    bool? thisMonth,
+    bool? isFirstAir,
+    List<int>? years,
+    String? traktId,
+  }) {
+    return LibraryFilter(
+      isMovie: isMovie ?? this.isMovie,
+      includedGenres: includedGenres ?? this.includedGenres,
+      items: items ?? this.items,
+      isAsc: isAsc ?? this.isAsc,
+      excludedGenres: excludedGenres ?? this.excludedGenres,
+      minVotes: minVotes ?? this.minVotes,
+      page: page ?? this.page,
+      type: type ?? this.type,
+      sort: sort ?? this.sort,
+      imdbRating: imdbRating ?? this.imdbRating,
+      thisWeek: thisWeek ?? this.thisWeek,
+      isTrending: isTrending ?? this.isTrending,
+      language: language ?? this.language,
+      thisMonth: thisMonth ?? this.thisMonth,
+      isFirstAir: isFirstAir ?? this.isFirstAir,
+      years: years ?? this.years,
+      traktId: traktId ?? this.traktId,
+    );
+  }
+
   factory LibraryFilter.fromJson(Map<String, dynamic> json) => LibraryFilter(
     isMovie: json["is_movie"],
     isTrending: json["is_trending"],
+    traktId: json["trakt_url"],
+    type: json["type"],
     thisWeek: json["this_week"],
     thisMonth: json["this_month"],
     years: List<int>.from(json["years"].map((x) => x)),
@@ -174,6 +267,8 @@ class LibraryFilter {
   );
 
   Map<String, dynamic> toJson() => {
+    "type": type,
+    "trakt_url": traktId,
     "is_movie": isMovie,
     "is_trending": isTrending,
     "this_week": thisWeek,
@@ -192,6 +287,8 @@ class LibraryFilter {
   };
 
   factory LibraryFilter.defaultFilter() => LibraryFilter(
+    type: "internal",
+    traktId: "",
     isMovie: true,
     thisWeek: false,
     thisMonth: false,
@@ -201,45 +298,11 @@ class LibraryFilter {
     language: '',
     sort: 'popularity',
     isAsc: false,
-    items: 20,
+    items: 15,
     includedGenres: [],
     excludedGenres: [],
     isTrending: false,
     page: 1,
     minVotes: 0,
-  );
-
-  LibraryFilter copyWith({
-    bool? isMovie,
-    bool? isTrending,
-    bool? thisWeek,
-    bool? thisMonth,
-    List<int>? years,
-    bool? isFirstAir,
-    int? imdbRating,
-    String? language,
-    String? sort,
-    bool? isAsc,
-    int? items,
-    List<int>? includedGenres,
-    List<int>? excludedGenres,
-    int? page,
-    int? minVotes,
-  }) => LibraryFilter(
-    isTrending: isTrending ?? this.isTrending,
-    isMovie: isMovie ?? this.isMovie,
-    thisWeek: thisWeek ?? this.thisWeek,
-    thisMonth: thisMonth ?? this.thisMonth,
-    years: years ?? this.years,
-    isFirstAir: isFirstAir ?? this.isFirstAir,
-    imdbRating: imdbRating ?? this.imdbRating,
-    language: language ?? this.language,
-    sort: sort ?? this.sort,
-    isAsc: isAsc ?? this.isAsc,
-    items: items ?? this.items,
-    includedGenres: includedGenres ?? this.includedGenres,
-    excludedGenres: excludedGenres ?? this.excludedGenres,
-    page: page ?? this.page,
-    minVotes: minVotes ?? this.minVotes,
   );
 }

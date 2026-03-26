@@ -322,11 +322,11 @@ type ZxyMedia struct {
 	Adult            bool     `json:"adult"`
 	BackdropPath     string   `json:"backdrop_path"`
 	ID               int64    `json:"id"`
-	Title            *string  `json:"title,omitempty"`
-	OriginalTitle    *string  `json:"original_title,omitempty"`
+	Title            string   `json:"title"`
+	OriginalTitle    string   `json:"original_title"`
 	Overview         string   `json:"overview"`
 	PosterPath       string   `json:"poster_path"`
-	MediaType        string   `json:"media_type"`
+	Type             string   `json:"type"`
 	OriginalLanguage string   `json:"original_language"`
 	GenreIDS         []int64  `json:"genre_ids"`
 	Popularity       float64  `json:"popularity"`
@@ -334,10 +334,15 @@ type ZxyMedia struct {
 	Video            *bool    `json:"video,omitempty"`
 	VoteAverage      float64  `json:"vote_average"`
 	VoteCount        int64    `json:"vote_count"`
-	Name             *string  `json:"name,omitempty"`
+	Name             string   `json:"name"`
 	OriginalName     *string  `json:"original_name,omitempty"`
 	FirstAirDate     *string  `json:"first_air_date,omitempty"`
 	OriginCountry    []string `json:"origin_country,omitempty"`
 	ImdbRating       float64  `json:"imdb_rating"`
 	Images           Images   `json:"images"`
+}
+
+type TmdbMediaIdentity struct {
+	TmdbId int
+	Type   string
 }

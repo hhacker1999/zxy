@@ -3,6 +3,7 @@ package userrepository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 	"zxy/models"
@@ -13,23 +14,29 @@ func (r *Repository) StoreTraktAuthToken(
 	userId int,
 	profileId int,
 	data models.TraktAuthRes,
+	traktProfile models.TraktUser,
 ) error {
 	txn, ok := ctx.Value("txn").(*sql.Tx)
 	var err error
+	profileBytes, err := json.Marshal(traktProfile)
+	if err != nil {
+		fmt.Println("Error unmarshalling trakt profile", err)
+		return err
+	}
 	if ok {
 		_, err = txn.Exec(`
       update user_profiles set trakt_expiry = $1,
       trakt_refresh_token = $2,
       trakt_token = $3,
-      is_trakt_valid = true where id = $4 and user_id = $5
-      `, data.Expiry, data.RefreshToken, data.AccessToken, profileId, userId)
+      is_trakt_valid = true, trakt_profile = $4 where id = $5 and user_id = $6
+      `, data.Expiry, data.RefreshToken, data.AccessToken, profileBytes, profileId, userId)
 	} else {
 		_, err = r.db.Exec(`
       update user_profiles set trakt_expiry = $1,
       trakt_refresh_token = $2,
       trakt_token = $3,
-      is_trakt_valid = true where id = $4 and user_id = $5
-      `, data.Expiry, data.RefreshToken, data.AccessToken, profileId, userId)
+      is_trakt_valid = true, trakt_profile = $4 where id = $5 and user_id = $6
+      `, data.Expiry, data.RefreshToken, data.AccessToken, profileBytes, profileId, userId)
 	}
 	if err != nil {
 		fmt.Println("Error inserting trakt auth token ", err)
@@ -51,7 +58,7 @@ func (r *Repository) GetProfilesWithTraktExpiry(
 		fmt.Println("Error getting user trakt profiles", err)
 		return res, err
 	}
-  defer rows.Close()
+	defer rows.Close()
 	for rows.Next() {
 		var temp models.ProfileTraktDetails
 		err = rows.Scan(
@@ -130,19 +137,21 @@ func (r *Repository) GetUserTraktInfo(
 ) (models.ProfileTraktDetails, error) {
 	var res models.ProfileTraktDetails
 	query := `
-  select id, user_id, trakt_token, trakt_expiry, is_trakt_valid
+  select id, user_id, trakt_token, trakt_expiry, is_trakt_valid, trakt_profile
   from user_profiles where user_id = $1 and id = $2
   `
 	row := r.db.QueryRow(query, userId, profileId)
 	tokenStr := sql.NullString{}
 	expiry := sql.NullTime{}
 	valid := sql.NullBool{}
+	var profileJson json.RawMessage
 	err := row.Scan(
 		&res.ProfileId,
 		&res.UserId,
 		&tokenStr,
 		&expiry,
 		&valid,
+		&profileJson,
 	)
 	if err != nil {
 		fmt.Println("Error scanning profile trakt details", err)
@@ -154,6 +163,13 @@ func (r *Repository) GetUserTraktInfo(
 	res.Expiry = expiry.Time
 	res.Token = tokenStr.String
 	res.IsTraktValid = valid.Bool
+
+	var user models.TraktUser
+	err = json.Unmarshal(profileJson, &user)
+	if err != nil {
+		return res, err
+	}
+	res.User = user
 
 	return res, nil
 }

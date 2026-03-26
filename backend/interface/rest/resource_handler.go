@@ -278,6 +278,9 @@ func (i *RestInterface) handleLibrary(w http.ResponseWriter, r *http.Request) {
 	var res ApiResponse
 	defer res.SendResponse(w)
 
+  userId,_:= r.Context().Value("user_id").(int)
+  profileId,_:= r.Context().Value("profile_id").(int)
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println("Error reading body")
@@ -296,7 +299,7 @@ func (i *RestInterface) handleLibrary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := i.tmdbUc.GetLibraryFromFilter(input)
+	data, err := i.tmdbUc.GetLibraryFromFilter(userId, profileId, input)
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError
 		res.Error = err.Error()

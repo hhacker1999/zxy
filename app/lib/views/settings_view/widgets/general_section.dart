@@ -89,6 +89,16 @@ class GeneralSection extends StatelessWidget {
             icon: Icons.view_list_rounded,
             valueNotifier: settingsBloc.showFormattedStreams,
             onChanged: (value) => settingsBloc.showFormattedStreams = value,
+            isLast: false,
+          ),
+          Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+          ModernSettingTile(
+            title: 'Auto Select stream',
+            subtitle:
+                'Highest quality stream will be automatically selected respecting default resolution',
+            icon: Icons.hd_outlined,
+            valueNotifier: settingsBloc.autoSelectBestStream,
+            onChanged: (value) => settingsBloc.setAutoSelectBestStream = value,
             isLast: true,
           ),
         ],

@@ -39,7 +39,7 @@ type Item struct {
 	IDS   IDS    `json:"ids"`
 }
 
-type TraktTrendingResponeElement struct {
+type TraktMultiMediaResponseElement struct {
 	Movie TraktItem `json:"movie"`
 	Show  TraktItem `json:"show"`
 }
@@ -132,4 +132,76 @@ type Show struct {
 	Title string     `json:"title"`
 	Year  int64      `json:"year"`
 	IDS   EpisodeIDS `json:"ids"`
+}
+
+type TraktUserSettingsResponse struct {
+	User        TraktUser   `json:"user"`
+	Account     Account     `json:"account"`
+	SharingText SharingText `json:"sharing_text"`
+	Permissions Permissions `json:"permissions"`
+}
+
+type Account struct {
+	Timezone   string     `json:"timezone"`
+	DateFormat string     `json:"date_format"`
+	Time24Hr   bool       `json:"time_24hr"`
+	CoverImage CoverImage `json:"cover_image"`
+	Token      CoverImage `json:"token"`
+	DisplayAds bool       `json:"display_ads"`
+}
+
+type CoverImage struct {
+}
+
+type Permissions struct {
+	Commenting bool `json:"commenting"`
+	Liking     bool `json:"liking"`
+	Following  bool `json:"following"`
+}
+
+type SharingText struct {
+	Watching string     `json:"watching"`
+	Watched  string     `json:"watched"`
+	Rated    CoverImage `json:"rated"`
+}
+
+type TraktUser struct {
+	Username      string     `json:"username"`
+	Private       bool       `json:"private"`
+	Deleted       bool       `json:"deleted"`
+	Name          string     `json:"name"`
+	Vip           bool       `json:"vip"`
+	VipEp         bool       `json:"vip_ep"`
+	Director      bool       `json:"director"`
+	IDS           UserIDS    `json:"ids"`
+	JoinedAt      time.Time  `json:"joined_at"`
+	Location      string     `json:"location"`
+	About         CoverImage `json:"about"`
+	Gender        string     `json:"gender"`
+	Age           int64      `json:"age"`
+	Images        Images     `json:"images"`
+	VipOg         bool       `json:"vip_og"`
+	VipYears      int64      `json:"vip_years"`
+	VipCoverImage CoverImage `json:"vip_cover_image"`
+}
+
+type UserIDS struct {
+	Slug string `json:"slug"`
+	UUID string `json:"uuid"`
+}
+
+type TraktLikedList struct {
+	List TraktList `json:"list"`
+}
+
+type TraktList struct {
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	IDS         ListIDS `json:"ids"`
+	Privacy     string  `json:"privacy"`
+}
+
+type ListIDS struct {
+	Trakt int64  `json:"trakt"`
+	Slug  string `json:"slug"`
 }

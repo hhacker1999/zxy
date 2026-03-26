@@ -1,5 +1,3 @@
-import 'package:zxy_app/views/filter_view/filter_view_model.dart';
-
 class ZxyPaginatedResponse<T> {
   final int page;
   final int totalPages;
@@ -27,6 +25,8 @@ class ZxyPaginatedResponse<T> {
     );
   }
 }
+
+enum ZxyMediaType { movie, shows }
 
 class ZxyMedia {
   final int id;
@@ -72,34 +72,35 @@ class ZxyMedia {
   });
 
   @override
-  factory ZxyMedia.fromJson(Map<String, dynamic> json, ZxyMediaType type) =>
-      ZxyMedia(
-        images: json["images"] != null ? Images.fromJson(json["images"]) : null,
-        adult: json["adult"],
-        backdropPath: json["backdrop_path"],
-        genreIds: json["genre_ids"] != null
-            ? List<int>.from(json["genre_ids"].map((x) => x))
-            : [],
-        id: json["id"],
-        type: type,
-        originalLanguage: json["original_language"]!,
-        originalTitle: json["original_title"],
-        originalName: json["original_name"],
-        overview: json["overview"],
-        popularity: json["popularity"]?.toDouble() ?? 0,
-        posterPath: json["poster_path"] ?? "",
-        releaseDate: json["release_date"] != null
-            ? DateTime.tryParse(json["release_date"])
-            : null,
-        firstAirDate: json["first_air_date"] != null
-            ? DateTime.tryParse(json["first_air_date"])
-            : null,
-        title: json["title"],
-        name: json["name"],
-        voteAverage: json["vote_average"]?.toDouble() ?? 0,
-        voteCount: json["vote_count"] ?? 0,
-        imdbRatings: json["imdb_rating"]?.toDouble() ?? 0,
-      );
+  factory ZxyMedia.fromJson(Map<String, dynamic> json) {
+    return ZxyMedia(
+      images: json["images"] != null ? Images.fromJson(json["images"]) : null,
+      adult: json["adult"],
+      backdropPath: json["backdrop_path"],
+      genreIds: json["genre_ids"] != null
+          ? List<int>.from(json["genre_ids"].map((x) => x))
+          : [],
+      id: json["id"],
+      type: json["type"] == "show" ? ZxyMediaType.shows : ZxyMediaType.movie,
+      originalLanguage: json["original_language"]!,
+      originalTitle: json["original_title"],
+      originalName: json["original_name"],
+      overview: json["overview"],
+      popularity: json["popularity"]?.toDouble() ?? 0,
+      posterPath: json["poster_path"] ?? "",
+      releaseDate: json["release_date"] != null
+          ? DateTime.tryParse(json["release_date"])
+          : null,
+      firstAirDate: json["first_air_date"] != null
+          ? DateTime.tryParse(json["first_air_date"])
+          : null,
+      title: json["title"],
+      name: json["name"],
+      voteAverage: json["vote_average"]?.toDouble() ?? 0,
+      voteCount: json["vote_count"] ?? 0,
+      imdbRatings: json["imdb_rating"]?.toDouble() ?? 0,
+    );
+  }
 }
 
 class GenreResponse {

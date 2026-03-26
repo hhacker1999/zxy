@@ -279,3 +279,48 @@ func (r *Repository) UpdateProgressVisible(
 
 	return err
 }
+
+func (r *Repository) UpdateProgressTrakt(ctx context.Context, updates []ProgressUpdate) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	query := `
+  insert into watch_progress (user_id, profile_id, media_id, progress, is_watched, updated_at) values 
+  `
+	params := []any{}
+
+	for i, v := range updates {
+		ln := len(params)
+		query += fmt.Sprintf("( $%d, $%d, $%d, $%d, $%d ,$%d)", ln+1, ln+2, ln+3, ln+4, ln+5, ln+6)
+		params = append(
+			params,
+			v.UserId,
+			v.ProfileId,
+			v.MediaId,
+			v.Progress,
+			v.IsWatched,
+			v.UpdatedAt,
+		)
+		if i != len(updates)-1 {
+			query += ", "
+		}
+
+	}
+
+	query += `on conflict (user_id, media_id, profile_id) do update set updated_at = excluded.updated_at, progress = excluded.progress, is_watched = excluded.is_watched`
+
+	var err error
+	tx, ok := ctx.Value("txn").(*sql.Tx)
+	if ok {
+		_, err = tx.Exec(query, params...)
+	} else {
+		_, err = r.db.Exec(query, params...)
+	}
+
+	if err != nil {
+		fmt.Println("Error updating watch progress", err)
+	}
+
+	return err
+}

@@ -20,6 +20,7 @@ class MobileVideoPlayerHUD extends StatelessWidget {
     required this.onBackOrStop,
     required this.iconHeight,
     required this.settingsBloc,
+    required this.onDoubleTap,
     required this.onSkipForward,
     required this.onSkipBackward,
   }) : _state = state,
@@ -36,6 +37,7 @@ class MobileVideoPlayerHUD extends StatelessWidget {
   final VoidCallback onSkipForward;
   final VoidCallback onSkipBackward;
   final VoidCallback onUserInteraction;
+  final ValueChanged<TapDownDetails> onDoubleTap;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +51,17 @@ class MobileVideoPlayerHUD extends StatelessWidget {
           // Subtle background darkening for better contrast
           Positioned.fill(
             child: GestureDetector(
-              onTap: () {
+              onTapDown: (details) {
+                final cTime = DateTime.now();
+                final lastTap = _state.lastTap.value;
+                _state.lastTap.value = cTime;
+                if (lastTap != null) {
+                  final diff = cTime.difference(lastTap);
+                  if (diff < Duration(milliseconds: 300)) {
+                    onDoubleTap(details);
+                    return;
+                  }
+                }
                 _state.isOverlayVisible.value = false;
               },
               child: Container(color: Colors.black.withOpacity(0.40)),
@@ -190,34 +202,38 @@ class _CenterControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: state.isPlaying,
-      builder: (_, isPlaying, _) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _SkipTap(
-              onTap: onSkipBackward,
-              forward: false,
-              skipDurationListenable: settingsBloc.skipDuration,
-            ),
-            const SizedBox(width: 70),
-            _PlayPauseTap(isPlaying: isPlaying, onTap: onPauseOrPlay),
-            const SizedBox(width: 70),
-            _SkipTap(
-              onTap: onSkipForward,
-              forward: true,
-              skipDurationListenable: settingsBloc.skipDuration,
-            ),
-          ],
+    return MultiValueListenableBuilder(
+      notifiers: [state.isPlaying, state.bufferingOrLoading],
+      builder: (context) {
+        final isPlaying = state.isPlaying.value;
+        final isBuffering = state.bufferingOrLoading.value;
+        return Visibility(
+          visible: !isBuffering,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _SkipTap(
+                onTap: onSkipBackward,
+                forward: false,
+                skipDurationListenable: settingsBloc.skipDuration,
+              ),
+              const SizedBox(width: 70),
+              _PlayPauseTap(isPlaying: isPlaying, onTap: onPauseOrPlay),
+              const SizedBox(width: 70),
+              _SkipTap(
+                onTap: onSkipForward,
+                forward: true,
+                skipDurationListenable: settingsBloc.skipDuration,
+              ),
+            ],
+          ),
         );
       },
     );
   }
 }
-
 
 class _PlayPauseTap extends StatefulWidget {
   final bool isPlaying;
