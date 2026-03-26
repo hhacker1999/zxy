@@ -931,6 +931,7 @@ func (u *Usecase) SearchMovie(
 
 	for i := range len(resp.Results) {
 		v := resp.Results[i]
+		v.Type = "movie"
 		rating, ok := ratings[int(v.ID)]
 		if ok {
 			v.ImdbRating = rating
@@ -994,6 +995,7 @@ func (u *Usecase) SearchShows(
 
 	for i := range len(resp.Results) {
 		v := resp.Results[i]
+		v.Type = "show"
 		rating, ok := ratings[int(v.ID)]
 		if ok {
 			v.ImdbRating = rating
