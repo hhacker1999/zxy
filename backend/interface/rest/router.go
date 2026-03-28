@@ -147,7 +147,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router := chi.NewRouter()
 	router.Post("/signup", i.handleSignup)
 	router.Post("/login", i.handleLogin)
-	router.Get("/stream", i.handleStream)
+	router.Get("/stream/*", i.handleStream)
 	router.Get("/proxy", i.handleProxy)
 	router.Get("/ws", i.SessionHandler(i.sockerHandler.HandleClientConnectionRequest, true))
 	router.Post("/profile/login", i.SessionHandler(i.handleProfileLogin, false))
