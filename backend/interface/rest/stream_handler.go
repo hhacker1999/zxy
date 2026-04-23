@@ -5,10 +5,8 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -120,6 +118,7 @@ func (i *RestInterface) HandleGetStreamV2(w http.ResponseWriter, r *http.Request
 		response.StatusCode = http.StatusBadRequest
 		return
 	}
+	subLang := params.Get("subtitle")
 	var data models.ZxyStreamsRes
 	var err error
 
@@ -159,9 +158,10 @@ func (i *RestInterface) HandleGetStreamV2(w http.ResponseWriter, r *http.Request
 			userId,
 			profileId,
 			userIp,
+			subLang,
 		)
 	} else {
-		data, err = i.addonuc.GetMovieStreamZxy(id, userId, profileId, userIp)
+		data, err = i.addonuc.GetMovieStreamZxy(id, userId, profileId, userIp, subLang)
 	}
 
 	if err != nil {
@@ -172,81 +172,6 @@ func (i *RestInterface) HandleGetStreamV2(w http.ResponseWriter, r *http.Request
 
 	response.StatusCode = http.StatusOK
 	response.Data = data
-}
-
-func (i *RestInterface) HandleAddDebridKey(w http.ResponseWriter, r *http.Request) {
-	response := &ApiResponse{}
-	defer response.SendResponse(w)
-
-	profileId := r.Context().Value("profile_id").(int)
-	userId := r.Context().Value("user_id").(int)
-
-	type Input struct {
-		ApiKey     string `json:"api_key"`
-		DebridType string `json:"debrid_type"`
-	}
-
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		response.StatusCode = http.StatusInternalServerError
-		response.Error = "Something went wrong"
-		return
-	}
-
-	defer r.Body.Close()
-	var input Input
-	err = json.Unmarshal(bodyBytes, &input)
-	if err != nil {
-		response.StatusCode = http.StatusBadRequest
-		response.Error = "Invalid Input"
-		return
-	}
-
-	if input.ApiKey == "" {
-		response.StatusCode = http.StatusBadRequest
-		response.Error = "Invalid type"
-		return
-	}
-
-	if input.DebridType != "rd" && input.DebridType != "tb" {
-		response.StatusCode = http.StatusBadRequest
-		response.Error = "Invalid type"
-		return
-	}
-
-	err = i.addonuc.StoreAddonFromApiKey(
-		userId,
-		profileId,
-		input.ApiKey,
-		input.DebridType,
-	)
-	if err != nil {
-		response.Error = err.Error()
-		response.StatusCode = http.StatusBadRequest
-		return
-	}
-
-	response.StatusCode = http.StatusOK
-}
-
-func (i *RestInterface) HandleRemoveDebridKey(w http.ResponseWriter, r *http.Request) {
-	response := &ApiResponse{}
-	defer response.SendResponse(w)
-
-	profileId := r.Context().Value("profile_id").(int)
-	userId := r.Context().Value("user_id").(int)
-
-	err := i.addonuc.RemoveDebridKey(
-		userId,
-		profileId,
-	)
-	if err != nil {
-		response.Error = err.Error()
-		response.StatusCode = http.StatusBadRequest
-		return
-	}
-
-	response.StatusCode = http.StatusOK
 }
 
 func (i *RestInterface) handleStream(w http.ResponseWriter, r *http.Request) {

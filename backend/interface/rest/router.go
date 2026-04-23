@@ -175,8 +175,6 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Get("/show/{id}/progress", i.SessionHandler(i.HandleGetShowProgress, true))
 	router.Post("/movie/update_progress", i.SessionHandler(i.HandleMovieProgressUpdate, true))
 	router.Post("/show/update_progress", i.SessionHandler(i.HandleShowProgressUpdate, true))
-	router.Post("/user/debrid/api", i.SessionHandler(i.HandleAddDebridKey, true))
-	router.Delete("/user/debrid/api", i.SessionHandler(i.HandleRemoveDebridKey, true))
 	router.Post("/discover/library", i.SessionHandler(i.handleLibrary, true))
 	router.Post("/movie/{id}/watched", i.SessionHandler(i.handleMovieWatched, true))
 	router.Post("/show/{id}/watched", i.SessionHandler(i.handleShowWatched, true))

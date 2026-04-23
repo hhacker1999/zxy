@@ -2,23 +2,36 @@ package addonusecase
 
 import (
 	"context"
-	"fmt"
+	"slices"
 	apperrors "zxy/app_errors"
+	"zxy/models"
 )
 
 func (u *Usecase) AddSource(userId int, profileId int, tp string, val string) error {
-	if tp != "rd" && tp != "tb" && tp != "ws" {
-		return apperrors.InvalidInput{Err: "Invalid source"}
-	}
-	if (tp == "rd" || tp == "tb") && len(val) == 0 {
-		return apperrors.InvalidInput{Err: "Invalid key"}
+	_, services, presets, err := u.userRepo.GetUserProfile(context.Background(), userId, profileId)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
 	}
 
-	value := fmt.Sprintf(`'%s'`, val)
-	if tp == "ws" {
-		value = "true"
+	if tp == models.REAL_DEBRID || tp == models.TORBOX {
+		if val == "" {
+			return apperrors.InvalidInput{Err: "Invalid key"}
+		}
+		services[tp] = val
 	}
-	err := u.userRepo.UpdateSource(context.Background(), userId, profileId, tp, value)
+	if tp == models.WEBSTREAMR || tp == models.HDHUB {
+		if !slices.Contains(presets, tp) {
+			presets = append(presets, tp)
+		}
+	}
+
+	err = u.userRepo.UpdateServiceAndPreset(
+		context.Background(),
+		userId,
+		profileId,
+		services,
+		presets,
+	)
 	if err != nil {
 		return apperrors.SomethingWentWrongError{}
 	}
@@ -27,15 +40,31 @@ func (u *Usecase) AddSource(userId int, profileId int, tp string, val string) er
 }
 
 func (u *Usecase) RemoveSource(userId int, profileId int, tp string) error {
-	if tp != "rd" && tp != "tb" && tp != "ws" {
-		return apperrors.InvalidInput{Err: "Invalid source"}
+	_, services, presets, err := u.userRepo.GetUserProfile(context.Background(), userId, profileId)
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
 	}
 
-	value := "null"
-	if tp == "ws" {
-		value = "false"
+	if tp == models.REAL_DEBRID || tp == models.TORBOX {
+		delete(services, tp)
 	}
-	err := u.userRepo.UpdateSource(context.Background(), userId, profileId, tp, value)
+	if tp == models.WEBSTREAMR || tp == models.HDHUB {
+		temp := []string{}
+		for _, v := range presets {
+			if v != tp {
+				temp = append(temp, v)
+			}
+		}
+		presets = temp
+	}
+
+	err = u.userRepo.UpdateServiceAndPreset(
+		context.Background(),
+		userId,
+		profileId,
+		services,
+		presets,
+	)
 	if err != nil {
 		return apperrors.SomethingWentWrongError{}
 	}

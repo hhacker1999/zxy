@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 	apperrors "zxy/app_errors"
 	"zxy/models"
@@ -180,7 +181,7 @@ func (u *Usecase) LogInProfile(
 	defer txn.Rollback()
 	ctx := context.WithValue(context.Background(), "txn", txn)
 
-	profile, err := u.userRepo.GetUserProfile(ctx, userId, profileId)
+	profile, _, _, err := u.userRepo.GetUserProfile(ctx, userId, profileId)
 	if err != nil {
 		return "", apperrors.SomethingWentWrongError{}
 	}
@@ -238,7 +239,11 @@ func (u *Usecase) GetUser(userId int) (models.User, error) {
 }
 
 func (u *Usecase) GetUserProfile(userId int, profileId int) (models.UserProfile, error) {
-	profile, err := u.userRepo.GetUserProfile(context.Background(), userId, profileId)
+	profile, dbServices, presets, err := u.userRepo.GetUserProfile(
+		context.Background(),
+		userId,
+		profileId,
+	)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return profile, apperrors.InvalidInput{Err: "User is not registered"}
@@ -269,6 +274,17 @@ func (u *Usecase) GetUserProfile(userId int, profileId int) (models.UserProfile,
 		traktLists = append(traktLists, lists...)
 	}
 	profile.TraktLists = traktLists
+	var profileServices []models.ProfileService
+
+	for _, v := range models.AvailableServiesAndPresets {
+		_, ok := dbServices[v.Id]
+		contains := slices.Contains(presets, v.Id)
+		if contains || ok {
+			v.Enabled = true
+		}
+		profileServices = append(profileServices, v)
+	}
+	profile.Services = profileServices
 
 	return profile, nil
 }
@@ -307,7 +323,7 @@ func (u *Usecase) CreateUserProfile(profileInput CreateProfileInput) error {
 	}
 
 	ctx := context.WithValue(context.Background(), "txn", txn)
-	profileId, err := u.userRepo.CreateUserProfile(ctx, models.UserProfile{
+	_, err = u.userRepo.CreateUserProfile(ctx, models.UserProfile{
 		UserId:       profileInput.UserId,
 		Name:         profileInput.Name,
 		PinHash:      string(pinHash),
@@ -315,29 +331,6 @@ func (u *Usecase) CreateUserProfile(profileInput CreateProfileInput) error {
 		LibraryItems: models.DefaultLibraryItems,
 	})
 
-	if profileInput.UseDefaultProfileKey {
-		var profile *models.UserProfile
-		for _, v := range user.Profiles {
-			if v.Id == profileInput.CreaterProfileId {
-				profile = &v
-			}
-		}
-		if profile != nil {
-			fullProfile, err := u.userRepo.GetUserProfile(context.Background(), user.Id, profile.Id)
-			fmt.Println(profile.Name)
-			fmt.Println(profile.DebridKey)
-			err = u.addonUc.StoreAddonFromApiKeyContext(
-				ctx,
-				user.Id,
-				profileId,
-				fullProfile.DebridKey,
-				fullProfile.DebridType,
-			)
-			if err != nil {
-				return apperrors.SomethingWentWrongError{}
-			}
-		}
-	}
 	err = txn.Commit()
 	if err != nil {
 		fmt.Println("Error committing transaction", err)
@@ -356,7 +349,7 @@ func (u *Usecase) UpdateUserProfile(profileInput CreateProfileInput) error {
 		return apperrors.InvalidInput{Err: "Pin can only be 6 digits long"}
 	}
 
-	profile, err := u.userRepo.GetUserProfile(
+	profile, _, _, err := u.userRepo.GetUserProfile(
 		context.Background(),
 		profileInput.UserId,
 		profileInput.CreaterProfileId,
@@ -398,7 +391,7 @@ func (u *Usecase) UpdateUserProfile(profileInput CreateProfileInput) error {
 }
 
 func (u *Usecase) DeleteAccount(userId int, profileId int) error {
-	profile, err := u.userRepo.GetUserProfile(
+	profile, _, _, err := u.userRepo.GetUserProfile(
 		context.Background(),
 		userId, profileId,
 	)
@@ -467,7 +460,7 @@ func (u *Usecase) DeleteAccount(userId int, profileId int) error {
 }
 
 func (u *Usecase) DeleteUserProfile(userId int, profileIdToDelete int, profileId int) error {
-	profile, err := u.userRepo.GetUserProfile(
+	profile, _, _, err := u.userRepo.GetUserProfile(
 		context.Background(),
 		userId, profileId,
 	)
