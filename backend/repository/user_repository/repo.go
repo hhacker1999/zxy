@@ -32,7 +32,7 @@ func (r *Repository) GetUserFromEmail(email string) (models.User, error) {
       u.updated_at,
       pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type, 'is_admin', up.is_admin, 'created_at', up.created_at)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'is_admin', up.is_admin, 'created_at', up.created_at)
       )
     from
       users u
@@ -84,7 +84,7 @@ func (r *Repository) GetUserFromUserId(userId string) (models.User, error) {
       updated_at,
       pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type, 'is_admin', up.is_admin)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'is_admin', up.is_admin)
       )
     from
       users u
