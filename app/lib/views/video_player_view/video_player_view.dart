@@ -371,6 +371,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       _player.setSubtitleTrack(
         subTrackIndex == -1 ? SubtitleTrack.no() : subtitles[subTrackIndex],
       );
+    } else {
+      _state.subtitleDetails.value = (subtitles, -1);
+      _player.setSubtitleTrack(SubtitleTrack.no());
     }
 
     _player.play().then((_) => widget.handler.onPlay());
