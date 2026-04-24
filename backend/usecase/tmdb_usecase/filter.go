@@ -120,6 +120,7 @@ func (u *Usecase) getTrendingInternal(
 		return res, apperrors.SomethingWentWrongError{}
 	}
 
+	fmt.Println(string(body))
 	if resp.StatusCode != http.StatusOK {
 		fmt.Println("Invalid status code from trakt", resp.StatusCode)
 		fmt.Println(string(body))
