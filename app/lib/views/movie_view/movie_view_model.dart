@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/bloc/events_bloc.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
@@ -77,11 +78,10 @@ class MovieViewModel implements VideoHandler {
       final inLib = await mediaUc.isInLibrary(id, ZxyMediaType.movie);
       isInLibrary.value = inLib;
       _movieDetailsState.value = ItemLoaded(data: details);
-      final userHasAddedDebrid =
-          !(userBloc.profileNotifier.value!.realDebrid.isEmpty &&
-              userBloc.profileNotifier.value!.torbox.isEmpty &&
-              !userBloc.profileNotifier.value!.webstreamr);
-      if (userHasAddedDebrid) {
+
+      bool userHasServicesEnabled = userBloc.profileNotifier.value!.services
+          .any((service) => service.enabled);
+      if (userHasServicesEnabled) {
         _getMovieStreams();
       }
     } catch (e) {
@@ -98,8 +98,14 @@ class MovieViewModel implements VideoHandler {
       _movieStreamsState.value = ItemLoading();
       final details =
           (_movieDetailsState.value as ItemLoaded<MovieDetails>).data;
+      final language = settingsBloc.subtitleLangNotifier.value != "None"
+          ? LanguageMapper.getCodesFromName(
+              settingsBloc.subtitleLangNotifier.value,
+            )!.first
+          : "";
       final streams = await streamUc.getMovieStreams(
         details.externalIds.imdbId ?? "",
+        language,
       );
       _movieStreamsState.value = ItemLoaded(data: streams);
       _setSelectedStreamBasedOnPrefs(streams);

@@ -15,7 +15,6 @@ import 'package:window_manager/window_manager.dart';
 import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
-import 'package:zxy_app/service/http_proxy.dart';
 import 'package:zxy_app/usecase/stream/model.dart';
 import 'package:zxy_app/views/movie_view/movie_view_model.dart';
 import 'package:zxy_app/views/screen.dart';
@@ -77,6 +76,15 @@ class ZxyPlayerState {
   final ValueNotifier<BoxFit> playerFit = ValueNotifier(BoxFit.contain);
   final ValueNotifier<DateTime?> lastTap = ValueNotifier(null);
   final ValueNotifier<bool> isDoubleRate = ValueNotifier(false);
+
+  void reset() {
+    audioDelay.value = 0;
+    subtitleDelay.value = 0;
+    audioDetails.value = null;
+    subtitleDetails.value = null;
+    seekInfo.value = SeekBarInfo();
+    playerFit.value = BoxFit.contain;
+  }
 
   void dispose() {
     isPlaying.dispose();
@@ -144,6 +152,8 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   // NOTE: This is here so that when user is tapping different stream links we can check
   // in our fuction calls to only start streaming from last user selected stream
   String? _currentInternalUrl;
+  List<Subtitle> currentExternalSubs = [];
+  bool subtitleSelectionDone = false;
 
   @override
   void initState() {
@@ -228,6 +238,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   void _updatePlayerBasedOnStreamsUpdate() {
     final val = widget.handler.getCurrentStreamsNotifier().value;
     if (val is ItemLoading) {
+      currentExternalSubs = [];
+      _state.reset();
+      subtitleSelectionDone = false;
       showToast(context, false, "Loading streams", "");
     }
 
@@ -235,8 +248,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       showToast(context, true, "Error loading streams", "");
     }
 
-
     if (val is ItemLoaded<ZxyStreamResponse>) {
+      _state.reset();
+      subtitleSelectionDone = false;
       final uhdStreams = val.data.uhd;
       final fhdStreams = val.data.fhd;
       final hdStreams = val.data.hd;
@@ -250,13 +264,16 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
         ..addAll(fhdStreams)
         ..addAll(hdStreams);
 
+      currentExternalSubs = val.data.subtitles;
+
       // If auto-select is off, show a picker for the user to choose a stream
       if (!_settingBloc.autoSelectBestStream.value) {
         showStreamSelectionPicker(
           context: context,
           streams: streams,
-          currentSelectedIndex:
-              widget.handler.getSelectedStreamNotifier().value,
+          currentSelectedIndex: widget.handler
+              .getSelectedStreamNotifier()
+              .value,
           showFormatted: _settingBloc.showFormattedStreams.value,
           onStreamSelected: (index) {
             widget.handler.getSelectedStreamNotifier().value = index;
@@ -272,6 +289,8 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   }
 
   void _playStream(ZxyResolutionItem streamItem) {
+    _state.reset();
+    subtitleSelectionDone = false;
     print("Playing url ${streamItem.url}");
     _currentInternalUrl = streamItem.url;
     widget.handler
@@ -331,9 +350,32 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       _player.setAudioTrack(audioTracks[_state.audioDetails.value!.$2]);
     }
 
-    final subtitles = tracks.subtitle.where((e) => e.language != null).toList();
-    _state.subtitleDetails.value = (subtitles, -1);
-    _player.setSubtitleTrack(SubtitleTrack.no());
+    var subtitles = tracks.subtitle
+        .where((e) => e.language != null && e.title != "external")
+        .toList();
+    for (var item in currentExternalSubs) {
+      subtitles.add(
+        SubtitleTrack.uri(item.url, language: item.langCode, title: "external"),
+      );
+    }
+
+    if (!subtitleSelectionDone &&
+        _settingBloc.subtitleLangNotifier.value != "None") {
+      int subTrackIndex = subtitles.indexWhere(
+        (track) =>
+            track.language != null &&
+            LanguageMapper.getNameFromCode(track.language!) ==
+                _settingBloc.subtitleLangNotifier.value,
+      );
+      _state.subtitleDetails.value = (subtitles, subTrackIndex);
+      _player.setSubtitleTrack(
+        subTrackIndex == -1 ? SubtitleTrack.no() : subtitles[subTrackIndex],
+      );
+    } else {
+      _state.subtitleDetails.value = (subtitles, -1);
+      _player.setSubtitleTrack(SubtitleTrack.no());
+    }
+
     _player.play().then((_) => widget.handler.onPlay());
   }
 
@@ -425,6 +467,8 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   void onVideoStreamChanged(ZxyResolutionItem streamItem) {
     _player.stop();
     _state.bufferingOrLoading.value = true;
+    _state.reset();
+    subtitleSelectionDone = false;
     print("Playing url ${streamItem.url}");
     // _pm.setInternalUrl(streamItem.url);
     _currentInternalUrl = streamItem.url;
@@ -439,8 +483,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
             showToast(context, true, e.toString(), "");
           }
         });
-    // _player.open(Media("http://127.0.0.1:6969"), play: true);
-    // _player.open(Media(streamItem.url), play: _state.isPlaying.value);
   }
 
   void initialMobileDeviceSetup() {
@@ -469,7 +511,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     }
     Navigator.pop(context);
   }
-
 
   void onSkipPressOrTap(bool isRight) {
     final currDur = _state.seekInfo.value.current;
@@ -503,7 +544,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     _state.dispose();
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -789,6 +829,9 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                           ),
                         ),
                       ModernSidebar(
+                        onSubtitleSelected: () {
+                          subtitleSelectionDone = true;
+                        },
                         state: _state,
                         height: constr.maxHeight - 40,
                         updateAudioDelay: () {

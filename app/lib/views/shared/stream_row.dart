@@ -58,26 +58,17 @@ class StreamRow extends StatelessWidget {
                     return;
                   }
                 }
-                if (context
-                        .read<UserBloc>()
-                        .profileNotifier
-                        .value!
-                        .realDebrid
-                        .isEmpty &&
-                    context
-                        .read<UserBloc>()
-                        .profileNotifier
-                        .value!
-                        .torbox
-                        .isEmpty &&
-                    !context
-                        .read<UserBloc>()
-                        .profileNotifier
-                        .value!
-                        .webstreamr) {
+
+                if (!context
+                    .read<UserBloc>()
+                    .profileNotifier
+                    .value!
+                    .services
+                    .any((service) => service.enabled)) {
                   showToast(context, true, "Add sources in settings", "");
                   return;
                 }
+
                 Navigator.pushNamed(
                   context,
                   AppRoutes.videoPlayerView,

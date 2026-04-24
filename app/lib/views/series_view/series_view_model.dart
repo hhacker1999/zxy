@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:zxy_app/app_constants.dart';
 import 'package:zxy_app/bloc/events_bloc.dart';
 import 'package:zxy_app/bloc/settings_bloc.dart';
 import 'package:zxy_app/bloc/user_bloc.dart';
@@ -171,20 +172,26 @@ class SeriesViewModel implements VideoHandler {
       return;
     }
 
-    final userHasAddedDebrid =
-        !(userBloc.profileNotifier.value!.realDebrid.isEmpty &&
-            userBloc.profileNotifier.value!.torbox.isEmpty &&
-            !userBloc.profileNotifier.value!.webstreamr);
+    bool userHasServicesEnabled = userBloc.profileNotifier.value!.services.any(
+      (service) => service.enabled,
+    );
 
-    if (userHasAddedDebrid) {
+    if (userHasServicesEnabled) {
       try {
         _episodeStreamsState.value = ItemLoading();
+
+        final language = settingsBloc.subtitleLangNotifier.value != "None"
+            ? LanguageMapper.getCodesFromName(
+                settingsBloc.subtitleLangNotifier.value,
+              )!.first
+            : "";
         final streams = await streamUc.getSeriesStreams(
           imdbId!,
           seasons[activeSeasonEpisode.value.$1].seasonNumber,
           seasons[activeSeasonEpisode.value.$1]
               .episodes[activeSeasonEpisode.value.$2]
               .episodeNumber,
+          language,
         );
         _streams["${activeSeasonEpisode.value.$1}:${activeSeasonEpisode.value.$2}"] =
             streams;

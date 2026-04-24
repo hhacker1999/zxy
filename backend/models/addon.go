@@ -5,7 +5,8 @@ import (
 )
 
 type AddonStreamResponse struct {
-	Streams []AddonStream `json:"streams"`
+	Streams   []AddonStream   `json:"streams"`
+	Subtitles []AddonSubtitle `json:"subtitles"`
 }
 
 type AddonStream struct {
@@ -27,9 +28,10 @@ type StreamResult struct {
 }
 
 type ZxyStreamsRes struct {
-	UHD []ZxyResolutionResponse `json:"uhd"`
-	FHD []ZxyResolutionResponse `json:"fhd"`
-	HD  []ZxyResolutionResponse `json:"hd"`
+	UHD       []ZxyResolutionResponse `json:"uhd"`
+	FHD       []ZxyResolutionResponse `json:"fhd"`
+	HD        []ZxyResolutionResponse `json:"hd"`
+	Subtitles []AddonSubtitle         `json:"subtitles"`
 }
 
 type ZxyResolutionResponse struct {
@@ -109,4 +111,12 @@ type ParsedFile struct {
 type Service struct {
 	ID     string `json:"id"`
 	Cached bool   `json:"cached"`
+}
+
+type AddonSubtitle struct {
+	ID          string `json:"id"`
+	URL         string `json:"url"`
+	LangCode    string `json:"lang_code"`
+	SubID       int    `json:"sub_id"`
+	FromTrusted bool   `json:"from_trusted"`
 }

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"zxy/models"
+
+	"github.com/lib/pq"
 )
 
 type Repository struct {
@@ -30,7 +32,7 @@ func (r *Repository) GetUserFromEmail(email string) (models.User, error) {
       u.updated_at,
       pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type, 'is_admin', up.is_admin, 'created_at', up.created_at)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'is_admin', up.is_admin, 'created_at', up.created_at)
       )
     from
       users u
@@ -82,7 +84,7 @@ func (r *Repository) GetUserFromUserId(userId string) (models.User, error) {
       updated_at,
       pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type, 'is_admin', up.is_admin)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'is_admin', up.is_admin)
       )
     from
       users u
@@ -133,7 +135,7 @@ func (r *Repository) GetUserFromId(userId int) (models.User, error) {
       u.updated_at,
       u.pwd_hash,
       json_agg(
-        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'debrid_type', up.debrid_type, 'is_admin', up.is_admin, 'created_at', up.created_at)
+        jsonb_build_object('name', up.name, 'pin_hash',up.pin_hash, 'id', up.id, 'is_admin', up.is_admin, 'created_at', up.created_at)
       )
     from
       users u
@@ -227,86 +229,41 @@ func (r *Repository) CreateUserProfile(
 	return id, err
 }
 
-func (r *Repository) StoreDebridInfo(
-	ctx context.Context,
-	userId int,
-	profileId int,
-	typ string,
-	key string,
-) error {
-	txn, ok := ctx.Value("txn").(*sql.Tx)
-	var err error
-	if ok {
-		_, err = txn.Exec(
-			`update user_profiles set debrid_type = $1 ,debrid_key = $2 where user_id = $3 and id = $4`,
-			typ,
-			key,
-			userId,
-			profileId,
-		)
-	} else {
-
-		_, err = r.db.Exec(
-			`update user_profiles set debrid_type = $1 ,debrid_key = $2 where user_id = $3 and id = $4`,
-			typ,
-			key,
-			userId,
-			profileId,
-		)
-	}
-	if err != nil {
-		fmt.Println("Error storing debrid info", err)
-	}
-
-	return err
-}
-
 func (r *Repository) GetUserProfile(
 	ctx context.Context,
 	userId int,
 	profileId int,
-) (models.UserProfile, error) {
+) (models.UserProfile, map[string]string, []string, error) {
 	var res models.UserProfile
 	row := r.db.QueryRow(
-		`select id, user_id, debrid_type, debrid_key, name, is_admin,pin_hash,library_items,
-    trakt_expiry, is_trakt_valid, ws, tb, rd
+		`select id, user_id, name, is_admin,pin_hash,library_items,
+    trakt_expiry, is_trakt_valid, services, presets
     from user_profiles where user_id = $1 and id = $2`,
 		userId,
 		profileId,
 	)
 
-	var typSql sql.NullString
-	var keySql sql.NullString
 	var items *json.RawMessage
+	var services *json.RawMessage
+	var presets []string
 	var traktExpiry sql.NullTime
 	var isTraktValid sql.NullBool
-	var tb sql.NullString
-	var rd sql.NullString
 
 	err := row.Scan(
 		&res.Id,
 		&res.UserId,
-		&typSql,
-		&keySql,
 		&res.Name,
 		&res.IsAdmin,
 		&res.PinHash,
 		&items,
 		&traktExpiry,
 		&isTraktValid,
-		&res.Webstreamr,
-		&tb,
-		&rd,
+		&services,
+		pq.Array(&presets),
 	)
 	if err != nil {
 		fmt.Println("Error getting user profile", err)
-	}
-	if typSql.Valid {
-		res.DebridType = typSql.String
-	}
-
-	if keySql.Valid {
-		res.DebridKey = keySql.String
+		return res, nil, nil, err
 	}
 
 	if traktExpiry.Valid {
@@ -317,53 +274,26 @@ func (r *Repository) GetUserProfile(
 		res.TraktValid = isTraktValid.Bool
 	}
 
-  if rd.Valid {
-    res.RealDebrid = rd.String
-  }
-
-  if tb.Valid  {
-    res.Torbox = tb.String
-  }
-
 	if items != nil {
 		var lItems []models.ProfileLibraryItem
 		err = json.Unmarshal(*items, &lItems)
 		if err != nil {
 			fmt.Println("Error unmarshalling library items", err)
-			return res, err
+			return res, nil, nil, err
 		}
 		res.LibraryItems = lItems
 	}
 
-	return res, err
-}
-
-func (r *Repository) RemoveDebridKeyFromDB(
-	ctx context.Context,
-	userId int,
-	profileId int,
-) error {
-	txn, ok := ctx.Value("txn").(*sql.Tx)
-	var err error
-	if ok {
-		_, err = txn.Exec(
-			`update user_profiles set debrid_type = null ,debrid_key = null where user_id = $1 and id = $2`,
-			userId,
-			profileId,
-		)
-	} else {
-
-		_, err = r.db.Exec(
-			`update user_profiles set debrid_type = null ,debrid_key = null where user_id = $1 and id = $2`,
-			userId,
-			profileId,
-		)
-	}
-	if err != nil {
-		fmt.Println("Error removing debrid info", err)
+	servicesMap := make(map[string]string)
+	if services != nil {
+		err = json.Unmarshal(*services, &servicesMap)
+		if err != nil {
+			fmt.Println("Error unmarshalling services", err)
+			return res, nil, nil, err
+		}
 	}
 
-	return err
+	return res, servicesMap, presets, err
 }
 
 func (r *Repository) UpdateUserProfile(
@@ -486,38 +416,39 @@ func (r *Repository) StoreLibraryItems(
 	return err
 }
 
-func (r *Repository) UpdateSource(
+func (r *Repository) UpdateServiceAndPreset(
 	ctx context.Context,
 	userId int,
 	profileId int,
-	tp string,
-	value string,
+	services map[string]string,
+	presets []string,
 ) error {
 	txn, ok := ctx.Value("txn").(*sql.Tx)
 	var err error
+	servicesJson, err := json.Marshal(services)
+	if err != nil {
+		fmt.Println("Error marshalling services map")
+		return err
+	}
 	if ok {
 		_, err = txn.Exec(
-			fmt.Sprintf(
-				`update user_profiles set %s = %s  where user_id = $1 and id = $2`,
-				tp,
-				value,
-			),
+			`update user_profiles set services = $1, presets = $2  where user_id = $3 and id = $4`,
+			servicesJson,
+			pq.Array(presets),
 			userId,
 			profileId,
 		)
 	} else {
 		_, err = r.db.Exec(
-			fmt.Sprintf(
-				`update user_profiles set %s = %s  where user_id = $1 and id = $2`,
-				tp,
-				value,
-			),
+			`update user_profiles set services = $1, presets = $2  where user_id = $3 and id = $4`,
+			servicesJson,
+			pq.Array(presets),
 			userId,
 			profileId,
 		)
 	}
 	if err != nil {
-		fmt.Println("Error updating source", err)
+		fmt.Println("Error updating service and preset", err)
 	}
 
 	return err

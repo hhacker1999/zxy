@@ -30,10 +30,15 @@ type UserProfile struct {
 	TraktValid     bool                 `json:"trakt_valid"`
 	IsAdmin        bool                 `json:"is_admin"`
 	LibraryItems   []ProfileLibraryItem `json:"library_items"`
-	Webstreamr     bool                 `json:"webstreamr"`
-	Torbox         string               `json:"torbox"`
-	RealDebrid     string               `json:"real_debrid"`
 	TraktLists     []TraktList          `json:"trakt_lists"`
+	Services       []ProfileService    `json:"services"`
+}
+
+type ProfileService struct {
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	InputType string `json:"input_type"`
+	Enabled   bool   `json:"enabled"`
 }
 
 type ProfileTraktDetails struct {

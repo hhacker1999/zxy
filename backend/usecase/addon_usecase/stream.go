@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	apperrors "zxy/app_errors"
 	"zxy/models"
 )
@@ -16,11 +17,12 @@ func (u *Usecase) GetMovieStreamZxy(
 	userId int,
 	profileId int,
 	userIp string,
+	sub string,
 ) (models.ZxyStreamsRes, error) {
 	var res models.ZxyStreamsRes
 	var aioRes models.AddonStreamResponse
 
-	reqBody, err := u.getReqBodyForStreams(userId, profileId)
+	reqBody, err := u.getReqBodyForStreams(userId, profileId, sub)
 	if err != nil {
 		return res, err
 	}
@@ -89,11 +91,12 @@ func (u *Usecase) GetSeriesStreamZxy(
 	userId int,
 	profileId int,
 	userIp string,
+	sub string,
 ) (models.ZxyStreamsRes, error) {
 	var res models.ZxyStreamsRes
 	var aioRes models.AddonStreamResponse
 
-	reqBody, err := u.getReqBodyForStreams(userId, profileId)
+	reqBody, err := u.getReqBodyForStreams(userId, profileId, sub)
 	if err != nil {
 		return res, err
 	}
@@ -154,48 +157,44 @@ func (u *Usecase) GetSeriesStreamZxy(
 	return u.getResponseStreamFromAioStream(aioRes)
 }
 
-func (u *Usecase) getReqBodyForStreams(userId int, profileId int) ([]byte, error) {
+func (u *Usecase) getReqBodyForStreams(userId int, profileId int, sub string) ([]byte, error) {
 	var res []byte
-	profile, err := u.userRepo.GetUserProfile(context.Background(), userId, profileId)
+	_, dbServices, presets, err := u.userRepo.GetUserProfile(
+		context.Background(),
+		userId,
+		profileId,
+	)
 	if err != nil {
 		return res, err
 	}
 	foundSource := false
 	services := []map[string]any{}
-	if len(profile.RealDebrid) != 0 {
+	for k, v := range dbServices {
 		foundSource = true
 		services = append(services, map[string]any{
-			"id":      "realdebrid",
+			"id":      k,
 			"enabled": true,
 			"credentials": map[string]any{
-				"apiKey": profile.RealDebrid,
-			},
-		})
-	}
-	if len(profile.Torbox) != 0 {
-		foundSource = true
-		services = append(services, map[string]any{
-			"id":      "torbox",
-			"enabled": true,
-			"credentials": map[string]any{
-				"apiKey": profile.Torbox,
+				"apiKey": v,
 			},
 		})
 	}
 
 	disabled := []string{}
-	if profile.Webstreamr {
-		foundSource = true
-	} else {
-		disabled = append(disabled, "webstreamr")
+
+	for _, v := range models.AvailablePresets {
+		if !slices.Contains(presets, v) {
+			disabled = append(disabled, v)
+		}
 	}
-	if !foundSource {
+	if !foundSource && len(disabled) == len(models.AvailablePresets) {
 		return nil, apperrors.InvalidInput{Err: "No sources found"}
 	}
 
 	res, err = json.Marshal(map[string]any{
 		"services": services,
 		"disabled": disabled,
+		"subtitle": sub,
 	})
 	if err != nil {
 		fmt.Println("Error marshalling request body", err)
@@ -255,6 +254,23 @@ func (u *Usecase) getResponseStreamFromAioStream(
 	res.UHD = uhd
 	res.FHD = fhd
 	res.HD = hd
+
+	tempSubtitles := []models.AddonSubtitle{}
+
+	for _, v := range aioRes.Subtitles {
+		if v.FromTrusted {
+			tempSubtitles = append(tempSubtitles, v)
+		}
+	}
+	if len(tempSubtitles) < 5 {
+		tempSubtitles = []models.AddonSubtitle{}
+		for _, v := range aioRes.Subtitles {
+			if v.SubID != 0 {
+				tempSubtitles = append(tempSubtitles, v)
+			}
+		}
+	}
+	res.Subtitles = tempSubtitles
 
 	return res, nil
 }

@@ -39,15 +39,49 @@ class BehaviorHints {
   };
 }
 
+class Subtitle {
+  String id;
+  String url;
+  String langCode;
+  int subId;
+  bool fromTrusted;
+
+  Subtitle({
+    required this.id,
+    required this.url,
+    required this.langCode,
+    required this.subId,
+    required this.fromTrusted,
+  });
+
+  factory Subtitle.fromJson(Map<String, dynamic> json) => Subtitle(
+    id: json["id"],
+    url: json["url"],
+    langCode: json["lang_code"],
+    subId: json["sub_id"],
+    fromTrusted: json["from_trusted"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "id": id,
+    "url": url,
+    "lang_code": langCode,
+    "sub_id": subId,
+    "from_trusted": fromTrusted,
+  };
+}
+
 class ZxyStreamResponse {
   final List<ZxyResolutionItem> uhd;
   final List<ZxyResolutionItem> fhd;
   final List<ZxyResolutionItem> hd;
+  final List<Subtitle> subtitles;
 
   const ZxyStreamResponse({
     required this.uhd,
     required this.fhd,
     required this.hd,
+    required this.subtitles,
   });
 
   factory ZxyStreamResponse.fromJson(Map<String, dynamic> json) {
@@ -66,6 +100,12 @@ class ZxyStreamResponse {
           ? List.from(
               json["hd"],
             ).map((e) => ZxyResolutionItem.fromJson(e)).toList()
+          : [],
+
+      subtitles: json["subtitles"] != null
+          ? List.from(
+              json["subtitles"],
+            ).map((e) => Subtitle.fromJson(e)).toList()
           : [],
     );
   }

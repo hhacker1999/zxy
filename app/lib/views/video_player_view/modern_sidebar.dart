@@ -30,6 +30,7 @@ class ModernSidebar extends StatefulWidget {
   final ValueChanged<ZxyResolutionItem> onVideoStreamChanged;
   final SettingsBloc settingsBloc;
   final ZxyPlayerState state;
+  final VoidCallback onSubtitleSelected;
 
   const ModernSidebar({
     super.key,
@@ -43,6 +44,7 @@ class ModernSidebar extends StatefulWidget {
     required this.selectedStreamNotifier,
     required this.player,
     required this.settingsBloc,
+    required this.onSubtitleSelected,
   });
 
   @override
@@ -520,7 +522,8 @@ class _ModernSidebarState extends State<ModernSidebar>
             return ValueListenableBuilder<int>(
               valueListenable: widget.selectedStreamNotifier,
               builder: (_, selectedIdx, _) {
-                final formatted = widget.settingsBloc.showFormattedStreams.value;
+                final formatted =
+                    widget.settingsBloc.showFormattedStreams.value;
                 return Column(
                   children: streams.asMap().entries.map((e) {
                     final index = e.key;
@@ -545,8 +548,10 @@ class _ModernSidebarState extends State<ModernSidebar>
                             borderRadius: BorderRadius.circular(12),
                             border: isSelected
                                 ? Border.all(
-                                    color:
-                                        AppTheme.accentColor.withOpacity(0.5))
+                                    color: AppTheme.accentColor.withOpacity(
+                                      0.5,
+                                    ),
+                                  )
                                 : Border.all(color: Colors.transparent),
                           ),
                           child: Row(
@@ -598,8 +603,9 @@ class _ModernSidebarState extends State<ModernSidebar>
                                               : stream.url,
                                         ),
                                       );
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
                                           content: Text(
                                             "Stream link copied to clipboard",
@@ -790,6 +796,7 @@ class _ModernSidebarState extends State<ModernSidebar>
                   title: "None",
                   isSelected: currentIdx == -1,
                   onTap: () {
+                    widget.onSubtitleSelected();
                     widget.player.setSubtitleTrack(SubtitleTrack.no());
                     widget.state.subtitleDetails.value = (tracks, -1);
                   },
@@ -804,6 +811,7 @@ class _ModernSidebarState extends State<ModernSidebar>
                     title: label,
                     isSelected: currentIdx == index,
                     onTap: () {
+                      widget.onSubtitleSelected();
                       widget.player.setSubtitleTrack(track);
                       widget.state.subtitleDetails.value = (tracks, index);
                     },
