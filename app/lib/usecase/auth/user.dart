@@ -36,6 +36,34 @@ class User {
   };
 }
 
+class Service {
+  String id;
+  String name;
+  String inputType;
+  bool enabled;
+
+  Service({
+    required this.id,
+    required this.name,
+    required this.inputType,
+    required this.enabled,
+  });
+
+  factory Service.fromJson(Map<String, dynamic> json) => Service(
+    id: json["id"],
+    name: json["name"],
+    inputType: json["input_type"],
+    enabled: json["enabled"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "id": id,
+    "name": name,
+    "input_type": inputType,
+    "enabled": enabled,
+  };
+}
+
 class Profile {
   final int id;
   final String name;
@@ -46,10 +74,8 @@ class Profile {
   final DateTime createdAt;
   final DateTime? traktExpiry;
   final bool isTraktValid;
-  final String realDebrid;
-  final String torbox;
-  final bool webstreamr;
   final List<ProfileTraktLists> profileTraktLists;
+  final List<Service> services;
 
   Profile({
     required this.id,
@@ -61,18 +87,13 @@ class Profile {
     required this.createdAt,
     this.traktExpiry,
     required this.isTraktValid,
-    required this.realDebrid,
-    required this.torbox,
-    required this.webstreamr,
     required this.profileTraktLists,
+    required this.services,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
     id: json["id"],
     name: json["name"],
-    torbox: json["torbox"],
-    realDebrid: json["real_debrid"],
-    webstreamr: json["webstreamr"],
     isPinProtected: json["is_pin_protected"],
     profileTraktLists: json["trakt_lists"] != null
         ? List<ProfileTraktLists>.from(
@@ -86,6 +107,9 @@ class Profile {
     createdAt: DateTime.parse(json["created_at"]),
     debridType: json["debrid_type"],
     isAdmin: json["is_admin"],
+    services: json["services"] != null
+        ? List<Service>.from(json["services"].map((x) => Service.fromJson(x)))
+        : [],
     libraryItems: json["library_items"] != null
         ? List<ProfileLibraryItem>.from(
             json["library_items"].map((x) => ProfileLibraryItem.fromJson(x)),

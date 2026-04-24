@@ -7,59 +7,41 @@ import 'package:zxy_app/app_theme.dart';
 import 'package:zxy_app/usecase/auth/user.dart';
 import 'package:zxy_app/views/settings_view/settings_view_model.dart';
 
-// ── Source definition ─────────────────────────────────────────────────────────
+// ── Color palette for service cards ───────────────────────────────────────────
 
-class _SourceDef {
-  final String key; // API key sent to addSource / removeSource
-  final String label; // UI display name
-  final IconData icon;
-  final Color color;
-  final bool needsApiKey;
-
-  const _SourceDef({
-    required this.key,
-    required this.label,
-    required this.icon,
-    required this.color,
-    this.needsApiKey = false,
-  });
-}
-
-const _sources = [
-  _SourceDef(
-    key: 'ws',
-    label: 'WebStreamr',
-    icon: Icons.cloud_outlined,
-    color: Color(0xFF7B61FF),
-  ),
-  _SourceDef(
-    key: 'rd',
-    label: 'Real Debrid',
-    icon: Icons.bolt_outlined,
-    color: Color(0xFF4CAF50),
-    needsApiKey: true,
-  ),
-  _SourceDef(
-    key: 'tb',
-    label: 'Torbox',
-    icon: Icons.bolt_outlined,
-    color: Color(0xFF00ACC1),
-    needsApiKey: true,
-  ),
+const _kServiceColors = [
+  Color(0xFF7B61FF),
+  Color(0xFF4CAF50),
+  Color(0xFF00ACC1),
+  Color(0xFFE91E63),
+  Color(0xFFFF9800),
+  Color(0xFF3F51B5),
+  Color(0xFF009688),
+  Color(0xFF795548),
 ];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-bool _isEnabled(Profile profile, String key) {
-  switch (key) {
+IconData _iconForService(String id) {
+  switch (id.toLowerCase()) {
     case 'ws':
-      return profile.webstreamr;
+      return Icons.cloud_outlined;
     case 'rd':
-      return profile.realDebrid.isNotEmpty;
     case 'tb':
-      return profile.torbox.isNotEmpty;
+      return Icons.bolt_outlined;
     default:
-      return false;
+      return Icons.extension_outlined;
+  }
+}
+
+Color _colorForService(String id, int index) {
+  switch (id.toLowerCase()) {
+    case 'ws':
+      return const Color(0xFF7B61FF);
+    case 'rd':
+      return const Color(0xFF4CAF50);
+    case 'tb':
+      return const Color(0xFF00ACC1);
+    default:
+      return _kServiceColors[index % _kServiceColors.length];
   }
 }
 
@@ -72,44 +54,77 @@ class SourcesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (profile.services.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(AppTheme.spacingL),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.04),
+          borderRadius: AppTheme.roundedLarge,
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.08),
+          ),
+        ),
+        child: Center(
+          child: Text(
+            'No services available',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: [
-        for (int i = 0; i < _sources.length; i++) ...[
-          _SourceCard(source: _sources[i], profile: profile),
-          if (i < _sources.length - 1) const SizedBox(height: AppTheme.spacingM),
+        for (int i = 0; i < profile.services.length; i++) ...[
+          _ServiceCard(
+            service: profile.services[i],
+            color: _colorForService(profile.services[i].id, i),
+            icon: _iconForService(profile.services[i].id),
+          ),
+          if (i < profile.services.length - 1)
+            const SizedBox(height: AppTheme.spacingM),
         ],
       ],
     );
   }
 }
 
-// ── Individual source card ────────────────────────────────────────────────────
+// ── Individual service card ───────────────────────────────────────────────────
 
-class _SourceCard extends StatefulWidget {
-  final _SourceDef source;
-  final Profile profile;
+class _ServiceCard extends StatefulWidget {
+  final Service service;
+  final Color color;
+  final IconData icon;
 
-  const _SourceCard({required this.source, required this.profile});
+  const _ServiceCard({
+    required this.service,
+    required this.color,
+    required this.icon,
+  });
 
   @override
-  State<_SourceCard> createState() => _SourceCardState();
+  State<_ServiceCard> createState() => _ServiceCardState();
 }
 
-class _SourceCardState extends State<_SourceCard> {
-  bool _showKeyInput = false;
-  final _keyController = TextEditingController();
+class _ServiceCardState extends State<_ServiceCard> {
+  bool _showInput = false;
+  final _inputController = TextEditingController();
 
   @override
   void dispose() {
-    _keyController.dispose();
+    _inputController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final enabled = _isEnabled(widget.profile, widget.source.key);
+    final enabled = widget.service.enabled;
     final vm = context.read<SettingsViewModel>();
-    final color = widget.source.color;
+    final color = widget.color;
+    final isBoolType = widget.service.inputType == 'bool';
 
     return ClipRRect(
       borderRadius: AppTheme.roundedLarge,
@@ -142,7 +157,7 @@ class _SourceCardState extends State<_SourceCard> {
                       color: color.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(widget.source.icon, color: color, size: 20),
+                    child: Icon(widget.icon, color: color, size: 20),
                   ),
                   const SizedBox(width: AppTheme.spacingM),
 
@@ -152,7 +167,7 @@ class _SourceCardState extends State<_SourceCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.source.label,
+                          widget.service.name,
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -192,8 +207,8 @@ class _SourceCardState extends State<_SourceCard> {
                       label: 'Remove',
                       color: AppTheme.errorColor,
                       onTap: () {
-                        _showKeyInput = false;
-                        vm.removeSource(widget.source.key);
+                        _showInput = false;
+                        vm.removeSource(widget.service.id);
                       },
                     )
                   else
@@ -201,30 +216,32 @@ class _SourceCardState extends State<_SourceCard> {
                       label: 'Add',
                       color: color,
                       onTap: () {
-                        if (widget.source.needsApiKey) {
-                          setState(() => _showKeyInput = !_showKeyInput);
+                        if (isBoolType) {
+                          // Bool type: just enable with empty value
+                          vm.addSource(widget.service.id, '');
                         } else {
-                          vm.addSource(widget.source.key, 'true');
+                          // String type: show text field
+                          setState(() => _showInput = !_showInput);
                         }
                       },
                     ),
                 ],
               ),
 
-              // ── API key input (Real Debrid / Torbox only) ──────────────
-              if (_showKeyInput && widget.source.needsApiKey && !enabled) ...[
+              // ── Text input for string-type services ────────────────────
+              if (_showInput && !isBoolType && !enabled) ...[
                 const SizedBox(height: AppTheme.spacingM),
                 Row(
                   children: [
                     Expanded(
                       child: TextField(
-                        controller: _keyController,
+                        controller: _inputController,
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           color: AppTheme.textPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: '${widget.source.label} API Key',
+                          hintText: '${widget.service.name} API Key',
                           hintStyle: GoogleFonts.inter(
                             fontSize: 14,
                             color: AppTheme.textDisabled,
@@ -267,13 +284,13 @@ class _SourceCardState extends State<_SourceCard> {
                       height: 48,
                       child: ElevatedButton(
                         onPressed: () {
-                          if (_keyController.text.trim().isEmpty) return;
+                          if (_inputController.text.trim().isEmpty) return;
                           vm.addSource(
-                            widget.source.key,
-                            _keyController.text.trim(),
+                            widget.service.id,
+                            _inputController.text.trim(),
                           );
-                          _keyController.clear();
-                          setState(() => _showKeyInput = false);
+                          _inputController.clear();
+                          setState(() => _showInput = false);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: color,

@@ -70,6 +70,20 @@ class GeneralSection extends StatelessWidget {
           ),
           Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
           ModernDropdownTile<String>(
+            title: 'Default Subtitle Language',
+            subtitle: 'Preferred language for subtitles',
+            icon: Icons.subtitles_outlined,
+            valueNotifier: settingsBloc.subtitleLangNotifier,
+            items: ['None', ...LanguageMapper.nameToCodes.keys.toList()..sort()],
+            onChanged: (value) {
+              if (value != null) {
+                settingsBloc.subtitleLanguage = value;
+              }
+            },
+            itemToString: (String val) => val,
+          ),
+          Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+          ModernDropdownTile<String>(
             title: 'Default Resolution',
             subtitle: 'Preferred video resolution for media',
             icon: Icons.hd_outlined,

@@ -18,6 +18,7 @@ class SettingsBloc {
   final ValueNotifier<String> langNotifier = ValueNotifier(
     LanguageMapper.defaultLang,
   );
+  final ValueNotifier<String> subtitleLangNotifier = ValueNotifier('None');
   final ValueNotifier<bool> autoSelectBestStream = ValueNotifier(true);
   late final ValueNotifier<String> resolutionNotifier;
 
@@ -50,6 +51,11 @@ class SettingsBloc {
   set language(String lang) {
     langNotifier.value = lang;
     _storage.write(key: "language", value: lang);
+  }
+
+  set subtitleLanguage(String lang) {
+    subtitleLangNotifier.value = lang;
+    _storage.write(key: "subtitle_language", value: lang);
   }
 
   set volume(double vol) {
@@ -107,6 +113,7 @@ class SettingsBloc {
     final vol = await _storage.read(key: "vol");
     final sd = await _storage.read(key: "skipDuration");
     final lang = await _storage.read(key: "language");
+    final subtitleLang = await _storage.read(key: "subtitle_language");
     final resolution = await _storage.read(key: "resolution");
     final formattedStream = await _storage.read(key: "formatted_streams");
     final autoSelect = await _storage.read(key: "auto_select");
@@ -142,6 +149,10 @@ class SettingsBloc {
       langNotifier.value = lang;
     }
 
+    if (subtitleLang != null) {
+      subtitleLangNotifier.value = subtitleLang;
+    }
+
     if (formattedStream == "false") {
       showFormattedStreams.value = false;
     }
@@ -170,5 +181,6 @@ class SettingsBloc {
     skipDuration.dispose();
     resolutionNotifier.dispose();
     langNotifier.dispose();
+    subtitleLangNotifier.dispose();
   }
 }
