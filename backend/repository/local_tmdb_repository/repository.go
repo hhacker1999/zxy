@@ -102,7 +102,7 @@ func (r *Repository) GetImdbRatings(imdbIds []string) (map[string]float64, error
 	}
 	query += ")"
 	rows, err := r.db.Query(query, params...)
-  defer rows.Close()
+	defer rows.Close()
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return res, nil
@@ -166,7 +166,7 @@ func (r *Repository) GetImdbRatingsFromTmdb(tmdbIds []int, tp string) (map[int]f
 	}
 	query += ")"
 	rows, err := r.db.Query(query, params...)
-  defer rows.Close()
+	defer rows.Close()
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return res, nil
@@ -383,7 +383,7 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 	}
 
 	rows, err := r.db.Query(query, params...)
-  defer rows.Close()
+	defer rows.Close()
 	if err != nil {
 		fmt.Println("Error in movies query", err)
 		return res, count, err
@@ -408,7 +408,7 @@ func (r *Repository) GetLibrary(filter models.LibraryFilter) ([]models.ZxyMedia,
 			rating = rtg.Float64
 		}
 		temp.ImdbRating = rating
-    temp.Type = tp
+		temp.Type = tp
 
 		res = append(res, temp)
 	}
@@ -431,7 +431,7 @@ func (r *Repository) GetLibraryFromIds(tmdbId []int, tp string) ([]models.ZxyMed
 	query += fmt.Sprintf("and type = '%s'", tp)
 
 	rows, err := r.db.Query(query)
-  defer rows.Close()
+	defer rows.Close()
 	if err != nil {
 		fmt.Println("Error getting library from ids", err)
 		return res, err
@@ -466,8 +466,11 @@ func (r *Repository) GetLibraryFromIdsSameOrder(
 	tmdbId []int,
 	tp string,
 ) ([]models.ZxyMedia, error) {
-	tempMap := make(map[int]models.ZxyMedia)
 	res := []models.ZxyMedia{}
+	if len(tmdbId) == 0 {
+		return res, nil
+	}
+	tempMap := make(map[int]models.ZxyMedia)
 	query := `
   select  data, imdb_rating, genre_ids from details where tmdb_id in (
   `
@@ -481,11 +484,11 @@ func (r *Repository) GetLibraryFromIdsSameOrder(
 	query += fmt.Sprintf("and type = '%s'", tp)
 
 	rows, err := r.db.Query(query)
-  defer rows.Close()
 	if err != nil {
 		fmt.Println("Error getting library from ids", err)
 		return res, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var jsn json.RawMessage
 		var genreId []int64
@@ -515,7 +518,7 @@ func (r *Repository) GetLibraryFromIdsSameOrder(
 			fmt.Println("Not found in db", v)
 			continue
 		}
-    temp.Type = tp
+		temp.Type = tp
 		res = append(res, temp)
 	}
 
