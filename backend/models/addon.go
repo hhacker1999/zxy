@@ -77,7 +77,7 @@ type StreamData struct {
 	Type       string     `json:"type"`
 	Proxied    bool       `json:"proxied,omitempty"`
 	Indexer    string     `json:"indexer,omitempty"`
-	Duration   int64      `json:"duration,omitempty"`
+	Duration   float64    `json:"duration,omitempty"`
 	Library    bool       `json:"library,omitempty"`
 	Size       int64      `json:"size,omitempty"`
 	Addon      string     `json:"addon"`

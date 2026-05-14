@@ -171,26 +171,6 @@ func (u *Usecase) GetSeriesStream(
 
 	var finalResult []models.StreamResult
 
-	// for _, v := range res.Streams {
-	// 	if len(v.BehaviorHints.Filename) != 0 {
-	// 		info, err := ptn.Parse(v.BehaviorHints.Filename)
-	// 		if err != nil {
-	// 			fmt.Println("Error parsing file name", err)
-	// 		}
-	// 		temp := models.StreamResult{
-	// 			Name:          v.Name,
-	// 			Description:   v.Description,
-	// 			Url:           v.URL,
-	// 			Resolution:    info.Resolution,
-	// 			Container:     info.Container,
-	// 			Language:      info.Language,
-	// 			BehaviorHints: v.BehaviorHints,
-	// 		}
-	// 		finalResult = append(finalResult, temp)
-	// 	}
-	//
-	// }
-
 	return finalResult, nil
 }
 
