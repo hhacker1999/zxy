@@ -302,10 +302,10 @@ type Part struct {
 }
 
 type Videos struct {
-	Results []Result `json:"results"`
+	Results []VideoResult `json:"results"`
 }
 
-type Result struct {
+type VideoResult struct {
 	ISO639_1    string    `json:"iso_639_1"`
 	ISO3166_1   string    `json:"iso_3166_1"`
 	Name        string    `json:"name"`
@@ -340,6 +340,7 @@ type ZxyMedia struct {
 	OriginCountry    []string `json:"origin_country,omitempty"`
 	ImdbRating       float64  `json:"imdb_rating"`
 	Images           Images   `json:"images"`
+	Videos           Videos   `json:"videos"`
 }
 
 type TmdbMediaIdentity struct {

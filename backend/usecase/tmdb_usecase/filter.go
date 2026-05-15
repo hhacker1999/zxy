@@ -62,6 +62,14 @@ func (u *Usecase) GetLibraryFromFilter(
 			item.Images.Logos = enLogos
 		}
 
+		var relevantVideoResults []models.VideoResult
+		for _, v := range item.Videos.Results {
+			if v.Site == "Youtube" && v.Type == "Trailer" {
+				relevantVideoResults = append(relevantVideoResults, v)
+			}
+		}
+		item.Videos.Results = relevantVideoResults
+
 		data[i] = item
 	}
 
@@ -104,6 +112,14 @@ func (u *Usecase) GetTrending(filter models.LibraryFilter) ([]byte, error) {
 			if len(enLogos) != 0 {
 				item.Images.Logos = enLogos
 			}
+
+			var relevantVideoResults []models.VideoResult
+			for _, v := range item.Videos.Results {
+				if v.Site == "Youtube" && v.Type == "Trailer" {
+					relevantVideoResults = append(relevantVideoResults, v)
+				}
+			}
+			item.Videos.Results = relevantVideoResults
 
 			response.Results[i] = item
 		}
