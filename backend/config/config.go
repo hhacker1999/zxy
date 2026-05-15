@@ -29,7 +29,6 @@ type Config struct {
 	AioConfigUid        string
 	AioConfigPwd        string
 	ZxyAioInstance      string
-	YTApiKey            string
 }
 
 func GetConfig(filePath string) (Config, error) {
@@ -62,7 +61,6 @@ func GetConfig(filePath string) (Config, error) {
 	config.AioConfigPwd = configMap["AIOCONFIG_PWD"]
 	config.AioConfigUid = configMap["AIOCONFIG_UID"]
 	config.ZxyAioInstance = configMap["ZXY_AIO_INSTANCE"]
-	config.YTApiKey = configMap["YT_API_KEY"]
 
 	return config, nil
 }
