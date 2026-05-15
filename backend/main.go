@@ -121,6 +121,24 @@ func main() {
 		return
 	}
 
+	ytDBID, err := strconv.Atoi(cfg.RedisYTDb)
+	if err != nil {
+		fmt.Println("Invalid redis yt db")
+		return
+	}
+
+	ytRDB := redis.NewClient(&redis.Options{
+		Addr:     cfg.RedisAddress,
+		Password: cfg.RedisPassword,
+		DB:       ytDBID,
+	})
+	defer ytRDB.Close()
+	_, err = cacheRDB.Ping(context.Background()).Result()
+	if err != nil {
+		fmt.Println("Unable to connect to yt redis db", err)
+		return
+	}
+
 	userRepo := userrepository.New(db)
 	sessionRepo := sessionrepository.New(db)
 	playbackRepo := playbackrepository.New(db)
@@ -162,7 +180,7 @@ func main() {
 		cfg.TmdbAT,
 		cacheRDB,
 		traktUc,
-    userRepo,
+		userRepo,
 	)
 	progressUc := progressusecase.New(
 		db,
@@ -182,6 +200,8 @@ func main() {
 		cfg.EncrKey,
 		wsHandler,
 		traktUc,
+		ytRDB,
+		cfg.YTApiKey,
 	)
 	defer restInterface.Exit()
 	router := restInterface.SetupRoutes()

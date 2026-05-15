@@ -45,6 +45,26 @@ func (u *Usecase) GetLibraryFromFilter(
 	if err != nil {
 		return nil, apperrors.SomethingWentWrongError{}
 	}
+
+	// NOTE: This is to remove a lot of unnecessary images to keep
+	// the size low for network transport
+	for i := range len(data) {
+		item := data[i]
+		item.Images.Backdrops = []models.Backdrop{}
+		item.Images.Posters = []models.Backdrop{}
+		var enLogos []models.Backdrop
+		for _, v := range item.Images.Logos {
+			if v.ISO639_1 == "en" {
+				enLogos = append(enLogos, v)
+			}
+		}
+		if len(enLogos) != 0 {
+			item.Images.Logos = enLogos
+		}
+
+		data[i] = item
+	}
+
 	var res models.MediaPaginatedResponse
 	res.Results = data
 	res.TotalResults = items
@@ -68,6 +88,26 @@ func (u *Usecase) GetTrending(filter models.LibraryFilter) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// NOTE: This is to remove a lot of unnecessary images to keep
+		// the size low for network transport
+		for i := range len(response.Results) {
+			item := response.Results[i]
+			item.Images.Backdrops = []models.Backdrop{}
+			item.Images.Posters = []models.Backdrop{}
+			var enLogos []models.Backdrop
+			for _, v := range item.Images.Logos {
+				if v.ISO639_1 == "en" {
+					enLogos = append(enLogos, v)
+				}
+			}
+			if len(enLogos) != 0 {
+				item.Images.Logos = enLogos
+			}
+
+			response.Results[i] = item
+		}
+
 		resBytes, err := json.Marshal(response)
 		if err != nil {
 			fmt.Println("Error marshalling trending response", err)

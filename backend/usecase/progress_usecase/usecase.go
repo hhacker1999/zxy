@@ -95,7 +95,7 @@ func (u *Usecase) GetContinueWatching(
 			return nil, apperrors.SomethingWentWrongError{}
 		}
 		for _, v := range media {
-      v.Type = "show"
+			v.Type = "show"
 			mediaMap[fmt.Sprintf("%d", v.ID)] = v
 		}
 	}
@@ -106,7 +106,7 @@ func (u *Usecase) GetContinueWatching(
 			return nil, apperrors.SomethingWentWrongError{}
 		}
 		for _, v := range media {
-      v.Type = "movie"
+			v.Type = "movie"
 			mediaMap[fmt.Sprintf("%d", v.ID)] = v
 		}
 	}
@@ -118,6 +118,20 @@ func (u *Usecase) GetContinueWatching(
 			fmt.Println("Media not found for continue watching", splitted[0])
 			continue
 		}
+
+		// NOTE: Remove unnecessary fluff to keep payload small
+		media.Images.Backdrops = []models.Backdrop{}
+		media.Images.Posters = []models.Backdrop{}
+		var enLogos []models.Backdrop
+		for _, v := range media.Images.Logos {
+			if v.ISO639_1 == "en" {
+				enLogos = append(enLogos, v)
+			}
+		}
+		if len(enLogos) != 0 {
+			media.Images.Logos = enLogos
+		}
+
 		response = append(response, ContinueWatchingItem{
 			Media:    media,
 			Progress: v,

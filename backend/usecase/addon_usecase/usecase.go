@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	apperrors "zxy/app_errors"
 	"zxy/models"
@@ -23,7 +22,6 @@ const userPath = "api/v1/user"
 type Usecase struct {
 	addonUrl       string
 	addonRepo      *addonsrepository.Repository
-	template       string
 	instances      []string
 	tmdbAt         string
 	db             *sql.DB
@@ -49,11 +47,6 @@ func New(
 	zxyAioPwd string,
 ) (*Usecase, error) {
 
-	byte, err := os.ReadFile(templatePath)
-	if err != nil {
-		fmt.Println("Error reading aio templated", err)
-		return nil, err
-	}
 
 	instancesSplitted := strings.Split(instances, ",")
 	if len(instancesSplitted) == 0 || instancesSplitted[0] == "" {
@@ -63,7 +56,6 @@ func New(
 
 	return &Usecase{
 		addonRepo:      addonRepo,
-		template:       string(byte),
 		instances:      instancesSplitted,
 		tmdbAt:         tmdbAt,
 		db:             db,

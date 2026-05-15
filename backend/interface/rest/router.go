@@ -21,6 +21,7 @@ import (
 	userusecase "zxy/usecase/user_usecase"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 type RedirectError struct {
@@ -66,6 +67,8 @@ type RestInterface struct {
 	mtx           *sync.RWMutex
 	cronCancel    context.CancelFunc
 	sockerHandler *zxyWs.WSHandler
+	ytRedisDb     *redis.Client
+	ytApiKey      string
 }
 
 func New(
@@ -78,6 +81,8 @@ func New(
 	encrKey string,
 	sockerHandler *zxyWs.WSHandler,
 	traktUC *traktusecase.Usecase,
+	ytRedisDb *redis.Client,
+	ytApiKey string,
 ) *RestInterface {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -109,6 +114,8 @@ func New(
 		mtx:           &sync.RWMutex{},
 		sockerHandler: sockerHandler,
 		traktUC:       traktUC,
+		ytRedisDb:     ytRedisDb,
+		ytApiKey:      ytApiKey,
 	}
 }
 
@@ -188,6 +195,7 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Post("/user/library", i.SessionHandler(i.HandleAddToLibrary, true))
 	router.Delete("/user/library", i.SessionHandler(i.HandleDeleteFromLibrary, true))
 	router.Post("/user/library/check", i.SessionHandler(i.HandleCheckIfInLibrary, true))
+	router.Get("/yt_stream", i.handleYtStream)
 	return router
 }
 
