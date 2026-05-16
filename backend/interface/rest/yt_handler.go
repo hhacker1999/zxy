@@ -26,7 +26,7 @@ func extractURL(videoID string) (string, error) {
 		videoURL,
 	)
 
-	out, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", err
 	}
