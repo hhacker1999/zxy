@@ -17,7 +17,7 @@ func (u *Usecase) GetLibraryFromFilter(
 	filter models.LibraryFilter,
 ) (any, error) {
 	// NOTE: We are using trakt to get trending things
-	var data []models.ZxyMedia
+	data := []models.ZxyMedia{}
 	var items int
 	var err error
 	if filter.Type == models.TRAKT {
