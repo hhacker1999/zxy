@@ -16,9 +16,17 @@ FROM alpine:latest
 
 WORKDIR /app
 
+# Install system dependencies, python3, ffmpeg, and yt-dlp
+RUN apk add --no-cache \
+    ca-certificates \
+    curl \
+    ffmpeg \
+    python3 \
+    && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+    && chmod a+rx /usr/local/bin/yt-dlp
+
 COPY --from=builder /zxy .
 COPY --from=builder /build/schema ./schema
-COPY --from=builder /build/aio_template.json ./aio_template.json
 
 EXPOSE 6969
 
