@@ -201,6 +201,7 @@ func main() {
 		wsHandler,
 		traktUc,
 		ytRDB,
+		cfg.YTProxy,
 	)
 	defer restInterface.Exit()
 	router := restInterface.SetupRoutes()

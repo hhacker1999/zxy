@@ -16,11 +16,15 @@ import (
 
 var pathExpireRegex = regexp.MustCompile(`/expire/(\d+)/`)
 
-func extractURL(videoID string) (string, error) {
+func extractURL(videoID string, proxy string) (string, error) {
 	videoURL := "https://www.youtube.com/watch?v=" + videoID
 
 	cmd := exec.Command(
 		"yt-dlp",
+		"--proxy", proxy,
+		"--no-playlist",
+		"--no-warnings",
+		"--extractor-args", "youtube:player_client=android",
 		"-f", "best[ext=mp4]/best",
 		"-g",
 		videoURL,
@@ -54,7 +58,7 @@ func (i *RestInterface) handleYtStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(streamURL) == 0 {
-		streamURL, err = extractURL(videoID)
+		streamURL, err = extractURL(videoID, i.ytProxy)
 		if err != nil {
 			fmt.Println("Error extracting url from id", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

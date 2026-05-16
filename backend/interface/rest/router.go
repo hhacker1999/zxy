@@ -68,6 +68,7 @@ type RestInterface struct {
 	cronCancel    context.CancelFunc
 	sockerHandler *zxyWs.WSHandler
 	ytRedisDb     *redis.Client
+	ytProxy       string
 }
 
 func New(
@@ -81,6 +82,7 @@ func New(
 	sockerHandler *zxyWs.WSHandler,
 	traktUC *traktusecase.Usecase,
 	ytRedisDb *redis.Client,
+	ytProxy string,
 ) *RestInterface {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -113,7 +115,9 @@ func New(
 		sockerHandler: sockerHandler,
 		traktUC:       traktUC,
 		ytRedisDb:     ytRedisDb,
+		ytProxy:       ytProxy,
 	}
+
 }
 
 func (i *RestInterface) SetupRoutes() *chi.Mux {
