@@ -76,7 +76,12 @@ func (u *Usecase) GetLibraryFromFilter(
 	var res models.MediaPaginatedResponse
 	res.Results = data
 	res.TotalResults = items
-	res.TotalPages = (items + filter.Items - 1) / len(data)
+	if len(data) == 0 {
+		res.TotalPages = 1
+	} else {
+		res.TotalPages = (items + filter.Items - 1) / len(data)
+	}
+
 	res.Page = filter.Page
 	if res.Page == 0 {
 		res.Page = 1
