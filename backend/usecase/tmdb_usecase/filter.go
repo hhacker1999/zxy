@@ -64,7 +64,7 @@ func (u *Usecase) GetLibraryFromFilter(
 
 		var relevantVideoResults []models.VideoResult
 		for _, v := range item.Videos.Results {
-			if v.Site == "Youtube" && v.Type == "Trailer" {
+			if v.Site == "YouTube" && v.Type == "Trailer" {
 				relevantVideoResults = append(relevantVideoResults, v)
 			}
 		}
@@ -115,7 +115,7 @@ func (u *Usecase) GetTrending(filter models.LibraryFilter) ([]byte, error) {
 
 			var relevantVideoResults []models.VideoResult
 			for _, v := range item.Videos.Results {
-				if v.Site == "Youtube" && v.Type == "Trailer" {
+				if v.Site == "YouTube" && v.Type == "Trailer" {
 					relevantVideoResults = append(relevantVideoResults, v)
 				}
 			}
