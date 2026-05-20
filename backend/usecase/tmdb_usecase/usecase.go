@@ -799,6 +799,9 @@ func (u *Usecase) getTMDBMovieGenre() ([]models.Genre, error) {
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36",
 	)
 
+	//NOTE: AI recommended this for EOF errors
+	req.Close = true
+
 	res, err := u.client.Do(req)
 	if err != nil {
 		fmt.Println("Error sending get movie genre ", err)
@@ -807,10 +810,7 @@ func (u *Usecase) getTMDBMovieGenre() ([]models.Genre, error) {
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		fmt.Println("--------------------------------------------------")
-		fmt.Println(res.StatusCode)
-		fmt.Println("--------------------------------------------------")
-		fmt.Println("Error reading get movie genre", err)
+		fmt.Println("Error reading get movie genre", err, res.StatusCode)
 		return nil, apperrors.SomethingWentWrongError{}
 	}
 
