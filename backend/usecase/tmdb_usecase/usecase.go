@@ -807,7 +807,10 @@ func (u *Usecase) getTMDBMovieGenre() ([]models.Genre, error) {
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		fmt.Println("Error reading get movie genre ", err, res.StatusCode)
+		fmt.Println("--------------------------------------------------")
+		fmt.Println(res.StatusCode)
+		fmt.Println("--------------------------------------------------")
+		fmt.Println("Error reading get movie genre", err)
 		return nil, apperrors.SomethingWentWrongError{}
 	}
 
