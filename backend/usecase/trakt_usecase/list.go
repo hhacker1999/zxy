@@ -192,12 +192,12 @@ func (u *Usecase) GetUsersListItems(
 	}
 
 	httpRes, err := u.doTraktPrivateReq(req, details.Token)
-	defer httpRes.Body.Close()
 
 	if err != nil {
 		fmt.Println("Error doing trakt list request", err)
 		return res, 0, apperrors.SomethingWentWrongError{}
 	}
+	defer httpRes.Body.Close()
 
 	resBody, err := io.ReadAll(httpRes.Body)
 	if err != nil {
