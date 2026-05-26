@@ -51,6 +51,15 @@ func (u *Usecase) GetLibraryFromFilter(
 	for i := range len(data) {
 		item := data[i]
 		item.Images.Backdrops = []models.Backdrop{}
+
+		// NOTE: Add a non logo poster path for Top Poster in app home page
+		for _, v := range item.Images.Posters {
+			if v.ISO639_1 == "" && v.ISO3166_1 == "" {
+				item.NonLogoPosterPath = v.FilePath
+				break
+			}
+		}
+
 		item.Images.Posters = []models.Backdrop{}
 		var enLogos []models.Backdrop
 		for _, v := range item.Images.Logos {
@@ -107,6 +116,15 @@ func (u *Usecase) GetTrending(filter models.LibraryFilter) ([]byte, error) {
 		for i := range len(response.Results) {
 			item := response.Results[i]
 			item.Images.Backdrops = []models.Backdrop{}
+
+			// NOTE: Add a non logo poster path for Top Poster in app home page
+			for _, v := range item.Images.Posters {
+				if v.ISO639_1 == "" && v.ISO3166_1 == "" {
+					item.NonLogoPosterPath = v.FilePath
+					break
+				}
+			}
+
 			item.Images.Posters = []models.Backdrop{}
 			var enLogos []models.Backdrop
 			for _, v := range item.Images.Logos {
@@ -114,6 +132,7 @@ func (u *Usecase) GetTrending(filter models.LibraryFilter) ([]byte, error) {
 					enLogos = append(enLogos, v)
 				}
 			}
+
 			if len(enLogos) != 0 {
 				item.Images.Logos = enLogos
 			}

@@ -319,28 +319,29 @@ type VideoResult struct {
 }
 
 type ZxyMedia struct {
-	Adult            bool     `json:"adult"`
-	BackdropPath     string   `json:"backdrop_path"`
-	ID               int64    `json:"id"`
-	Title            string   `json:"title"`
-	OriginalTitle    string   `json:"original_title"`
-	Overview         string   `json:"overview"`
-	PosterPath       string   `json:"poster_path"`
-	Type             string   `json:"type"`
-	OriginalLanguage string   `json:"original_language"`
-	GenreIDS         []int64  `json:"genre_ids"`
-	Popularity       float64  `json:"popularity"`
-	ReleaseDate      *string  `json:"release_date,omitempty"`
-	Video            *bool    `json:"video,omitempty"`
-	VoteAverage      float64  `json:"vote_average"`
-	VoteCount        int64    `json:"vote_count"`
-	Name             string   `json:"name"`
-	OriginalName     *string  `json:"original_name,omitempty"`
-	FirstAirDate     *string  `json:"first_air_date,omitempty"`
-	OriginCountry    []string `json:"origin_country,omitempty"`
-	ImdbRating       float64  `json:"imdb_rating"`
-	Images           Images   `json:"images"`
-	Videos           Videos   `json:"videos"`
+	Adult             bool     `json:"adult"`
+	BackdropPath      string   `json:"backdrop_path"`
+	ID                int64    `json:"id"`
+	Title             string   `json:"title"`
+	OriginalTitle     string   `json:"original_title"`
+	Overview          string   `json:"overview"`
+	PosterPath        string   `json:"poster_path"`
+	NonLogoPosterPath string   `json:"non_logo_poster_path"`
+	Type              string   `json:"type"`
+	OriginalLanguage  string   `json:"original_language"`
+	GenreIDS          []int64  `json:"genre_ids"`
+	Popularity        float64  `json:"popularity"`
+	ReleaseDate       *string  `json:"release_date,omitempty"`
+	Video             *bool    `json:"video,omitempty"`
+	VoteAverage       float64  `json:"vote_average"`
+	VoteCount         int64    `json:"vote_count"`
+	Name              string   `json:"name"`
+	OriginalName      *string  `json:"original_name,omitempty"`
+	FirstAirDate      *string  `json:"first_air_date,omitempty"`
+	OriginCountry     []string `json:"origin_country,omitempty"`
+	ImdbRating        float64  `json:"imdb_rating"`
+	Images            Images   `json:"images"`
+	Videos            Videos   `json:"videos"`
 }
 
 type TmdbMediaIdentity struct {

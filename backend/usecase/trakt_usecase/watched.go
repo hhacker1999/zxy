@@ -37,7 +37,7 @@ func (u *Usecase) getWatchedMovies(token string) ([]models.TraktPlaybackHistoryI
 	}
 
 	if response.StatusCode != http.StatusOK {
-		fmt.Println("Invalid status code ", response.StatusCode, string(bodyBytes))
+		fmt.Println("Invalid status code from trakt", response.StatusCode, string(bodyBytes))
 		return nil, apperrors.SomethingWentWrongError{}
 	}
 
