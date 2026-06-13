@@ -1,6 +1,6 @@
 # zxy 🎬
 
-##NOTE: Public instance is closed, dont use this anymore
+## NOTE: Public instance is closed, dont use this anymore
 
 **zxy** is a minimalist, high-performance media streaming application built with Flutter. Designed for a "plug and play" experience, zxy removes the friction of complex configurations, letting you get straight to your content.
 
