@@ -146,7 +146,7 @@ func (r *Repository) GetProgress(
 		&res.CreatedAt,
 		&res.UpdatedAt,
 	)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		fmt.Println("Error getting progress", err)
 	}
 

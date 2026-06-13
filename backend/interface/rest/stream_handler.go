@@ -304,6 +304,68 @@ func (i *RestInterface) resolveInternalURL(initial string) (string, error) {
 	return string(plainText), nil
 }
 
+func (i *RestInterface) ResolvePlayableStreamURL(internal string) (string, error) {
+	if internal == "" {
+		return "", fmt.Errorf("missing internal stream token")
+	}
+
+	i.mtx.RLock()
+	cachedURL, ok := i.urlMap[internal]
+	i.mtx.RUnlock()
+	if ok {
+		return cachedURL.FinalUrl, nil
+	}
+
+	plainText, err := i.resolveInternalURL(internal)
+	if err != nil {
+		return "", err
+	}
+
+	uri, err := url.Parse(plainText)
+	if err == nil {
+		splittedHost := strings.Split(uri.Host, ":")
+		if len(splittedHost) == 1 {
+			i.mtx.Lock()
+			i.urlMap[internal] = RedirectUrlInfo{
+				FinalUrl: plainText,
+				UrlTime:  time.Now(),
+			}
+			i.mtx.Unlock()
+			return plainText, nil
+		}
+	}
+
+	req, err := http.NewRequest(http.MethodGet, plainText, nil)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := i.client.Do(req)
+	if err != nil {
+		var resErr *RedirectError
+		if errors.As(err, &resErr) {
+			i.mtx.Lock()
+			i.urlMap[internal] = RedirectUrlInfo{
+				FinalUrl: resErr.URL,
+				UrlTime:  time.Now(),
+			}
+			i.mtx.Unlock()
+			return resErr.URL, nil
+		}
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	finalURL := resp.Request.URL.String()
+	i.mtx.Lock()
+	i.urlMap[internal] = RedirectUrlInfo{
+		FinalUrl: finalURL,
+		UrlTime:  time.Now(),
+	}
+	i.mtx.Unlock()
+	return finalURL, nil
+}
+
 func (i *RestInterface) handleFinalUrl(w http.ResponseWriter, r *http.Request) {
 	var res ApiResponse
 	defer res.SendResponse(w)
@@ -335,79 +397,11 @@ func (i *RestInterface) handleFinalUrl(w http.ResponseWriter, r *http.Request) {
 		Url string `json:"url"`
 	}
 
-	i.mtx.RLock()
-	defer i.mtx.RUnlock()
-	cachedUrl, ok := i.urlMap[initial]
-	if ok {
-		fmt.Println("Found url in cache", cachedUrl.FinalUrl)
-		res.StatusCode = http.StatusOK
-		res.Data = Response{
-			Url: cachedUrl.FinalUrl,
-		}
-		return
-	}
-
-	plainText, err := i.resolveInternalURL(initial)
+	finalURL, err := i.ResolvePlayableStreamURL(initial)
 	if err != nil {
-		res.StatusCode = http.StatusBadRequest
-		res.Error = "Invalid url"
-		return
-	}
-
-	fmt.Println("Initial decoded url", plainText)
-	uri, err := url.Parse(plainText)
-	if err == nil {
-		splittedHost := strings.Split(uri.Host, ":")
-		// NOTE: Initial url is final url
-		if len(splittedHost) == 1 {
-			res.StatusCode = http.StatusOK
-			res.Data = Response{
-				Url: plainText,
-			}
-			return
-		}
-	}
-
-	req, err := http.NewRequest("GET", plainText, nil)
-	if err != nil {
-		res.StatusCode = http.StatusBadRequest
-		res.Error = "Invalid url"
-		return
-	}
-	userIp := GetRequestIP(r)
-	req.Header.Set("X-Forwarded-For", userIp)
-	req.Header.Set("X-Real-IP", userIp)
-	req.Header.Set("X-Client-Ip", userIp)
-
-	// req.Header.Set("Range", "bytes=0-0")
-
-	resp, err := i.client.Do(req)
-	if err != nil {
-		var resErr *RedirectError
-		if errors.As(err, &resErr) {
-			finalURL := resErr.URL
-			i.urlMap[initial] = RedirectUrlInfo{
-				FinalUrl: finalURL,
-				UrlTime:  time.Now(),
-			}
-
-			res.StatusCode = http.StatusOK
-			res.Data = Response{
-				Url: finalURL,
-			}
-			return
-		}
 		res.StatusCode = http.StatusBadGateway
 		res.Error = "Source resolution failed"
 		return
-	}
-	defer resp.Body.Close()
-
-	finalURL := resp.Request.URL.String()
-	fmt.Println("final url ", finalURL)
-	i.urlMap[initial] = RedirectUrlInfo{
-		FinalUrl: finalURL,
-		UrlTime:  time.Now(),
 	}
 
 	res.StatusCode = http.StatusOK

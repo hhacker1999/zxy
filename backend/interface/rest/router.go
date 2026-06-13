@@ -14,6 +14,7 @@ import (
 	"zxy/models"
 	sessionrepository "zxy/repository/session_repository"
 	userrepository "zxy/repository/user_repository"
+	"zxy/interface/jellyfin"
 	addonusecase "zxy/usecase/addon_usecase"
 	progressusecase "zxy/usecase/progress_usecase"
 	tmdbusecase "zxy/usecase/tmdb_usecase"
@@ -69,6 +70,7 @@ type RestInterface struct {
 	sockerHandler *zxyWs.WSHandler
 	ytRedisDb     *redis.Client
 	ytProxy       string
+	zxyUrl        string
 }
 
 func New(
@@ -83,6 +85,7 @@ func New(
 	traktUC *traktusecase.Usecase,
 	ytRedisDb *redis.Client,
 	ytProxy string,
+	zxyUrl string,
 ) *RestInterface {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -116,6 +119,7 @@ func New(
 		traktUC:       traktUC,
 		ytRedisDb:     ytRedisDb,
 		ytProxy:       ytProxy,
+		zxyUrl:        zxyUrl,
 	}
 
 }
@@ -197,6 +201,22 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	router.Delete("/user/library", i.SessionHandler(i.HandleDeleteFromLibrary, true))
 	router.Post("/user/library/check", i.SessionHandler(i.HandleCheckIfInLibrary, true))
 	router.Get("/yt_stream", i.SessionHandler(i.handleYtStream, true))
+
+	jellyfinServer := jellyfin.New(
+		jellyfin.Config{
+			PublicURL:    i.zxyUrl,
+			ImageBase:    "https://image.tmdb.org/t/p",
+			GetRequestIP: GetRequestIP,
+			ResolveStream: i.ResolvePlayableStreamURL,
+		},
+		i.userUC,
+		i.sessionRepo,
+		i.tmdbUc,
+		i.addonuc,
+		i.progressUC,
+	)
+	jellyfinServer.RegisterRoutes(router)
+
 	return router
 }
 

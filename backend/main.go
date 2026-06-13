@@ -202,6 +202,7 @@ func main() {
 		traktUc,
 		ytRDB,
 		cfg.YTProxy,
+		cfg.ZxyUrl,
 	)
 	defer restInterface.Exit()
 	router := restInterface.SetupRoutes()

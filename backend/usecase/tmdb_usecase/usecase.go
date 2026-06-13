@@ -330,9 +330,11 @@ func (u *Usecase) GetMovieDetails(id string) (models.TMDBMovie, error) {
 		return response, apperrors.InvalidInput{Err: "Invalid id"}
 	}
 
-	response, err = u.localTmdbRepo.GetMovie(idInt)
-	if err != nil {
-		fmt.Println("Movie not found in local db")
+	response, localErr := u.localTmdbRepo.GetMovie(idInt)
+	if localErr != nil || movieDetailsNeedEnrichment(response) {
+		if localErr != nil {
+			fmt.Println("Movie not found in local db")
+		}
 		url := fmt.Sprintf(
 			"%s/movie/%s?append_to_response=credits,images,external_ids,similar,belongs_to_collection,videos,watch/providers,recommendations",
 			u.tmdbApiBaseUrl,
@@ -481,8 +483,8 @@ func (u *Usecase) GetShowDetails(id string) (models.TMDBShow, error) {
 	if err != nil {
 		return response, apperrors.InvalidInput{Err: "Invalid id"}
 	}
-	response, err = u.localTmdbRepo.GetShow(idInt)
-	if err != nil {
+	response, localErr := u.localTmdbRepo.GetShow(idInt)
+	if localErr != nil || showDetailsNeedEnrichment(response) {
 		url := fmt.Sprintf(
 			"%s/tv/%s?append_to_response=credits,external_ids,images,similar,videos,watch/providers,recommendations",
 			u.tmdbApiBaseUrl,
@@ -1060,4 +1062,14 @@ func (u *Usecase) getConfigurationInternal() ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+func movieDetailsNeedEnrichment(movie models.TMDBMovie) bool {
+	return len(movie.Credits.Cast) == 0 ||
+		(movie.BackdropPath == "" && len(movie.Images.Backdrops) == 0)
+}
+
+func showDetailsNeedEnrichment(show models.TMDBShow) bool {
+	return len(show.Credits.Cast) == 0 ||
+		(show.BackdropPath == "" && len(show.Images.Backdrops) == 0)
 }
