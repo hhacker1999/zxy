@@ -31,7 +31,14 @@ type UserProfile struct {
 	IsAdmin        bool                 `json:"is_admin"`
 	LibraryItems   []ProfileLibraryItem `json:"library_items"`
 	TraktLists     []TraktList          `json:"trakt_lists"`
-	Services       []ProfileService    `json:"services"`
+	Services       []ProfileService     `json:"services"`
+	Addons         []ProfileAddon       `json:"addons"`
+}
+
+type ProfileAddon struct {
+	Id          int    `json:"id"`
+	ManifestUrl string `json:"manifest_url"`
+	Enabled     bool   `json:"enabled"`
 }
 
 type ProfileService struct {

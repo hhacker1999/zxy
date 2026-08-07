@@ -286,6 +286,21 @@ func (u *Usecase) GetUserProfile(userId int, profileId int) (models.UserProfile,
 	}
 	profile.Services = profileServices
 
+	addons, err := u.addonRepo.GetProfileAddons(profileId)
+	if err != nil {
+		return profile, apperrors.SomethingWentWrongError{}
+	}
+
+	profileAddons := []models.ProfileAddon{}
+	for _, v := range addons {
+		profileAddons = append(profileAddons, models.ProfileAddon{
+			Id:          v.Id,
+			ManifestUrl: v.ManifestUrl,
+			Enabled:     v.Enabled,
+		})
+	}
+	profile.Addons = profileAddons
+
 	return profile, nil
 }
 

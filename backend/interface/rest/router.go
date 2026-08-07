@@ -153,50 +153,79 @@ func (i *RestInterface) SetupRoutes() *chi.Mux {
 	go i.urlCleanerCron(ctx)
 
 	router := chi.NewRouter()
+
+	// Auth
 	router.Post("/signup", i.handleSignup)
 	router.Post("/login", i.handleLogin)
-	router.Get("/stream/*", i.handleStream)
-	router.Get("/proxy", i.handleProxy)
-	router.Get("/ws", i.SessionHandler(i.sockerHandler.HandleClientConnectionRequest, true))
 	router.Post("/profile/login", i.SessionHandler(i.handleProfileLogin, false))
+
+	// User
 	router.Get("/user", i.SessionHandler(i.handleGetUser, false))
+	router.Delete("/user", i.SessionHandler(i.handleDeleteUser, true))
+
+	// Profile
 	router.Get("/user/profile", i.SessionHandler(i.handleGetUserProfile, true))
 	router.Post("/user/profile", i.SessionHandler(i.handleCreateUserProfile, true))
 	router.Put("/user/profile", i.SessionHandler(i.handleUpdateUserProfile, true))
 	router.Put("/user/profile/list", i.SessionHandler(i.handleUpdateUserProfileLists, true))
 	router.Delete("/user/profile", i.SessionHandler(i.handleDeleteUserProfile, true))
-	router.Delete("/user", i.SessionHandler(i.handleDeleteUser, true))
+
+	// Streaming
+	router.Get("/stream/*", i.handleStream)
+	router.Get("/proxy", i.handleProxy)
 	router.Get("/streams", i.SessionHandler(i.HandleGetStream, true))
 	router.Get("/v2/streams", i.SessionHandler(i.HandleGetStreamV2, true))
+	router.Get("/stream_url", i.SessionHandler(i.handleFinalUrl, true))
+	router.Get("/yt_stream", i.SessionHandler(i.handleYtStream, true))
+
+	// WebSocket
+	router.Get("/ws", i.SessionHandler(i.sockerHandler.HandleClientConnectionRequest, true))
+
+	// Discover
 	router.Get("/discover/movies", i.SessionHandler(i.HandleDiscoverMovies, true))
 	router.Get("/discover/shows", i.SessionHandler(i.HandleDiscoverShows, true))
 	router.Get("/trending/movies", i.SessionHandler(i.HandleGetTrendingMovies, true))
 	router.Get("/trending/shows", i.SessionHandler(i.HandleGetTrendingShows, true))
 	router.Get("/search/show", i.SessionHandler(i.HandleSearchShows, true))
 	router.Get("/search/movie", i.SessionHandler(i.HandleSearchMovies, true))
-	router.Get("/movie/{id}", i.SessionHandler(i.HandleGetMovieInfo, true))
-	router.Get("/show/{id}", i.SessionHandler(i.HandleGetShowInfo, true))
 	router.Get("/genre", i.HandleGetGenre)
 	router.Get("/configuration", i.HandleGetConfiguration)
+
+	// Content
+	router.Get("/movie/{id}", i.SessionHandler(i.HandleGetMovieInfo, true))
+	router.Get("/show/{id}", i.SessionHandler(i.HandleGetShowInfo, true))
+
+	// Progress
 	router.Get("/continue_watching", i.SessionHandler(i.HandleGetContinueWatching, true))
+	router.Delete("/continue_watching/{id}", i.SessionHandler(i.handleDeleteContinueWatching, true))
 	router.Get("/movie/{id}/progress", i.SessionHandler(i.HandleGetMovieProgress, true))
 	router.Get("/show/{id}/progress", i.SessionHandler(i.HandleGetShowProgress, true))
 	router.Post("/movie/update_progress", i.SessionHandler(i.HandleMovieProgressUpdate, true))
 	router.Post("/show/update_progress", i.SessionHandler(i.HandleShowProgressUpdate, true))
-	router.Post("/discover/library", i.SessionHandler(i.handleLibrary, true))
 	router.Post("/movie/{id}/watched", i.SessionHandler(i.handleMovieWatched, true))
 	router.Post("/show/{id}/watched", i.SessionHandler(i.handleShowWatched, true))
-	router.Delete("/continue_watching/{id}", i.SessionHandler(i.handleDeleteContinueWatching, true))
-	router.Get("/stream_url", i.SessionHandler(i.handleFinalUrl, true))
-	router.Get("/trakt_url", i.SessionHandler(i.HandleGetTraktUrl, true))
-	router.Get("/trakt", i.HandleTraktRedirect)
-	router.Delete("/trakt", i.SessionHandler(i.HandleTraktDelete, true))
-	router.Post("/user/source", i.SessionHandler(i.HandleAddSource, true))
-	router.Delete("/user/source", i.SessionHandler(i.HandleRemoveSource, true))
+
+	// Library
+	router.Post("/discover/library", i.SessionHandler(i.handleLibrary, true))
 	router.Post("/user/library", i.SessionHandler(i.HandleAddToLibrary, true))
 	router.Delete("/user/library", i.SessionHandler(i.HandleDeleteFromLibrary, true))
 	router.Post("/user/library/check", i.SessionHandler(i.HandleCheckIfInLibrary, true))
-	router.Get("/yt_stream", i.SessionHandler(i.handleYtStream, true))
+
+	// Trakt
+	router.Get("/trakt_url", i.SessionHandler(i.HandleGetTraktUrl, true))
+	router.Get("/trakt", i.HandleTraktRedirect)
+	router.Delete("/trakt", i.SessionHandler(i.HandleTraktDelete, true))
+
+	// Sources
+	router.Post("/user/source", i.SessionHandler(i.HandleAddSource, true))
+	router.Delete("/user/source", i.SessionHandler(i.HandleRemoveSource, true))
+
+	// Streamio Addons
+	router.Post("/profile/addon", i.SessionHandler(i.HandleAddAddon, true))
+	router.Delete("/profile/addon", i.SessionHandler(i.HandleRemoveAddon, true))
+	router.Post("/profile/addon/enable", i.SessionHandler(i.HandleEnableAddon, true))
+	router.Post("/profile/addon/disable", i.SessionHandler(i.HandleDisableAddon, true))
+
 	return router
 }
 

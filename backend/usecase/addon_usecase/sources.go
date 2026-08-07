@@ -2,7 +2,9 @@ package addonusecase
 
 import (
 	"context"
+	"net/url"
 	"slices"
+	"strings"
 	apperrors "zxy/app_errors"
 	"zxy/models"
 )
@@ -73,7 +75,18 @@ func (u *Usecase) RemoveSource(userId int, profileId int, tp string) error {
 }
 
 func (u *Usecase) AddStreamioAddon(userId int, profileId int, manifestUrl string) error {
-	err := u.addonRepo.AddAddon(
+	if manifestUrl == "" {
+		return apperrors.InvalidInput{Err: "Invalid url"}
+	}
+	URL, err := url.Parse(manifestUrl)
+	if err != nil {
+		return apperrors.InvalidInput{Err: "Invalid url"}
+	}
+	if strings.ToLower(URL.Scheme) != "http" && strings.ToLower(URL.Scheme) != "HTTPS" {
+		return apperrors.InvalidInput{Err: "Invalid url"}
+	}
+
+	err = u.addonRepo.AddAddon(
 		context.Background(),
 		models.Addon{Enabled: true, ProfileId: profileId, ManifestUrl: manifestUrl},
 	)
@@ -100,6 +113,7 @@ func (u *Usecase) UpdateStreamioAddon(profileId int, addonId int, enable bool) e
 			if err != nil {
 				return apperrors.SomethingWentWrongError{}
 			}
+			return nil
 		}
 
 	}
@@ -114,6 +128,7 @@ func (u *Usecase) RemoveStreamioAddon(profileId int, addonId int) error {
 	if err != nil {
 		return apperrors.InvalidInput{Err: "Addons not found"}
 	}
+
 	for _, v := range addons {
 		v := v
 		if v.Id == addonId {
@@ -121,8 +136,8 @@ func (u *Usecase) RemoveStreamioAddon(profileId int, addonId int) error {
 			if err != nil {
 				return apperrors.SomethingWentWrongError{}
 			}
+			return nil
 		}
-
 	}
 
 	return apperrors.InvalidInput{Err: "Addon not found"}

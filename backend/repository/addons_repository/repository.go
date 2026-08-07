@@ -45,7 +45,7 @@ func (r *Repository) AddAddon(ctx context.Context, addon models.Addon) error {
 
 func (r *Repository) UpdateAddon(ctx context.Context, addon models.Addon) error {
 	txn, ok := ctx.Value("txn").(*sql.Tx)
-	query := `update into profile_addons set = enabled = $1  where id =$2`
+	query := `update profile_addons set enabled = $1 where id =$2`
 	var err error
 	if ok {
 		_, err = txn.Exec(
@@ -118,6 +118,10 @@ func (r *Repository) GetProfileAddons(profileId int) ([]models.Addon, error) {
 		profileId,
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return res, nil
+		}
+
 		fmt.Println("Error getting profile addons", err)
 		return res, err
 	}
