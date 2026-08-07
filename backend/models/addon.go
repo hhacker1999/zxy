@@ -48,9 +48,11 @@ type ZxyResolutionResponse struct {
 }
 
 type BehaviorHints struct {
-	BingeGroup string `json:"bingeGroup"`
-	VideoSize  int64  `json:"videoSize"`
-	Filename   string `json:"filename"`
+	BingeGroup            string `json:"bingeGroup"`
+	VideoSize             int64  `json:"videoSize"`
+	Filename              string `json:"filename"`
+	Configurable          bool   `json:"configurable"`
+	ConfigurationRequired bool   `json:"configurationRequired"`
 }
 
 type Addon struct {

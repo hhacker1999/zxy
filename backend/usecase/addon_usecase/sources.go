@@ -71,3 +71,59 @@ func (u *Usecase) RemoveSource(userId int, profileId int, tp string) error {
 
 	return nil
 }
+
+func (u *Usecase) AddStreamioAddon(userId int, profileId int, manifestUrl string) error {
+	err := u.addonRepo.AddAddon(
+		context.Background(),
+		models.Addon{Enabled: true, ProfileId: profileId, ManifestUrl: manifestUrl},
+	)
+
+	if err != nil {
+		return apperrors.SomethingWentWrongError{}
+	}
+
+	return nil
+}
+
+func (u *Usecase) UpdateStreamioAddon(profileId int, addonId int, enable bool) error {
+	addons, err := u.addonRepo.GetProfileAddons(
+		profileId,
+	)
+	if err != nil {
+		return apperrors.InvalidInput{Err: "Addons not found"}
+	}
+	for _, v := range addons {
+		v := v
+		if v.Id == addonId {
+			v.Enabled = enable
+			err := u.addonRepo.UpdateAddon(context.Background(), v)
+			if err != nil {
+				return apperrors.SomethingWentWrongError{}
+			}
+		}
+
+	}
+
+	return apperrors.InvalidInput{Err: "Addon not found"}
+}
+
+func (u *Usecase) RemoveStreamioAddon(profileId int, addonId int) error {
+	addons, err := u.addonRepo.GetProfileAddons(
+		profileId,
+	)
+	if err != nil {
+		return apperrors.InvalidInput{Err: "Addons not found"}
+	}
+	for _, v := range addons {
+		v := v
+		if v.Id == addonId {
+			err := u.addonRepo.RemoveProfileAddon(context.Background(), addonId)
+			if err != nil {
+				return apperrors.SomethingWentWrongError{}
+			}
+		}
+
+	}
+
+	return apperrors.InvalidInput{Err: "Addon not found"}
+}

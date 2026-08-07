@@ -43,6 +43,31 @@ func (r *Repository) AddAddon(ctx context.Context, addon models.Addon) error {
 	return err
 }
 
+func (r *Repository) UpdateAddon(ctx context.Context, addon models.Addon) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	query := `update into profile_addons set = enabled = $1  where id =$2`
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			query,
+			addon.Enabled,
+			addon.Id,
+		)
+	} else {
+		_, err = r.db.Exec(
+			query,
+			addon.Enabled,
+			addon.Id,
+		)
+	}
+	if err != nil {
+		fmt.Println("Error updating addon", err)
+
+	}
+
+	return err
+}
+
 func (r *Repository) RemoveProfileAddons(ctx context.Context, profileId int) error {
 	txn, ok := ctx.Value("txn").(*sql.Tx)
 	var err error
@@ -58,8 +83,29 @@ func (r *Repository) RemoveProfileAddons(ctx context.Context, profileId int) err
 		)
 	}
 	if err != nil {
-		fmt.Println("Error inserting addon to profile", err)
+		fmt.Println("Error removing addons from profile", err)
 
+	}
+
+	return err
+}
+
+func (r *Repository) RemoveProfileAddon(ctx context.Context, addonId int) error {
+	txn, ok := ctx.Value("txn").(*sql.Tx)
+	var err error
+	if ok {
+		_, err = txn.Exec(
+			`delete from profile_addons where id = $1`,
+			addonId,
+		)
+	} else {
+		_, err = r.db.Exec(
+			`delete from profile_addons where id = $1`,
+			addonId,
+		)
+	}
+	if err != nil {
+		fmt.Println("Error removing addon from profile", err)
 	}
 
 	return err
@@ -68,7 +114,7 @@ func (r *Repository) RemoveProfileAddons(ctx context.Context, profileId int) err
 func (r *Repository) GetProfileAddons(profileId int) ([]models.Addon, error) {
 	var res []models.Addon
 	rows, err := r.db.Query(
-		`select id, manifest_url from profile_addons where profile_id = $1`,
+		`select id, manifest_url, enabled from profile_addons where profile_id = $1`,
 		profileId,
 	)
 	if err != nil {
@@ -80,12 +126,12 @@ func (r *Repository) GetProfileAddons(profileId int) ([]models.Addon, error) {
 
 	for rows.Next() {
 		var temp models.Addon
-		err = rows.Scan(&temp.Id, &temp.ManifestUrl)
+		err = rows.Scan(&temp.Id, &temp.ManifestUrl, &temp.Enabled)
 		if err != nil {
 			fmt.Println("Error scanning get profile addons", err)
 			return res, err
 		}
-    res = append(res, temp)
+		res = append(res, temp)
 	}
 
 	return res, nil
